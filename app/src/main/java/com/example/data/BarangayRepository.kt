@@ -458,67 +458,38 @@ class BarangayRepository {
         officialRemarks: String
     ) {
         val user = _currentUser.value
-        val list = _requests.value.toMutableList()
-        val index = list.indexOfFirst { it.id == requestId || it.referenceNumber == requestId }
-        if (index >= 0) {
-            val old = list[index]
+        ioScope.launch {
+            val index = _requests.value.indexOfFirst { it.id == requestId || it.referenceNumber == requestId }
+            if (index < 0) return@launch
+            val old = _requests.value[index]
+            val result = CivicSyncService.updateRequestStatus(old.id, newStatus.label, officialRemarks, user.uid)
+            if (result.isFailure) {
+                _isOnline.value = false
+                return@launch
+            }
+
+            _isOnline.value = true
             val now = System.currentTimeMillis()
-            val newTimeline = old.timeline + RequestTimelineEvent(
-                title = "Status: ${newStatus.label}",
-                description = officialRemarks.ifEmpty { "Status updated by ${user.role.displayName}" },
-                timestamp = now,
-                actorName = user.profile.fullName
-            )
             val updated = old.copy(
                 status = newStatus,
                 officialRemarks = officialRemarks,
                 updatedAt = now,
-                timeline = newTimeline
+                timeline = old.timeline + RequestTimelineEvent(
+                    title = "Status: ${newStatus.label}",
+                    description = officialRemarks,
+                    timestamp = now,
+                    actorName = user.profile.fullName
+                ),
+                isSyncedToServer = true
             )
-            list[index] = updated
-            _requests.value = list
-
-            ioScope.launch {
-                database?.documentRequestDao()?.insertRequest(DocumentRequestEntity.fromDomain(updated))
+            val list = _requests.value.toMutableList()
+            val currentIndex = list.indexOfFirst { it.id == old.id }
+            if (currentIndex >= 0) {
+                list[currentIndex] = updated
+                _requests.value = list
             }
-
-            ioScope.launch {
-                val result = CivicSyncService.updateRequestStatus(old.id, newStatus.label, officialRemarks, user.uid)
-                if (result.isFailure) _isOnline.value = false
-            }
-
-            // Notification for resident
-            val notif = BarangayNotification(
-                id = "notif_${System.currentTimeMillis()}",
-                title = "Request Update: ${old.serviceName}",
-                message = "Status changed to ${newStatus.label}. $officialRemarks",
-                timestamp = now,
-                isRead = false,
-                category = "Service Request",
-                priority = if (newStatus == RequestStatus.READY) "Important" else "Normal",
-                referenceId = old.referenceNumber
-            )
-            _notifications.value = listOf(notif) + _notifications.value
-            ioScope.launch {
-                database?.notificationDao()?.insertNotification(NotificationEntity.fromDomain(notif))
-            }
-
-            appContext?.let { ctx ->
-                NotificationHelper.showNotification(
-                    context = ctx,
-                    id = old.referenceNumber.hashCode(),
-                    title = "Request Update: ${old.serviceName}",
-                    message = "Status changed to ${newStatus.label}."
-                )
-            }
-
-            addAuditLog(
-                action = "UPDATE_REQUEST_STATUS",
-                targetType = "DocumentRequest",
-                targetId = old.referenceNumber,
-                previousState = old.status.label,
-                newState = newStatus.label
-            )
+            database?.documentRequestDao()?.insertRequest(DocumentRequestEntity.fromDomain(updated))
+            refreshAuthenticatedNotifications(user.uid)
         }
     }
 
