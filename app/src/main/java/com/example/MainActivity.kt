@@ -100,6 +100,7 @@ fun EBarangaySuaApp() {
                         Triple(Screen.Home, "Home", Icons.Default.Home),
                         Triple(Screen.Services, "Services", Icons.Default.Widgets),
                         Triple(Screen.Sua, "Sua", Icons.Default.Waves),
+                        Triple(Screen.Alerts, "Alerts", Icons.Default.Notifications),
                         Triple(Screen.Profile, "Profile", Icons.Default.Person)
                     )
 
