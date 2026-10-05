@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -216,6 +217,11 @@ fun SuaCommunityHubScreen(
                     InfoStat(label = "Elevation", value = "178.3 m")
                 }
             }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Explore Barangay Sua without embedding a paid map SDK/key.
+            SuaLocationCard()
 
             Spacer(modifier = Modifier.height(20.dp))
 
@@ -434,6 +440,55 @@ private fun OfficialCard(official: BarangayOfficial) {
                     )
                 }
             }
+        }
+    }
+}
+
+
+@Composable
+private fun SuaLocationCard() {
+    val context = LocalContext.current
+    val latitude = 10.3340
+    val longitude = 124.9810
+
+    SoftSkeuomorphicCard(
+        modifier = Modifier.fillMaxWidth(),
+        backgroundColor = DeepOceanContainer.copy(alpha = 0.72f)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = SouthernSeaTealContainer,
+                modifier = Modifier.size(48.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Map, contentDescription = null, tint = SouthernSeaTealDark, modifier = Modifier.size(26.dp))
+                }
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Explore Barangay Sua", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DeepOceanBlue)
+                Text("10.3340, 124.9810 • Cabalian Bay coastal area", fontSize = 11.sp, color = DeepNavySecondary)
+                Text("Uses the verified app service-area coordinates.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Button(
+            onClick = {
+                val uri = android.net.Uri.parse("geo:$latitude,$longitude?q=$latitude,$longitude(Barangay%20Sua)")
+                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, uri)
+                if (intent.resolveActivity(context.packageManager) != null) {
+                    context.startActivity(intent)
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Icon(Icons.Default.Navigation, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Open in Maps")
         }
     }
 }
