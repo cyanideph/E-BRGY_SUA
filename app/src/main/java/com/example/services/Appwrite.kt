@@ -1,6 +1,7 @@
 package com.example.services
 
 import android.content.Context
+import com.example.BuildConfig
 import io.appwrite.Client
 import io.appwrite.services.Account
 import io.appwrite.services.Realtime
@@ -12,12 +13,15 @@ import io.appwrite.services.TablesDB
  *
  * No API key is stored in the mobile app. Resident/admin authorization is
  * enforced by Appwrite sessions, resource permissions, and server functions.
+ *
+ * Endpoint/project/database/bucket identifiers come from Gradle build
+ * configuration so CI and local builds use the same configuration path.
  */
 object Appwrite {
-    const val ENDPOINT = "https://sgp.cloud.appwrite.io/v1"
-    const val PROJECT_ID = "6ac31e4000390af0f850"
-    const val DATABASE_ID = "ebarangay-sua-db"
-    const val RESIDENT_FILES_BUCKET_ID = "resident-files"
+    const val ENDPOINT = BuildConfig.APPWRITE_ENDPOINT
+    const val PROJECT_ID = BuildConfig.APPWRITE_PROJECT_ID
+    const val DATABASE_ID = BuildConfig.APPWRITE_DATABASE_ID
+    const val RESIDENT_FILES_BUCKET_ID = BuildConfig.APPWRITE_RESIDENT_FILES_BUCKET_ID
 
     const val USERS_TABLE = "users"
     const val RESIDENTS_TABLE = "residents"
