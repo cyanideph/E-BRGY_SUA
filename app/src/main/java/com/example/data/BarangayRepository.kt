@@ -82,6 +82,9 @@ class BarangayRepository {
     private val _residents = MutableStateFlow<List<ResidentProfile>>(emptyList())
     val residents: StateFlow<List<ResidentProfile>> = _residents.asStateFlow()
 
+    private val _households = MutableStateFlow<List<Household>>(emptyList())
+    val households: StateFlow<List<Household>> = _households.asStateFlow()
+
     // Notifications
     private val _notifications = MutableStateFlow<List<BarangayNotification>>(emptyList())
     val notifications: StateFlow<List<BarangayNotification>> = _notifications.asStateFlow()
@@ -207,6 +210,20 @@ class BarangayRepository {
                 _hotlines.value = hotlinesRes.rows.map { row ->
                     val d = rowData(row)
                     OfficialHotline(str(d,"name"), str(d,"number"), str(d,"agency"), str(d,"description"))
+                }
+
+                val householdsRes = db.listRows(Appwrite.DATABASE_ID, Appwrite.HOUSEHOLDS_TABLE)
+                _households.value = householdsRes.rows.map { row ->
+                    val d = rowData(row)
+                    Household(
+                        id = row.id,
+                        householdNumber = str(d, "householdNumber"),
+                        headName = str(d, "headName"),
+                        address = str(d, "address"),
+                        memberCount = int(d, "memberCount"),
+                        memberNames = parseJsonArray(str(d, "memberNames")),
+                        emergencyNotes = str(d, "emergencyNotes")
+                    )
                 }
 
                 val facilitiesRes = db.listRows(Appwrite.DATABASE_ID, Appwrite.FACILITIES_TABLE)
