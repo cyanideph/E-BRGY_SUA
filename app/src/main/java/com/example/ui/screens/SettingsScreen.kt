@@ -9,6 +9,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,6 +27,9 @@ fun SettingsScreen(
 ) {
     val repository = remember { com.example.data.BarangayRepository.instance }
     val themeMode by repository.themeMode.collectAsState()
+    val scope = rememberCoroutineScope()
+    var appwriteStatus by remember { mutableStateOf("Not checked") }
+    var appwriteChecking by remember { mutableStateOf(false) }
 
     var pushNotifsEnabled by remember { mutableStateOf(true) }
     var emergencySmsEnabled by remember { mutableStateOf(true) }
@@ -156,6 +160,69 @@ fun SettingsScreen(
                             }
                         }
                     }
+                }
+            }
+
+            // Appwrite Connection
+            SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "Appwrite Connection",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "Project: " + com.example.services.Appwrite.PROJECT_ID,
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = appwriteStatus,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = when {
+                        appwriteStatus.startsWith("Connected") -> MaterialTheme.colorScheme.primary,
+                        appwriteStatus.startsWith("Connection failed") -> RestrainedCoralRed,
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    modifier = Modifier.testTag("appwrite_connection_status")
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                OutlinedButton(
+                    onClick = {
+                        scope.launch {
+                            appwriteChecking = true
+                            appwriteStatus = "Checking Appwrite…"
+                            try {
+                                val response = com.example.services.Appwrite.ping()
+                                appwriteStatus = "Connected • " + response.trim().ifEmpty { "Appwrite responded" }
+                            } catch (error: Throwable) {
+                                appwriteStatus = "Connection failed • " + (error.message ?: error.javaClass.simpleName)
+                            } finally {
+                                appwriteChecking = false
+                            }
+                        }
+                    },
+                    enabled = !appwriteChecking,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("test_appwrite_connection")
+                ) {
+                    if (appwriteChecking) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(Icons.Default.CloudDone, contentDescription = null)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = if (appwriteChecking) "Testing Connection…" else "Test Appwrite Connection",
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
 
