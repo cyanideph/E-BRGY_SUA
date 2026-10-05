@@ -140,6 +140,18 @@ class BarangayRepository {
     suspend fun register(fullName: String, email: String, password: String, mobile: String, address: String): Result<UserSession> = runCatching {
         val created = Appwrite.account().create(userId=ID.unique(), email=email, password=password, name=fullName)
         Appwrite.account().createEmailPasswordSession(email=email, password=password)
+        val now = java.time.Instant.now().toString()
+        val userPermissions = listOf("read(\"user:${created.id}\")", "update(\"user:${created.id}\")")
+        Appwrite.tablesDB().createRow(
+            databaseId=Appwrite.DATABASE_ID, tableId=Appwrite.USERS_TABLE, rowId=created.id,
+            data=mapOf("userId" to created.id, "name" to fullName, "email" to email, "role" to "resident", "address" to address, "createdAt" to now),
+            permissions=userPermissions
+        )
+        Appwrite.tablesDB().createRow(
+            databaseId=Appwrite.DATABASE_ID, tableId=Appwrite.RESIDENTS_TABLE, rowId=created.id,
+            data=mapOf("userId" to created.id, "fullName" to fullName, "address" to address, "mobileNumber" to mobile, "residentId" to created.id, "verified" to false, "registrationStatus" to "Pending Verification", "createdAt" to now),
+            permissions=userPermissions
+        )
         val s = UserSession(created.id, created.email, UserRole.RESIDENT,
             ResidentProfile(id=created.id, residentId=created.id, fullName=fullName, address=address, mobileNumber=mobile,
                 registrationStatus="Pending Verification"))
