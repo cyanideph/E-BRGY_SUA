@@ -203,8 +203,6 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(30.dp))
         }
-
-
     }
 }
 
