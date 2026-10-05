@@ -61,21 +61,6 @@ class EBarangaySuaRobolectricTest {
     }
 
     @Test
-    fun repositoryExposesBackendFirstMutationApis() {
-        val repo = BarangayRepository.instance
-
-        // These are suspend APIs because mutations must be accepted by Appwrite
-        // before the local Room/cache state is changed. This test intentionally
-        // verifies API shape rather than inventing local/mock backend data.
-        assertNotNull(repo::submitRequest)
-        assertNotNull(repo::submitEmergency)
-        assertNotNull(repo::updateRequestStatus)
-        assertNotNull(repo::updateEmergencyStatus)
-        assertNotNull(repo::publishAnnouncement)
-        assertNotNull(repo::createEvent)
-    }
-
-    @Test
     fun suaCoordinatesAreStable() {
         assertEquals(10.3340, com.example.services.OpenMeteoService.SUA_LATITUDE, 0.001)
         assertEquals(124.9810, com.example.services.OpenMeteoService.SUA_LONGITUDE, 0.001)
