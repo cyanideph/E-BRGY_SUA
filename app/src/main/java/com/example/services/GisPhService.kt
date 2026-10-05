@@ -15,12 +15,12 @@ private val VERIFIED_SUA_FALLBACK = BarangayProfile(
     municipality = "San Juan",
     province = "Southern Leyte",
     region = "Eastern Visayas",
-    psgcCode = "086402013",
-    municipalityPsgcCode = "086402000",
+    psgcCode = "0806414023",
+    municipalityPsgcCode = "086414000",
     provincePsgcCode = "086400000",
     regionPsgcCode = "080000000",
     type = "Barangay",
-    source = "Configured Barangay Sua identity"
+    source = "PSA PSGC-verified configured identity"
 )
 
 @JsonClass(generateAdapter = true)
