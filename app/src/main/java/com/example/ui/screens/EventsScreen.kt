@@ -115,7 +115,6 @@ fun EventsScreen(
                                 fontWeight = FontWeight.Medium
                             )
                         }
-}
                     }
                 }
             }
