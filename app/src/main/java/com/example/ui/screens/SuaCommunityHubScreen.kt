@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.BarangayRepository
 import com.example.model.BarangayOfficial
+import com.example.model.BarangayProfile
+import com.example.services.GisPhService
 import com.example.ui.components.SoftSkeuomorphicCard
 import com.example.ui.components.SuaWaveDivider
 import com.example.ui.components.SuaWaveHeader
@@ -35,6 +37,21 @@ fun SuaCommunityHubScreen(
     val repository = remember { BarangayRepository.instance }
     val officials by repository.officials.collectAsState()
     var selectedOfficialTab by remember { mutableStateOf("All") }
+    var barangayProfile by remember { mutableStateOf<BarangayProfile?>(null) }
+    var profileLoading by remember { mutableStateOf(true) }
+    var profileError by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        GisPhService.fetchSuaProfile()
+            .onSuccess {
+                barangayProfile = it
+                profileError = null
+            }
+            .onFailure {
+                profileError = it.message ?: "Unable to load GIS.PH barangay data."
+            }
+        profileLoading = false
+    }
 
     val roleTabs = listOf("All", "Executive", "Council", "Administration", "Health & Security")
 
@@ -94,7 +111,11 @@ fun SuaCommunityHubScreen(
                             color = DeepOceanBlue
                         )
                         Text(
-                            text = "San Juan • Southern Leyte • Postal Code 6611",
+                            text = listOf(
+                                barangayProfile?.municipality ?: "San Juan",
+                                barangayProfile?.province ?: "Southern Leyte",
+                                "Postal Code 6611"
+                            ).joinToString(" • "),
                             style = MaterialTheme.typography.bodySmall,
                             color = SouthernSeaTealDark,
                             fontWeight = FontWeight.SemiBold
@@ -105,11 +126,75 @@ fun SuaCommunityHubScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "Barangay Sua is a barangay of San Juan, Southern Leyte, on the island of Leyte. PhilAtlas lists a 2020 population of 659, a 2015 household population of 713 across 161 households, and coordinates of approximately 10.2619, 125.2115. e-Barangay Sua brings local public services, community information, and barangay officials together in one digital hub.",
+                    text = "Barangay Sua is a barangay of San Juan, Southern Leyte, on the island of Leyte. e-Barangay Sua brings local public services, community information, and barangay officials together in one digital hub.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 22.sp
                 )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                SoftSkeuomorphicCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    backgroundColor = DeepOceanContainer,
+                    elevation = 2.dp
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Public,
+                            contentDescription = null,
+                            tint = DeepOceanBlue,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Official geographic identity",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = DeepOceanBlue
+                            )
+                            when {
+                                profileLoading -> Text(
+                                    text = "Checking GIS.PH…",
+                                    fontSize = 11.sp,
+                                    color = DeepNavySecondary
+                                )
+                                barangayProfile != null -> Text(
+                                    text = "PSGC " + barangayProfile!!.psgcCode + " • " + barangayProfile!!.region,
+                                    fontSize = 11.sp,
+                                    color = DeepNavySecondary
+                                )
+                                else -> Text(
+                                    text = "Using verified local fallback",
+                                    fontSize = 11.sp,
+                                    color = DeepNavySecondary
+                                )
+                            }
+                        }
+                        if (profileLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                imageVector = if (barangayProfile != null) Icons.Default.Verified else Icons.Default.CloudOff,
+                                contentDescription = null,
+                                tint = if (barangayProfile != null) SouthernSeaTealDark else WarmSunGoldDark,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    if (profileError != null) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Live lookup unavailable; the app keeps the verified Sua identity locally.",
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(14.dp))
 
