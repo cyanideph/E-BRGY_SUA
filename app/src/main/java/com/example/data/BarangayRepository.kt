@@ -636,6 +636,17 @@ class BarangayRepository {
         refreshPublicData()
     }
 
+    fun toggleEventRsvp(eventId: String) {
+        ioScope.launch {
+            runCatching {
+                val row = Appwrite.tablesDB().getRow(Appwrite.DATABASE_ID, Appwrite.EVENTS_TABLE, eventId)
+                val current = row.data["rsvpCount"]?.toString()?.toIntOrNull() ?: 0
+                Appwrite.tablesDB().updateRow(Appwrite.DATABASE_ID, Appwrite.EVENTS_TABLE, eventId, mapOf("rsvpCount" to current + 1))
+                refreshPublicData()
+            }.onFailure { _isOnline.value = false }
+        }
+    }
+
     // Notifications — Appwrite is authoritative; Room is cache only.
     fun markNotificationAsRead(id: String) {
         val userId = _currentUser.value.uid
