@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.testing.Test
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.compose)
@@ -59,7 +61,7 @@ android {
     unitTests {
       isIncludeAndroidResources = true
       all {
-        jvmArgs += listOf(
+        it.jvmArgs(listOf(
           "--add-opens=java.base/java.lang=ALL-UNNAMED",
           "--add-opens=java.base/java.util=ALL-UNNAMED",
           "--add-opens=java.base/java.io=ALL-UNNAMED",
