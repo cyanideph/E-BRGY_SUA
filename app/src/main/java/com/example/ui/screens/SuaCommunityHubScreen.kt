@@ -149,24 +149,29 @@ fun SuaCommunityHubScreen(
                         Spacer(modifier = Modifier.width(10.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Official geographic identity",
+                                text = "Barangay Sua identity",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = DeepOceanBlue
                             )
                             when {
                                 profileLoading -> Text(
-                                    text = "Checking GIS.PH…",
+                                    text = "Checking live GIS.PH data…",
+                                    fontSize = 11.sp,
+                                    color = DeepNavySecondary
+                                )
+                                barangayProfile?.source == "GIS.PH" -> Text(
+                                    text = "Live GIS.PH • PSGC " + barangayProfile!!.psgcCode + " • " + barangayProfile!!.region,
                                     fontSize = 11.sp,
                                     color = DeepNavySecondary
                                 )
                                 barangayProfile != null -> Text(
-                                    text = "PSGC " + barangayProfile!!.psgcCode + " • " + barangayProfile!!.region,
+                                    text = "Configured service area • PSGC " + barangayProfile!!.psgcCode,
                                     fontSize = 11.sp,
                                     color = DeepNavySecondary
                                 )
                                 else -> Text(
-                                    text = "Using verified local fallback",
+                                    text = "Configured service area",
                                     fontSize = 11.sp,
                                     color = DeepNavySecondary
                                 )
@@ -179,9 +184,9 @@ fun SuaCommunityHubScreen(
                             )
                         } else {
                             Icon(
-                                imageVector = if (barangayProfile != null) Icons.Default.Verified else Icons.Default.CloudOff,
+                                imageVector = if (barangayProfile?.source == "GIS.PH") Icons.Default.Verified else Icons.Default.CloudOff,
                                 contentDescription = null,
-                                tint = if (barangayProfile != null) SouthernSeaTealDark else WarmSunGoldDark,
+                                tint = if (barangayProfile?.source == "GIS.PH") SouthernSeaTealDark else WarmSunGoldDark,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -189,7 +194,7 @@ fun SuaCommunityHubScreen(
                     if (profileError != null) {
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Live lookup unavailable; the app keeps the verified Sua identity locally.",
+                            text = "Live lookup unavailable; using the configured Barangay Sua service-area identity.",
                             fontSize = 10.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
