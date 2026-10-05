@@ -261,7 +261,7 @@ fun HomeScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Quick Services",
+                    text = "Services for you",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
@@ -279,7 +279,7 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             // 6 Primary Service Cards in a neat 2-row grid or horizontal scroll
-            val primaryServices = services.take(6)
+            val primaryServices = services.take(4)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 for (chunk in primaryServices.chunked(2)) {
                     Row(
@@ -360,7 +360,7 @@ fun HomeScreen(
                 )
                 TextButton(onClick = onNavigateToMyRequests) {
                     Text(
-                        text = "History (${requests.size})",
+                        text = "View all (${requests.size})",
                         fontWeight = FontWeight.SemiBold,
                         color = SouthernSeaTealDark,
                         fontSize = 13.sp
