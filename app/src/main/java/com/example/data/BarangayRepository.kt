@@ -81,7 +81,12 @@ class BarangayRepository {
     val officials: StateFlow<List<BarangayOfficial>> = _officials.asStateFlow()
 
     // Hotlines
-    val hotlines: List<OfficialHotline> = emptyList()
+    private val _hotlines = MutableStateFlow<List<OfficialHotline>>(emptyList())
+    val hotlines: StateFlow<List<OfficialHotline>> = _hotlines.asStateFlow()
+
+    // Facilities
+    private val _facilities = MutableStateFlow<List<Facility>>(emptyList())
+    val facilities: StateFlow<List<Facility>> = _facilities.asStateFlow()
 
     // Notifications
     private val _notifications = MutableStateFlow<List<BarangayNotification>>(emptyList())
@@ -115,7 +120,6 @@ class BarangayRepository {
                 if (entities.isNotEmpty()) {
                     _requests.value = entities.map { it.toDomain() }
                 }
-                }
             }
         }
 
@@ -131,7 +135,6 @@ class BarangayRepository {
             db.notificationDao().getAllNotifications().collect { entities ->
                 if (entities.isNotEmpty()) {
                     _notifications.value = entities.map { it.toDomain() }
-                }
                 }
             }
         }
@@ -183,13 +186,52 @@ class BarangayRepository {
                     }
                 }
                 val eventsRes = db.listRows(Appwrite.DATABASE_ID, Appwrite.EVENTS_TABLE)
-                if (eventsRes.rows.isNotEmpty()) {
-                    _events.value = eventsRes.rows.map { row ->
-                        val d = rowData(row)
-                        BarangayEvent(row.id, str(d,"title"), str(d,"description"), str(d,"startsAt").substringBefore("T"),
-                            str(d,"startsAt").substringAfter("T").take(5), str(d,"location"), str(d,"organizer"), str(d,"category"), int(d,"rsvpCount"), false)
-                    }
+                _events.value = eventsRes.rows.map { row ->
+                    val d = rowData(row)
+                    BarangayEvent(row.id, str(d,"title"), str(d,"description"), str(d,"startsAt").substringBefore("T"),
+                        str(d,"startsAt").substringAfter("T").take(5), str(d,"location"), str(d,"organizer"), str(d,"category"), int(d,"rsvpCount"), false)
                 }
+
+                val officialsRes = db.listRows(Appwrite.DATABASE_ID, Appwrite.OFFICIALS_TABLE)
+                _officials.value = officialsRes.rows.map { row ->
+                    val d = rowData(row)
+                    BarangayOfficial(
+                        id = row.id,
+                        name = str(d,"name"),
+                        position = str(d,"position"),
+                        roleCategory = str(d,"department"),
+                        contactNumber = str(d,"phone"),
+                        officeHours = str(d,"officeHours"),
+                        committee = str(d,"committee"),
+                        isDemoRecord = false,
+                        email = str(d,"email")
+                    )
+                }
+
+                val hotlinesRes = db.listRows(Appwrite.DATABASE_ID, Appwrite.HOTLINES_TABLE)
+                _hotlines.value = hotlinesRes.rows.map { row ->
+                    val d = rowData(row)
+                    OfficialHotline(row.id, str(d,"name"), str(d,"number"), str(d,"agency"), str(d,"description"))
+                }
+
+                val facilitiesRes = db.listRows(Appwrite.DATABASE_ID, Appwrite.FACILITIES_TABLE)
+                _facilities.value = facilitiesRes.rows.map { row ->
+                    val d = rowData(row)
+                    Facility(
+                        id = row.id,
+                        name = str(d,"name"),
+                        type = str(d,"type"),
+                        description = str(d,"description"),
+                        address = str(d,"address"),
+                        latitude = d["latitude"]?.toString()?.toDoubleOrNull(),
+                        longitude = d["longitude"]?.toString()?.toDoubleOrNull(),
+                        phone = d["phone"]?.toString(),
+                        hours = d["hours"]?.toString(),
+                        emergencyAvailable = bool(d,"emergencyAvailable"),
+                        active = bool(d,"active")
+                    )
+                }
+
                 _isOnline.value = true
             } catch (_: Exception) { _isOnline.value = false }
         }
