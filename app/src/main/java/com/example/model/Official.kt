@@ -8,5 +8,6 @@ data class BarangayOfficial(
     val contactNumber: String,
     val officeHours: String,
     val committee: String,
-    val isDemoRecord: Boolean = true
+    val isDemoRecord: Boolean = true,
+    val email: String = ""
 )
