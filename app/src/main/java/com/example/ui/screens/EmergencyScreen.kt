@@ -38,6 +38,7 @@ fun EmergencyScreen(
 ) {
     val context = LocalContext.current
     val repository = remember { BarangayRepository.instance }
+    val scope = rememberCoroutineScope()
     val userSession by repository.currentUser.collectAsState()
     val hotlines by repository.hotlines.collectAsState()
 
@@ -269,16 +270,24 @@ fun EmergencyScreen(
                 Button(
                     onClick = {
                         isSubmitting = true
-                        val report = repository.submitEmergency(
-                            type = selectedType,
-                            description = description,
-                            latitude = locationCoordinates?.first,
-                            longitude = locationCoordinates?.second,
-                            locationDescription = locationNote
-                        )
-                        submittedReport = report
-                        description = ""
-                        isSubmitting = false
+                        scope.launch {
+                            runCatching {
+                                repository.submitEmergency(
+                                    type = selectedType,
+                                    description = description,
+                                    latitude = locationCoordinates?.first,
+                                    longitude = locationCoordinates?.second,
+                                    locationDescription = locationNote
+                                )
+                            }.onSuccess {
+                                submittedReport = it
+                                description = ""
+                                isSubmitting = false
+                            }.onFailure {
+                                isSubmitting = false
+                                showPermissionRationale = false
+                            }
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
