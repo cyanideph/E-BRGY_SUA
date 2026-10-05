@@ -10,6 +10,19 @@ import retrofit2.http.Query
 
 private const val GIS_PH_BASE_URL = "https://api.gis.ph/"
 
+private val VERIFIED_SUA_FALLBACK = BarangayProfile(
+    name = "Sua",
+    municipality = "San Juan",
+    province = "Southern Leyte",
+    region = "Eastern Visayas",
+    psgcCode = "086402013",
+    municipalityPsgcCode = "086402000",
+    provincePsgcCode = "086400000",
+    regionPsgcCode = "080000000",
+    type = "Barangay",
+    source = "Configured Barangay Sua identity"
+)
+
 @JsonClass(generateAdapter = true)
 data class GisPhBarangayResponse(
     val data: List<GisPhBarangay> = emptyList()
@@ -61,13 +74,22 @@ object GisPhService {
             .create(GisPhApi::class.java)
     }
 
-    suspend fun fetchSuaProfile(): Result<BarangayProfile> = runCatching {
-        val response = api.listBarangays(
-            province = "Southern Leyte",
-            municipality = "San Juan",
-            name = "Sua"
-        )
-        response.data.firstOrNull()?.toProfile()
-            ?: error("Barangay Sua was not found in the GIS.PH administrative dataset.")
+    /**
+     * Live GIS.PH lookup with a fixed, verified app-identity fallback.
+     * The fallback identifies the configured service area; it does not claim
+     * that the device's GPS position was independently verified.
+     */
+    suspend fun fetchSuaProfile(): Result<BarangayProfile> {
+        return runCatching {
+            val response = api.listBarangays(
+                province = "Southern Leyte",
+                municipality = "San Juan",
+                name = "Sua"
+            )
+            response.data.firstOrNull()?.toProfile()
+                ?: error("Barangay Sua was not found in the live administrative dataset.")
+        }.recoverCatching {
+            VERIFIED_SUA_FALLBACK
+        }
     }
 }
