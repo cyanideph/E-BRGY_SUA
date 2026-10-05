@@ -44,19 +44,22 @@ android {
     }
     debug { signingConfig = signingConfigs.getByName("debugConfig") }
   }
+
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
   }
+
   buildFeatures {
     compose = true
     buildConfig = true
   }
+
   testOptions {
     unitTests {
       isIncludeAndroidResources = true
       all {
-        jvmArgs(
+        jvmArgs += listOf(
           "--add-opens=java.base/java.lang=ALL-UNNAMED",
           "--add-opens=java.base/java.util=ALL-UNNAMED",
           "--add-opens=java.base/java.io=ALL-UNNAMED",
@@ -70,6 +73,7 @@ android {
       }
     }
   }
+
   dependenciesInfo {
     includeInApk = false
     includeInBundle = true
