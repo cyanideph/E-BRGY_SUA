@@ -538,32 +538,39 @@ class BarangayRepository {
         return report
     }
 
-    fun updateEmergencyStatus(
+    suspend fun updateEmergencyStatus(
         reportId: String,
         newStatus: EmergencyStatus,
         assignedResponder: String,
         notes: String
     ) {
+        val user = _currentUser.value
+        val status = when (newStatus) {
+            EmergencyStatus.RECEIVED -> "Reported"
+            EmergencyStatus.RESPONDING -> "Responding"
+            EmergencyStatus.RESOLVED -> "Resolved"
+        }
+        CivicSyncService.updateEmergencyStatus(
+            reportId = reportId,
+            status = status,
+            responder = assignedResponder,
+            notes = notes,
+            actorUid = user.uid
+        ).getOrThrow()
+
         val list = _emergencyReports.value.toMutableList()
         val index = list.indexOfFirst { it.id == reportId }
         if (index >= 0) {
             val old = list[index]
-            val updated = old.copy(
+            list[index] = old.copy(
                 status = newStatus,
-                assignedResponder = assignedResponder.ifEmpty { old.assignedResponder },
+                assignedResponder = assignedResponder,
                 responseNotes = notes
             )
-            list[index] = updated
             _emergencyReports.value = list
-
-            addAuditLog(
-                action = "UPDATE_EMERGENCY_STATUS",
-                targetType = "EmergencyReport",
-                targetId = reportId,
-                previousState = old.status.label,
-                newState = newStatus.label
-            )
+            database?.emergencyReportDao()?.insertEmergency(EmergencyReportEntity.fromDomain(list[index]))
         }
+        refreshAuthenticatedNotifications(user.uid)
     }
 
     // Announcements
