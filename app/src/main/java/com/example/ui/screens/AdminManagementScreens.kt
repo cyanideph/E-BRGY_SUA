@@ -342,6 +342,7 @@ fun AdminAnnouncementsScreen(
     onNavigateBack: () -> Unit
 ) {
     val repository = remember { BarangayRepository.instance }
+    val scope = rememberCoroutineScope()
     val announcements by repository.announcements.collectAsState()
 
     var showCreateDialog by remember { mutableStateOf(false) }
@@ -441,16 +442,21 @@ fun AdminAnnouncementsScreen(
                     Button(
                         onClick = {
                             if (title.isNotBlank() && desc.isNotBlank()) {
-                                repository.publishAnnouncement(
-                                    title = title,
-                                    description = desc,
-                                    category = category,
-                                    priority = priority,
-                                    isPinned = (priority == AnnouncementPriority.EMERGENCY)
-                                )
-                                showCreateDialog = false
-                                title = ""
-                                desc = ""
+                                scope.launch {
+                                    runCatching {
+                                        repository.publishAnnouncement(
+                                            title = title,
+                                            description = desc,
+                                            category = category,
+                                            priority = priority,
+                                            isPinned = (priority == AnnouncementPriority.EMERGENCY)
+                                        )
+                                    }.onSuccess {
+                                        showCreateDialog = false
+                                        title = ""
+                                        desc = ""
+                                    }
+                                }
                             }
                         }
                     ) {
@@ -474,14 +480,15 @@ fun AdminEventsScreen(
     onNavigateBack: () -> Unit
 ) {
     val repository = remember { BarangayRepository.instance }
+    val scope = rememberCoroutineScope()
     val events by repository.events.collectAsState()
 
     var showCreateDialog by remember { mutableStateOf(false) }
     var title by remember { mutableStateOf("") }
     var desc by remember { mutableStateOf("") }
-    var date by remember { mutableStateOf("November 20, 2026") }
-    var time by remember { mutableStateOf("9:00 AM - 12:00 PM") }
-    var location by remember { mutableStateOf("Barangay Sua Multipurpose Hall") }
+    var date by remember { mutableStateOf("") }
+    var time by remember { mutableStateOf("") }
+    var location by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -552,17 +559,27 @@ fun AdminEventsScreen(
                 confirmButton = {
                     Button(
                         onClick = {
-                            if (title.isNotBlank()) {
-                                repository.createEvent(
-                                    title = title,
-                                    description = desc,
-                                    date = date,
-                                    time = time,
-                                    location = location,
-                                    organizer = "Barangay Council of Sua",
-                                    category = "Community"
-                                )
-                                showCreateDialog = false
+                            if (title.isNotBlank() && date.isNotBlank() && time.isNotBlank() && location.isNotBlank()) {
+                                scope.launch {
+                                    runCatching {
+                                        repository.createEvent(
+                                            title = title,
+                                            description = desc,
+                                            date = date,
+                                            time = time,
+                                            location = location,
+                                            organizer = repository.currentUser.value.profile.fullName,
+                                            category = "Community"
+                                        )
+                                    }.onSuccess {
+                                        showCreateDialog = false
+                                        title = ""
+                                        desc = ""
+                                        date = ""
+                                        time = ""
+                                        location = ""
+                                    }
+                                }
                             }
                         }
                     ) {
