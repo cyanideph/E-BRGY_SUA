@@ -107,7 +107,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
+          # No npm lockfile is required; Ramus CLI is invoked with npx.
 
       - name: Run Ramus smoke test
         env:
