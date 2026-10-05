@@ -283,6 +283,17 @@ object CivicSyncService {
         )
     }
 
+    suspend fun markNotificationRead(userId: String, notificationId: String): Result<Unit> = runCatching {
+        val row = db.getRow(databaseId = Appwrite.DATABASE_ID, tableId = Appwrite.NOTIFICATIONS_TABLE, rowId = notificationId)
+        require(row.data["userId"]?.toString() == userId) { "Notification does not belong to the authenticated user." }
+        db.updateRow(
+            databaseId = Appwrite.DATABASE_ID,
+            tableId = Appwrite.NOTIFICATIONS_TABLE,
+            rowId = notificationId,
+            data = mapOf("read" to true)
+        )
+    }
+
     suspend fun listNotificationsForUser(userId: String): Result<List<BarangayNotification>> = runCatching {
         db.listRows(
             databaseId = Appwrite.DATABASE_ID,
