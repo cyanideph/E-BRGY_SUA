@@ -42,21 +42,21 @@ fun OnboardingScreen(
         OnboardingPage(
             title = "Fast Barangay Services",
             subtitle = "Clearance, Residency, Indigency & More",
-            description = "Apply for official barangay certificates and clearances directly from your phone. Receive digital tracking updates and real-time pickup status without long queues.",
+            description = "Request barangay documents from your phone and track them until release.",
             icon = Icons.Default.Description,
             badge = "Public Services"
         ),
         OnboardingPage(
             title = "Emergency SOS & Alerts",
             subtitle = "Immediate Coastal & Medical Response",
-            description = "One-tap emergency distress alerting connecting you directly to Barangay Tanods, San Juan Municipal Police, and MDRRMO disaster response teams.",
+            description = "Send an emergency alert to Barangay responders with your location.",
             icon = Icons.Default.Emergency,
             badge = "Community Safety"
         ),
         OnboardingPage(
             title = "Barangay Sua Community Hub",
             subtitle = "San Juan, Southern Leyte",
-            description = "Stay informed with official announcements, upcoming assemblies, coastal conservation activities, and direct directory access to our Barangay Council.",
+            description = "See official announcements, community events, and Barangay Council contacts.",
             icon = Icons.Default.Groups,
             badge = "Transparent Governance"
         )
