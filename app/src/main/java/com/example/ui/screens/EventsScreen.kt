@@ -108,15 +108,6 @@ fun EventsScreen(
                         }
 
                         Column(horizontalAlignment = Alignment.End) {
-                            IconButton(
-                                onClick = { repository.toggleEventRsvp(event.id) }
-                            ) {
-                                Icon(
-                                    imageVector = if (event.isUserRsvpd) Icons.Default.BookmarkAdded else Icons.Default.BookmarkBorder,
-                                    contentDescription = "RSVP",
-                                    tint = if (event.isUserRsvpd) WarmSunGoldDark else DeepOceanBlue
-                                )
-                            }
                             Text(
                                 text = "${event.rsvpCount} Attending",
                                 fontSize = 10.sp,
@@ -124,6 +115,7 @@ fun EventsScreen(
                                 fontWeight = FontWeight.Medium
                             )
                         }
+}
                     }
                 }
             }
