@@ -619,19 +619,7 @@ class BarangayRepository {
     }
 
     // Events
-    fun toggleEventRsvp(eventId: String) {
-        val list = _events.value.toMutableList()
-        val index = list.indexOfFirst { it.id == eventId }
-        if (index >= 0) {
-            val old = list[index]
-            val newRsvp = !old.isUserRsvpd
-            val newCount = if (newRsvp) old.rsvpCount + 1 else maxOf(0, old.rsvpCount - 1)
-            list[index] = old.copy(isUserRsvpd = newRsvp, rsvpCount = newCount)
-            _events.value = list
-        }
-    }
-
-    fun createEvent(
+    suspend fun createEvent(
         title: String,
         description: String,
         date: String,
@@ -640,24 +628,19 @@ class BarangayRepository {
         organizer: String,
         category: String
     ) {
-        val event = BarangayEvent(
-            id = "evt_${System.currentTimeMillis()}",
+        val formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy h:mm a", Locale.US)
+        val start = LocalDateTime.parse("$date $time", formatter).atZone(ZoneId.of("Asia/Manila")).toInstant()
+        val end = start.plusHours(2)
+        CivicSyncService.createEvent(
             title = title,
             description = description,
-            date = date,
-            time = time,
+            startsAt = start.toString(),
+            endsAt = end.toString(),
             location = location,
             organizer = organizer,
             category = category
-        )
-        _events.value = listOf(event) + _events.value
-        addAuditLog(
-            action = "CREATE_EVENT",
-            targetType = "BarangayEvent",
-            targetId = event.id,
-            previousState = null,
-            newState = title
-        )
+        ).getOrThrow()
+        refreshPublicData()
     }
 
     // Notifications
