@@ -33,9 +33,7 @@ fun ProfileScreen(
 ) {
     val repository = remember { BarangayRepository.instance }
     val userSession by repository.currentUser.collectAsState()
-    val isOnline by repository.isOnline.collectAsState()
 
-    var showRoleDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -130,41 +128,6 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Role Switcher Card (MANDATORY for testing Resident, Staff, Official, Administrator views)
-            SoftSkeuomorphicCard(
-                modifier = Modifier.fillMaxWidth(),
-                backgroundColor = SouthernSeaTealContainer.copy(alpha = 0.4f),
-                borderColor = SouthernSeaTeal
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "Active Access Role",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = SouthernSeaTealDark
-                        )
-                        Text(
-                            text = userSession.role.displayName,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = DeepOceanBlue
-                        )
-                    }
-
-                    Button(
-                        onClick = { showRoleDialog = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = SouthernSeaTealDark)
-                    ) {
-                        Text("Switch Role")
-                    }
-                }
-            }
-
             // Admin Dashboard button if role allows
             if (userSession.role != UserRole.RESIDENT) {
                 Spacer(modifier = Modifier.height(12.dp))
@@ -223,35 +186,6 @@ fun ProfileScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Connectivity Test Toggle
-            SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "Simulate Offline Mode",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = if (isOnline) "App is online (Firestore live)" else "App is offline (Using local cache)",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (isOnline) NaturalGreen else WarmAmber
-                        )
-                    }
-                    Switch(
-                        checked = !isOnline,
-                        onCheckedChange = { repository.toggleOnline(!it) }
-                    )
-                }
-            }
-
             Spacer(modifier = Modifier.height(24.dp))
 
             OutlinedButton(
@@ -270,57 +204,7 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(30.dp))
         }
 
-        if (showRoleDialog) {
-            AlertDialog(
-                onDismissRequest = { showRoleDialog = false },
-                title = { Text("Select Role Access", fontWeight = FontWeight.Bold) },
-                text = {
-                    Column {
-                        Text(
-                            text = "Switch roles to preview resident vs official vs administrator permissions:",
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        UserRole.values().forEach { role ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                RadioButton(
-                                    selected = (userSession.role == role),
-                                    onClick = {
-                                        repository.switchRole(role)
-                                        showRoleDialog = false
-                                    }
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Column {
-                                    Text(role.displayName, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                    Text(
-                                        when (role) {
-                                            UserRole.RESIDENT -> "Standard resident: apply for services, track requests"
-                                            UserRole.STAFF -> "Process requests, add remarks, manage announcements"
-                                            UserRole.OFFICIAL -> "Council member: publish advisories, review reports"
-                                            UserRole.ADMIN -> "Full administrative control, audit logs, resident registry"
-                                        },
-                                        fontSize = 11.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = { showRoleDialog = false }) {
-                        Text("Close")
-                    }
-                }
-            )
-        }
+
     }
 }
 
