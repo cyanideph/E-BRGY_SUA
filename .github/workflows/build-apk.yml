@@ -14,7 +14,7 @@ concurrency:
 
 env:
   GRADLE_VERSION: '9.3.1'
-  JAVA_VERSION: '17'
+  JAVA_VERSION: '21'
   ANDROID_API: '36'
 
 jobs:
