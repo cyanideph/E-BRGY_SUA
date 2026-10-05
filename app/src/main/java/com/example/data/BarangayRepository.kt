@@ -40,23 +40,21 @@ class BarangayRepository {
     // Current User Session
     private val _currentUser = MutableStateFlow(
         UserSession(
-            uid = "res_sua_001",
-            email = "elena.santos@barangaysua.ph",
-            role = UserRole.RESIDENT,
+            uid = "admin_demo",
+            email = "admindemo@barangaysua.ph",
+            role = UserRole.ADMIN,
             profile = ResidentProfile(
-                id = "res_sua_001",
-                residentId = "SUA-2026-0012",
-                fullName = "Elena Santos",
-                address = "Purok 1 Coastal Boulevard, Barangay Sua, San Juan, Southern Leyte",
-                mobileNumber = "+63 917 555 0192",
-                dateOfBirth = "1994-08-22",
-                civilStatus = "Single",
-                sex = "Female",
-                occupation = "Fisheries Co-op Member",
-                householdId = "HH-SUA-0012",
-                registrationStatus = "Verified Resident",
-                emergencyContactName = "Ernesto Santos (Father)",
-                emergencyContactPhone = "+63 920 123 4567"
+                id = "admin_demo",
+                residentId = "ADMIN-DEMO",
+                fullName = "admindemo",
+                address = "Barangay Sua Municipal Administration",
+                mobileNumber = "",
+                dateOfBirth = "",
+                civilStatus = "",
+                sex = "",
+                occupation = "System Administrator (Demo)",
+                householdId = "",
+                registrationStatus = "System Admin Demo Account"
             )
         )
     )
@@ -65,6 +63,30 @@ class BarangayRepository {
     fun switchRole(newRole: UserRole) {
         _currentUser.value = _currentUser.value.copy(role = newRole)
     }
+
+    /**
+     * Local QA/admin demo session. This is intentionally credential-free so the
+     * test account can exercise every admin UI flow without embedding a password
+     * or bypassing real Appwrite authentication.
+     */
+    fun loginAsAdminDemo(): UserSession {
+        val session = UserSession(
+            uid = "admin_demo",
+            email = "admindemo@barangaysua.ph",
+            role = UserRole.ADMIN,
+            profile = ResidentProfile(
+                id = "admin_demo",
+                residentId = "ADMIN-DEMO",
+                fullName = "admindemo",
+                address = "Barangay Sua Municipal Administration",
+                occupation = "System Administrator (Demo)",
+                registrationStatus = "System Admin Demo Account"
+            )
+        )
+        _currentUser.value = session
+        return session
+    }
+
 
     // Offline / Online state
     private val _isOnline = MutableStateFlow(true)
