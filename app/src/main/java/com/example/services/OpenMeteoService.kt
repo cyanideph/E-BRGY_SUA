@@ -34,15 +34,15 @@ object OpenMeteoService {
      * Fetches combined atmospheric forecast and marine swell telemetry for Barangay Sua.
      */
     suspend fun fetchCoastalTelemetry(): CoastalTelemetry = withContext(Dispatchers.IO) {
-        var temp = 27.2
-        var humidity = 82
-        var rainProb = 20
-        var windSpeed = 12.0
-        var windDirDegrees = 75
-        var weatherCode = 1
-        var waveHeight = 0.45
-        var swellHeight = 0.38
-        var wavePeriod = 4.2
+        var temp = 0.0
+        var humidity = 0
+        var rainProb = 0
+        var windSpeed = 0.0
+        var windDirDegrees = 0
+        var weatherCode = -1
+        var waveHeight = 0.0
+        var swellHeight = 0.0
+        var wavePeriod = 0.0
         var isLive = false
 
         // 1. Fetch Atmospheric Forecast (Temperature, Rain Probability, Wind Speed, Weather Code)
@@ -139,8 +139,8 @@ object OpenMeteoService {
             weatherCode = weatherCode,
             conditionDescription = conditionDesc,
             safetyStatus = safetyStatus,
-            highTideEstimate = "1.3m • 10:45 AM",
-            lowTideEstimate = "0.4m • 5:15 PM",
+            highTideEstimate = "Unavailable",
+            lowTideEstimate = "Unavailable",
             lastUpdated = updateTime,
             isLive = isLive
         )
@@ -163,7 +163,7 @@ object OpenMeteoService {
         65 -> "Heavy Downpour"
         80, 81, 82 -> "Scattered Coastal Rain"
         95, 96, 99 -> "Thunderstorm Warning"
-        else -> "Calm Tropical Conditions"
+        else -> "Unavailable"
     }
 }
 
@@ -183,19 +183,19 @@ enum class SeaSafety(val label: String, val advisory: String) {
 }
 
 data class CoastalTelemetry(
-    val temperature: Double = 27.2,
-    val humidity: Int = 82,
-    val rainProbability: Int = 20,
-    val windSpeedKmH: Double = 12.0,
-    val windDirection: String = "ENE (75°)",
-    val waveHeightMeters: Double = 0.45,
-    val swellHeightMeters: Double = 0.38,
-    val wavePeriodSeconds: Double = 4.2,
-    val weatherCode: Int = 1,
-    val conditionDescription: String = "Partly Cloudy",
+    val temperature: Double = 0.0,
+    val humidity: Int = 0,
+    val rainProbability: Int = 0,
+    val windSpeedKmH: Double = 0.0,
+    val windDirection: String = "Unavailable",
+    val waveHeightMeters: Double = 0.0,
+    val swellHeightMeters: Double = 0.0,
+    val wavePeriodSeconds: Double = 0.0,
+    val weatherCode: Int = -1,
+    val conditionDescription: String = "Unavailable",
     val safetyStatus: SeaSafety = SeaSafety.SAFE_SEAS,
-    val highTideEstimate: String = "1.3m • 10:45 AM",
-    val lowTideEstimate: String = "0.4m • 5:15 PM",
+    val highTideEstimate: String = "Unavailable",
+    val lowTideEstimate: String = "Unavailable",
     val lastUpdated: String = "Live",
     val isLive: Boolean = false
 )
