@@ -33,6 +33,7 @@ fun RequestFormScreen(
     onRequestSubmitted: (String) -> Unit
 ) {
     val repository = remember { BarangayRepository.instance }
+    val scope = rememberCoroutineScope()
     val userSession by repository.currentUser.collectAsState()
     val service = remember(serviceId) {
         repository.services.value.firstOrNull { it.id == serviceId }
