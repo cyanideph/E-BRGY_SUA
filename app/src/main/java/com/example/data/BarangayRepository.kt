@@ -272,13 +272,39 @@ class BarangayRepository {
         List(a.length()) { i -> a.optString(i) }.filter { it.isNotBlank() }
     }.getOrDefault(emptyList())
 
+    private fun roleFromBackend(value: String?): UserRole = when (value?.trim()?.lowercase()) {
+        "admin" -> UserRole.ADMIN
+        "official" -> UserRole.OFFICIAL
+        "staff" -> UserRole.STAFF
+        else -> UserRole.RESIDENT
+    }
+
+    private suspend fun loadAuthenticatedSession(): UserSession {
+        val account = Appwrite.account().get()
+        val fallbackName = account.name.ifBlank { account.email.substringBefore("@") }
+        val row = runCatching {
+            Appwrite.tablesDB()
+                .listRows(Appwrite.DATABASE_ID, Appwrite.USERS_TABLE,
+                    queries = listOf(io.appwrite.Query.equal("userId", account.id)))
+                .rows.firstOrNull()
+        }.getOrNull()
+        val data = row?.data ?: emptyMap()
+        val role = roleFromBackend(data["role"]?.toString())
+        val profile = ResidentProfile(
+            id = account.id,
+            residentId = data["residentId"]?.toString()?.ifBlank { account.id } ?: account.id,
+            fullName = data["name"]?.toString()?.ifBlank { fallbackName } ?: fallbackName,
+            address = data["address"]?.toString()?.ifBlank { ResidentProfile().address } ?: ResidentProfile().address,
+            mobileNumber = data["phone"]?.toString().orEmpty(),
+            registrationStatus = data["registrationStatus"]?.toString()?.ifBlank { "Account Registered" } ?: "Account Registered"
+        )
+        return UserSession(account.id, account.email, role, profile)
+    }
+
     suspend fun login(email: String, password: String): Result<UserSession> = runCatching {
         if (Appwrite.ENDPOINT.isNotBlank()) {
             Appwrite.account().createEmailPasswordSession(email=email, password=password)
-            val a = Appwrite.account().get()
-            val s = UserSession(a.id, a.email, UserRole.RESIDENT,
-                ResidentProfile(id=a.id, residentId=a.id, fullName=a.name.ifBlank { a.email.substringBefore("@") },
-                    registrationStatus="Account Registered"))
+            val s = loadAuthenticatedSession()
             _currentUser.value=s; _isOnline.value=true; s
         } else {
             val nameClean = email.substringBefore("@").replace(".", " ")
