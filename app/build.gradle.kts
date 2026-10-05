@@ -7,7 +7,7 @@ plugins {
 
 android {
   namespace = "com.example"
-  compileSdk { version = release(37) }
+  compileSdk = 36
 
   defaultConfig {
     applicationId = "com.aistudio.ebarangaysua.sjl"
