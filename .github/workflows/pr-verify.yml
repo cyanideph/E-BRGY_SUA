@@ -1,0 +1,59 @@
+name: PR Verification
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-verify-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  GRADLE_VERSION: '9.3.1'
+  JAVA_VERSION: '21'
+  ANDROID_API: '36'
+
+jobs:
+  verify:
+    name: Kotlin / Android verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools platforms;android-${{ env.ANDROID_API }}
+      - name: Generate CI Appwrite environment
+        env:
+          APPWRITE_ENDPOINT: ${{ vars.APPWRITE_ENDPOINT }}
+          APPWRITE_PROJECT_ID: ${{ vars.APPWRITE_PROJECT_ID }}
+          APPWRITE_DATABASE_ID: ${{ vars.APPWRITE_DATABASE_ID }}
+          APPWRITE_RESIDENT_FILES_BUCKET_ID: ${{ vars.APPWRITE_RESIDENT_FILES_BUCKET_ID }}
+        run: |
+          set -euo pipefail
+          # These are public Appwrite client identifiers, not secrets. Keep secrets out of the APK/CI.
+          APPWRITE_ENDPOINT="${APPWRITE_ENDPOINT:-https://sgp.cloud.appwrite.io/v1}"
+          APPWRITE_PROJECT_ID="${APPWRITE_PROJECT_ID:-6ac31e4000390af0f850}"
+          APPWRITE_DATABASE_ID="${APPWRITE_DATABASE_ID:-ebarangay-sua-db}"
+          APPWRITE_RESIDENT_FILES_BUCKET_ID="${APPWRITE_RESIDENT_FILES_BUCKET_ID:-resident-files}"
+          printf 'APPWRITE_ENDPOINT=%s\nAPPWRITE_PROJECT_ID=%s\nAPPWRITE_DATABASE_ID=%s\nAPPWRITE_RESIDENT_FILES_BUCKET_ID=%s\n'             "$APPWRITE_ENDPOINT" "$APPWRITE_PROJECT_ID" "$APPWRITE_DATABASE_ID" "$APPWRITE_RESIDENT_FILES_BUCKET_ID" > .env
+      - name: Install Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: ${{ env.GRADLE_VERSION }}
+      - name: Generate wrapper
+        run: gradle wrapper --gradle-version "${GRADLE_VERSION}" --distribution-type bin
+      - name: Unit and Robolectric tests
+        run: ./gradlew :app:testDebugUnitTest --no-daemon --stacktrace
+      - name: Debug APK compile
+        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace

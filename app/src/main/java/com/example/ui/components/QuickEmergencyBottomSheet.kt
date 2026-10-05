@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import com.example.data.BarangayRepository
 import com.example.model.EmergencyType
 import com.example.ui.theme.*
+import kotlinx.coroutines.launch
 
 /**
  * 1-Tap Quick Emergency Bottom Sheet Modal.
@@ -238,19 +239,26 @@ fun QuickEmergencyBottomSheet(
                             .maxByOrNull { it.time }
                     }.getOrNull()
 
-                    val report = repository.submitEmergency(
-                        type = selectedType,
-                        description = if (incidentNotes.isNotBlank()) "$locationDescription - $incidentNotes" else locationDescription,
-                        latitude = lastLoc?.latitude,
-                        longitude = lastLoc?.longitude,
-                        locationDescription = if (lastLoc != null) {
-                            "$locationDescription (GPS: %.5f, %.5f)".format(java.util.Locale.US, lastLoc.latitude, lastLoc.longitude)
-                        } else locationDescription
-                    )
-                    Toast.makeText(context, "SOS Sent! Tanod & Responders dispatched.", Toast.LENGTH_LONG).show()
-                    isSending = false
-                    onDismiss()
-                    onEmergencyDispatched(report.id)
+                    kotlinx.coroutines.MainScope().launch {
+                        try {
+                            val report = repository.submitEmergency(
+                                type = selectedType,
+                                description = if (incidentNotes.isNotBlank()) "$locationDescription - $incidentNotes" else locationDescription,
+                                latitude = lastLoc?.latitude,
+                                longitude = lastLoc?.longitude,
+                                locationDescription = if (lastLoc != null) {
+                                    "$locationDescription (GPS: %.5f, %.5f)".format(java.util.Locale.US, lastLoc.latitude, lastLoc.longitude)
+                                } else locationDescription
+                            )
+                            Toast.makeText(context, "SOS sent successfully.", Toast.LENGTH_LONG).show()
+                            onDismiss()
+                            onEmergencyDispatched(report.id)
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "SOS could not be submitted. Please retry or call the hotline.", Toast.LENGTH_LONG).show()
+                        } finally {
+                            isSending = false
+                        }
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()

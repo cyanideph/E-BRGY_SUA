@@ -30,6 +30,7 @@ import com.example.model.EmergencyReport
 import com.example.model.EmergencyType
 import com.example.ui.components.SoftSkeuomorphicCard
 import com.example.ui.theme.*
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,12 +39,13 @@ fun EmergencyScreen(
 ) {
     val context = LocalContext.current
     val repository = remember { BarangayRepository.instance }
+    val scope = rememberCoroutineScope()
     val userSession by repository.currentUser.collectAsState()
-    val hotlines = remember { repository.hotlines }
+    val hotlines by repository.hotlines.collectAsState()
 
     var selectedType by remember { mutableStateOf(EmergencyType.BARANGAY_EMERGENCY) }
     var description by remember { mutableStateOf("") }
-    var locationNote by remember { mutableStateOf("Barangay Sua, San Juan, Southern Leyte") }
+    var locationNote by remember { mutableStateOf("") }
     var locationCoordinates by remember { mutableStateOf<Pair<Double, Double>?>(null) }
     var isLocationPermissionGranted by remember { mutableStateOf(false) }
     var isSubmitting by remember { mutableStateOf(false) }
@@ -123,7 +125,7 @@ fun EmergencyScreen(
                                 color = NaturalGreen
                             )
                             Text(
-                                text = "Report ID: ${submittedReport?.id}. Barangay Tanods & San Juan MDRRMO notified.",
+                                text = "Report ID: ${submittedReport?.id}. Emergency report was accepted by the barangay backend.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = DeepNavy
                             )
@@ -269,16 +271,24 @@ fun EmergencyScreen(
                 Button(
                     onClick = {
                         isSubmitting = true
-                        val report = repository.submitEmergency(
-                            type = selectedType,
-                            description = description.ifEmpty { "Immediate emergency assistance requested in Barangay Sua." },
-                            latitude = locationCoordinates?.first,
-                            longitude = locationCoordinates?.second,
-                            locationDescription = locationNote
-                        )
-                        submittedReport = report
-                        description = ""
-                        isSubmitting = false
+                        scope.launch {
+                            runCatching {
+                                repository.submitEmergency(
+                                    type = selectedType,
+                                    description = description,
+                                    latitude = locationCoordinates?.first,
+                                    longitude = locationCoordinates?.second,
+                                    locationDescription = locationNote
+                                )
+                            }.onSuccess {
+                                submittedReport = it
+                                description = ""
+                                isSubmitting = false
+                            }.onFailure {
+                                isSubmitting = false
+                                showPermissionRationale = false
+                            }
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()

@@ -16,7 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,6 +36,7 @@ fun SuaCommunityHubScreen(
 ) {
     val repository = remember { BarangayRepository.instance }
     val officials by repository.officials.collectAsState()
+    val facilities by repository.facilities.collectAsState()
     var selectedOfficialTab by remember { mutableStateOf("All") }
     var barangayProfile by remember { mutableStateOf<BarangayProfile?>(null) }
     var profileLoading by remember { mutableStateOf(true) }
@@ -113,9 +113,9 @@ fun SuaCommunityHubScreen(
                         )
                         Text(
                             text = listOf(
-                                barangayProfile?.municipality ?: "San Juan",
-                                barangayProfile?.province ?: "Southern Leyte",
-                                "Postal Code 6611"
+                                barangayProfile?.municipality.orEmpty(),
+                                barangayProfile?.province.orEmpty(),
+                                barangayProfile?.type.orEmpty()
                             ).joinToString(" • "),
                             style = MaterialTheme.typography.bodySmall,
                             color = SouthernSeaTealDark,
@@ -208,51 +208,39 @@ fun SuaCommunityHubScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround
-                ) {
-                    InfoStat(label = "Population (2020)", value = "659")
-                    InfoStat(label = "Households (2015)", value = "161")
-                    InfoStat(label = "Elevation", value = "178.3 m")
+                if (facilities.isNotEmpty()) {
+                    Text(
+                        text = "Verified Community Facilities",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = DeepOceanBlue
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        facilities.filter { it.active }.forEach { facility ->
+                            FacilityItem(
+                                title = facility.name,
+                                desc = facility.description,
+                                hours = facility.hours.orEmpty(),
+                                icon = when (facility.type.lowercase()) {
+                                    "health", "medical", "health center" -> Icons.Default.LocalHospital
+                                    "marine", "coastal" -> Icons.Default.Water
+                                    else -> Icons.Default.AccountBalance
+                                }
+                            )
+                        }
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Explore Barangay Sua without embedding a paid map SDK/key.
-            SuaLocationCard()
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Community Pillars & Facilities
-            Text(
-                text = "Community Facilities & Programs",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                FacilityItem(
-                    title = "Barangay Sua Multipurpose Hall",
-                    desc = "Secretariat, document issuance windows, and regular council session hall.",
-                    hours = "Monday to Friday: 8:00 AM - 5:00 PM",
-                    icon = Icons.Default.AccountBalance
-                )
-                FacilityItem(
-                    title = "Barangay Health Center & Birthing Station",
-                    desc = "Primary care, prenatal check-ups, infant immunizations, and medicine distribution.",
-                    hours = "Monday to Saturday: 8:00 AM - 4:00 PM (Emergency on-call)",
-                    icon = Icons.Default.LocalHospital
-                )
-                FacilityItem(
-                    title = "Marine Sanctuary & Coastal Buffer Zone",
-                    desc = "Protected fish sanctuary co-managed with San Juan MENRO to preserve biodiversity.",
-                    hours = "Continuous conservation surveillance by Marine Tanod",
-                    icon = Icons.Default.Water
+            // Community Facilities are backend-managed.
+            if (facilities.isEmpty()) {
+                Text(
+                    text = "Facility information is managed by the barangay backend.",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -440,55 +428,6 @@ private fun OfficialCard(official: BarangayOfficial) {
                     )
                 }
             }
-        }
-    }
-}
-
-
-@Composable
-private fun SuaLocationCard() {
-    val context = LocalContext.current
-    val latitude = 10.3340
-    val longitude = 124.9810
-
-    SoftSkeuomorphicCard(
-        modifier = Modifier.fillMaxWidth(),
-        backgroundColor = DeepOceanContainer.copy(alpha = 0.72f)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = SouthernSeaTealContainer,
-                modifier = Modifier.size(48.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Map, contentDescription = null, tint = SouthernSeaTealDark, modifier = Modifier.size(26.dp))
-                }
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Explore Barangay Sua", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DeepOceanBlue)
-                Text("10.3340, 124.9810 • Cabalian Bay coastal area", fontSize = 11.sp, color = DeepNavySecondary)
-                Text("Uses the verified app service-area coordinates.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Button(
-            onClick = {
-                val uri = android.net.Uri.parse("geo:$latitude,$longitude?q=$latitude,$longitude(Barangay%20Sua)")
-                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, uri)
-                if (intent.resolveActivity(context.packageManager) != null) {
-                    context.startActivity(intent)
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Icon(Icons.Default.Navigation, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Open in Maps")
         }
     }
 }

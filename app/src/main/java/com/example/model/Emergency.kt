@@ -23,10 +23,10 @@ data class EmergencyReport(
     val residentUid: String = "",
     val latitude: Double? = null,
     val longitude: Double? = null,
-    val locationDescription: String = "Barangay Sua Coastal Zone, San Juan",
+    val locationDescription: String = "",
     val timestamp: Long = System.currentTimeMillis(),
     val status: EmergencyStatus = EmergencyStatus.RECEIVED,
-    val assignedResponder: String = "Barangay Tanod Duty Officer",
+    val assignedResponder: String = "",
     val responseNotes: String = ""
 )
 

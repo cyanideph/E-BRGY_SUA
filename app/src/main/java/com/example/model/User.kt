@@ -11,16 +11,16 @@ data class ResidentProfile(
     val id: String = "",
     val residentId: String = "",
     val fullName: String = "",
-    val address: String = "Purok 1, Barangay Sua, San Juan, Southern Leyte",
-    val mobileNumber: String = "+63 917 555 0192",
-    val dateOfBirth: String = "1992-06-15",
-    val civilStatus: String = "Single",
-    val sex: String = "Female",
-    val occupation: String = "Fisheries Co-op Member",
-    val householdId: String = "HH-SUA-0012",
-    val registrationStatus: String = "Verified Resident",
-    val emergencyContactName: String = "Maria Santos (Mother)",
-    val emergencyContactPhone: String = "+63 920 123 4567"
+    val address: String = "",
+    val mobileNumber: String = "",
+    val dateOfBirth: String = "",
+    val civilStatus: String = "",
+    val sex: String = "",
+    val occupation: String = "",
+    val householdId: String = "",
+    val registrationStatus: String = "",
+    val emergencyContactName: String = "",
+    val emergencyContactPhone: String = ""
 )
 
 data class Household(
