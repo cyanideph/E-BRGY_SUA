@@ -195,24 +195,6 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    OutlinedButton(
-                        onClick = {
-                            repository.loginAsAdminDemo()
-                            onLoginSuccess()
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        shape = RoundedCornerShape(14.dp)
-                    ) {
-                        Icon(Icons.Default.VerifiedUser, contentDescription = null, tint = SouthernSeaTealDark)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Continue as System Admin (admindemo)",
-                            color = DeepOceanBlue,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
                 }
             }
 
@@ -245,8 +227,8 @@ fun RegisterScreen(
 ) {
     val repository = remember { BarangayRepository.instance }
     var fullName by remember { mutableStateOf("") }
-    var address by remember { mutableStateOf("Purok 1, Barangay Sua") }
-    var mobile by remember { mutableStateOf("+63 ") }
+    var address by remember { mutableStateOf("") }
+    var mobile by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
