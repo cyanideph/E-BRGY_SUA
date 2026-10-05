@@ -138,48 +138,6 @@ fun HomeScreen(
             }
         }
 
-        // Admin Access Banner (if user is Staff, Official, or Admin)
-        if (userSession.role != UserRole.RESIDENT) {
-            Surface(
-                color = DeepOceanContainer,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(onClick = onNavigateToAdminDashboard)
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.AdminPanelSettings,
-                            contentDescription = null,
-                            tint = DeepOceanBlue,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "${userSession.role.displayName} Portal Available",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = DeepOceanBlue
-                        )
-                    }
-                    Text(
-                        text = "Open Console →",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = SouthernSeaTealDark
-                    )
-                }
-            }
-        }
-
         Spacer(modifier = Modifier.height(16.dp))
 
         // EMERGENCY / SOS SECTION
@@ -255,13 +213,6 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // COASTAL TIDE & WEATHER WIDGET
-        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-            CoastalWeatherWidget()
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
         // QUICK SERVICES SECTION
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
             Row(
@@ -288,10 +239,13 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         for (service in chunk) {
-                            SoftSkeuomorphicCard(
-                                modifier = Modifier.weight(1f),
-                                elevation = 2.dp,
-                                onClick = { onNavigateToServiceDetails(service.id) }
+                            Surface(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { onNavigateToServiceDetails(service.id) },
+                                color = MaterialTheme.colorScheme.surface,
+                                tonalElevation = 1.dp,
+                                shape = RoundedCornerShape(14.dp)
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
@@ -426,6 +380,13 @@ fun HomeScreen(
                     }
                 }
             }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // COASTAL TIDE & WEATHER WIDGET
+        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+            CoastalWeatherWidget()
         }
 
         Spacer(modifier = Modifier.height(20.dp))
