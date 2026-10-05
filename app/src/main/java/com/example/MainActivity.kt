@@ -18,6 +18,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.ui.components.GlobalAppBackground
 import com.example.ui.navigation.Screen
 import com.example.ui.screens.*
 import com.example.ui.theme.*
@@ -44,6 +45,7 @@ class MainActivity : ComponentActivity() {
                 EBarangaySuaApp()
             }
         }
+    }
     }
 }
 
@@ -87,8 +89,12 @@ fun EBarangaySuaApp() {
         else -> false
     }
 
+    GlobalAppBackground(
+        modifier = Modifier.fillMaxSize()
+    ) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         bottomBar = {
             if (isBottomBarVisible) {
                 NavigationBar(
