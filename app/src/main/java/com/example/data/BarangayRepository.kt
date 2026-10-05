@@ -115,7 +115,6 @@ class BarangayRepository {
     // Residents (Admin / Staff only)
     private val _residents = MutableStateFlow(
         listOf(
-            _currentUser.value.profile,
             ResidentProfile(
                 id = "res_sua_002",
                 residentId = "SUA-2026-0028",
