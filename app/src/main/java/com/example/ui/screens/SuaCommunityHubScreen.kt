@@ -88,13 +88,13 @@ fun SuaCommunityHubScreen(
 
                     Column {
                         Text(
-                            text = "A Vibrant Coastal Community",
+                            text = "Barangay Sua at a Glance",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = DeepOceanBlue
                         )
                         Text(
-                            text = "Barangay Sua • San Juan, Southern Leyte",
+                            text = "San Juan • Southern Leyte • Postal Code 6611",
                             style = MaterialTheme.typography.bodySmall,
                             color = SouthernSeaTealDark,
                             fontWeight = FontWeight.SemiBold
@@ -105,7 +105,7 @@ fun SuaCommunityHubScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "Nestled along the pristine eastern coastline of San Juan, Southern Leyte, Barangay Sua is a peaceful community celebrated for its marine sanctuary, cooperative fisheries, lush coastal groves, and steadfast bayanihan spirit. e-Barangay Sua is our official digital public-service hub designed to deliver responsive, transparent local governance directly to every household.",
+                    text = "Barangay Sua is a barangay of San Juan, Southern Leyte, on the island of Leyte. PhilAtlas lists a 2020 population of 659, a 2015 household population of 713 across 161 households, and coordinates of approximately 10.2619, 125.2115. e-Barangay Sua brings local public services, community information, and barangay officials together in one digital hub.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 22.sp
@@ -121,9 +121,9 @@ fun SuaCommunityHubScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
-                    InfoStat(label = "Registered Puroks", value = "4 Puroks")
-                    InfoStat(label = "Households", value = "420+")
-                    InfoStat(label = "Co-op Members", value = "180+")
+                    InfoStat(label = "Population (2020)", value = "659")
+                    InfoStat(label = "Households (2015)", value = "161")
+                    InfoStat(label = "Elevation", value = "178.3 m")
                 }
             }
 
