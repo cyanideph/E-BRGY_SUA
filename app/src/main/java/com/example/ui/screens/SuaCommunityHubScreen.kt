@@ -113,9 +113,9 @@ fun SuaCommunityHubScreen(
                         )
                         Text(
                             text = listOf(
-                                barangayProfile?.municipality ?: "San Juan",
-                                barangayProfile?.province ?: "Southern Leyte",
-                                "Postal Code 6611"
+                                barangayProfile?.municipality.orEmpty(),
+                                barangayProfile?.province.orEmpty(),
+                                barangayProfile?.type.orEmpty()
                             ).joinToString(" • "),
                             style = MaterialTheme.typography.bodySmall,
                             color = SouthernSeaTealDark,
