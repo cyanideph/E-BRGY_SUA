@@ -24,7 +24,8 @@ val OnSouthernSeaTealContainer = Color(0xFF00201D)
 
 // Accent: Warm Sun Gold (#FFD700)
 val WarmSunGold = Color(0xFFFFD700)
-val WarmSunGoldDark = Color(0xFFC7A500)
+// Darkened for accessible text/icons on Warm Coastal White surfaces.
+val WarmSunGoldDark = Color(0xFF806A00)
 val WarmSunGoldLight = Color(0xFFFFE033)
 val WarmSunGoldDarkTheme = Color(0xFFFFE57F)
 val WarmSunGoldContainer = Color(0xFFFFF3C4)
@@ -40,7 +41,8 @@ val CoastalBorderHighlight = Color(0xFFFFFFFF)
 // Text: Deep Navy (#1A2B3C)
 val DeepNavy = Color(0xFF1A2B3C)
 val DeepNavySecondary = Color(0xFF475E74)
-val DeepNavyMuted = Color(0xFF768B9E)
+// Keep muted text above WCAG normal-text contrast on light surfaces.
+val DeepNavyMuted = Color(0xFF5F7180)
 
 // Status & Emergency Colors
 val NaturalGreen = Color(0xFF2E7D32)
