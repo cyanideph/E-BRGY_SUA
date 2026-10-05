@@ -359,8 +359,8 @@ class BarangayRepository {
         _isOnline.value = online
     }
 
-    // Submit Document Request
-    fun submitRequest(
+    // Submit Document Request. The backend is authoritative; local Room is only a cache.
+    suspend fun submitRequest(
         service: BarangayService,
         purpose: String,
         deliveryMethod: String,
@@ -368,10 +368,12 @@ class BarangayRepository {
         attachmentNames: List<String>
     ): DocumentRequest {
         val user = _currentUser.value
+        require(user.uid.isNotBlank()) { "You must be signed in before submitting a request." }
+        require(Appwrite.ENDPOINT.isNotBlank()) { "Barangay services are unavailable because the backend is not configured." }
+
         val requestId = ID.unique()
         val refNum = "BRG-SUA-${requestId.take(12).uppercase()}"
         val now = System.currentTimeMillis()
-
         val newRequest = DocumentRequest(
             id = requestId,
             referenceNumber = refNum,
@@ -392,61 +394,30 @@ class BarangayRepository {
             timeline = listOf(
                 RequestTimelineEvent(
                     title = "Application Submitted",
-                    description = "Request submitted and awaiting backend acknowledgement",
+                    description = "Request accepted by the barangay backend",
                     timestamp = now,
                     actorName = user.profile.fullName
                 )
             ),
-            isSyncedToServer = false
+            isSyncedToServer = true
         )
 
-        val updatedList = listOf(newRequest) + _requests.value
+        CivicSyncService.createRequest(newRequest).getOrThrow()
+        _isOnline.value = true
+
+        val updatedList = listOf(newRequest) + _requests.value.filter { it.id != newRequest.id }
         _requests.value = updatedList
-
-        // Persist to Room local database immediately
-        ioScope.launch {
-            database?.documentRequestDao()?.insertRequest(DocumentRequestEntity.fromDomain(newRequest))
-        }
-
-        // Persist the same mutation server-side without blocking the UI.
-        ioScope.launch {
-            val sync = CivicSyncService.createRequest(newRequest)
-            if (sync.isFailure) _isOnline.value = false
-        }
-
-        // In-app notification
-        val notif = BarangayNotification(
-            id = "notif_${System.currentTimeMillis()}",
-            title = "Request Submitted: ${service.name}",
-            message = "Your request with reference number $refNum has been received.",
-            timestamp = now,
-            isRead = false,
-            category = "Service Request",
-            priority = "Normal",
-            referenceId = refNum
-        )
-        _notifications.value = listOf(notif) + _notifications.value
-        ioScope.launch {
-            database?.notificationDao()?.insertNotification(NotificationEntity.fromDomain(notif))
-            CivicSyncService.createNotification(user.uid, notif)
-        }
+        database?.documentRequestDao()?.insertRequest(DocumentRequestEntity.fromDomain(newRequest))
+        refreshAuthenticatedNotifications(user.uid)
 
         appContext?.let { ctx ->
             NotificationHelper.showNotification(
                 context = ctx,
                 id = newRequest.hashCode(),
                 title = "Request Submitted: ${service.name}",
-                message = "Reference Number $refNum logged with Barangay Sua Secretariat."
+                message = "Reference number ${refNum} was accepted by the barangay backend."
             )
         }
-
-        addAuditLog(
-            action = "CREATE_REQUEST",
-            targetType = "DocumentRequest",
-            targetId = refNum,
-            previousState = null,
-            newState = RequestStatus.SUBMITTED.label
-        )
 
         return newRequest
     }
