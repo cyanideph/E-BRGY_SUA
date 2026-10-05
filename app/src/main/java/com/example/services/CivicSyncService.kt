@@ -2,6 +2,7 @@ package com.example.services
 
 import com.example.model.*
 import io.appwrite.ID
+import io.appwrite.Query
 import java.time.Instant
 
 object CivicSyncService {
@@ -35,6 +36,57 @@ object CivicSyncService {
             )
         )
         createAudit(request.residentUid, "CREATE_REQUEST", "DocumentRequest", request.id.take(36), request.referenceNumber).getOrThrow()
+    }
+
+
+    /** Fetch only the authenticated resident's requests. Appwrite permissions remain
+     * the primary security boundary; the query also prevents loading unrelated rows. */
+    suspend fun listRequestsForUser(userId: String): Result<List<Map<String, Any>>> = runCatching {
+        db.listRows(
+            databaseId = Appwrite.DATABASE_ID,
+            tableId = Appwrite.REQUESTS_TABLE,
+            queries = listOf(Query.equal("userId", userId), Query.orderDesc("submittedAt"), Query.limit(100))
+        ).rows.map { row ->
+            buildMap {
+                put("id", row.id)
+                putAll(row.data)
+                put("createdAt", row.createdAt)
+                put("updatedAt", row.updatedAt)
+            }
+        }
+    }
+
+    /** Server-side lifecycle update. The caller should also write the matching
+     * status-history row so the audit timeline is durable. */
+    suspend fun updateRequestStatus(
+        requestId: String,
+        status: String,
+        remarks: String,
+        actorUid: String
+    ): Result<Unit> = runCatching {
+        db.updateRow(
+            databaseId = Appwrite.DATABASE_ID,
+            tableId = Appwrite.REQUESTS_TABLE,
+            rowId = requestId,
+            data = mapOf(
+                "status" to status,
+                "officialRemarks" to remarks,
+                "updatedAt" to Instant.now().toString()
+            )
+        )
+        db.createRow(
+            databaseId = Appwrite.DATABASE_ID,
+            tableId = Appwrite.REQUEST_STATUS_HISTORY_TABLE,
+            rowId = ID.unique(),
+            data = mapOf(
+                "requestId" to requestId,
+                "status" to status,
+                "remarks" to remarks,
+                "changedBy" to actorUid,
+                "changedAt" to Instant.now().toString()
+            )
+        )
+        createAudit(actorUid, "UPDATE_REQUEST_STATUS", "DocumentRequest", requestId, status).getOrThrow()
     }
 
     suspend fun createEmergency(report: EmergencyReport): Result<Unit> = runCatching {
