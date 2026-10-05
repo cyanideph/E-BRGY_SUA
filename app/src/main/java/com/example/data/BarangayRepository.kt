@@ -60,6 +60,22 @@ class BarangayRepository {
     private val _requests = MutableStateFlow<List<DocumentRequest>>(emptyList())
     val requests: StateFlow<List<DocumentRequest>> = _requests.asStateFlow()
 
+    // Public civic data — Appwrite is authoritative; Room is cache only.
+    private val _announcements = MutableStateFlow<List<Announcement>>(emptyList())
+    val announcements: StateFlow<List<Announcement>> = _announcements.asStateFlow()
+
+    private val _events = MutableStateFlow<List<BarangayEvent>>(emptyList())
+    val events: StateFlow<List<BarangayEvent>> = _events.asStateFlow()
+
+    private val _officials = MutableStateFlow<List<BarangayOfficial>>(emptyList())
+    val officials: StateFlow<List<BarangayOfficial>> = _officials.asStateFlow()
+
+    private val _hotlines = MutableStateFlow<List<OfficialHotline>>(emptyList())
+    val hotlines: StateFlow<List<OfficialHotline>> = _hotlines.asStateFlow()
+
+    private val _facilities = MutableStateFlow<List<Facility>>(emptyList())
+    val facilities: StateFlow<List<Facility>> = _facilities.asStateFlow()
+
     // Announcements
     suspend fun publishAnnouncement(
         title: String,
