@@ -11,6 +11,14 @@ android {
   namespace = "com.example"
   compileSdk = 36
 
+  sourceSets {
+    getByName("main") {
+      // Keep design assets in the repository-level assets/ folder while packaging
+      // them into the Android APK as standard application assets.
+      assets.srcDir(rootProject.file("assets"))
+    }
+  }
+
   defaultConfig {
     applicationId = "com.aistudio.ebarangaysua.sjl"
     minSdk = 24
