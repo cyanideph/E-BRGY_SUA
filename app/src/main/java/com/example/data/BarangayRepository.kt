@@ -1,6 +1,11 @@
 package com.example.data
 
 import com.example.model.*
+import com.example.services.Appwrite
+import io.appwrite.ID
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,14 +34,7 @@ class BarangayRepository {
     }
 
     // Current User Session
-    private val _currentUser = MutableStateFlow(
-        UserSession(
-            uid = "res_user_1",
-            email = "elena.alcantara@sua.ph",
-            role = UserRole.RESIDENT,
-            profile = DemoData.demoResidents.first()
-        )
-    )
+    private val _currentUser = MutableStateFlow(UserSession())
     val currentUser: StateFlow<UserSession> = _currentUser.asStateFlow()
 
     // Offline / Online state
@@ -44,62 +42,115 @@ class BarangayRepository {
     val isOnline: StateFlow<Boolean> = _isOnline.asStateFlow()
 
     // Services
-    private val _services = MutableStateFlow(DemoData.services)
+    private val _services = MutableStateFlow(emptyList<BarangayService>())
     val services: StateFlow<List<BarangayService>> = _services.asStateFlow()
 
     // Document Requests
-    private val _requests = MutableStateFlow(DemoData.initialRequests)
+    private val _requests = MutableStateFlow(emptyList<DocumentRequest>())
     val requests: StateFlow<List<DocumentRequest>> = _requests.asStateFlow()
 
     // Announcements
-    private val _announcements = MutableStateFlow(DemoData.announcements)
+    private val _announcements = MutableStateFlow(emptyList<Announcement>())
     val announcements: StateFlow<List<Announcement>> = _announcements.asStateFlow()
 
     // Events
-    private val _events = MutableStateFlow(DemoData.events)
+    private val _events = MutableStateFlow(emptyList<BarangayEvent>())
     val events: StateFlow<List<BarangayEvent>> = _events.asStateFlow()
 
     // Emergency Reports
-    private val _emergencyReports = MutableStateFlow(DemoData.emergencyReports)
+    private val _emergencyReports = MutableStateFlow(emptyList<EmergencyReport>())
     val emergencyReports: StateFlow<List<EmergencyReport>> = _emergencyReports.asStateFlow()
 
     // Residents (Admin / Staff only)
-    private val _residents = MutableStateFlow(DemoData.demoResidents)
+    private val _residents = MutableStateFlow(emptyList<ResidentProfile>())
     val residents: StateFlow<List<ResidentProfile>> = _residents.asStateFlow()
 
     // Households
-    private val _households = MutableStateFlow(DemoData.demoHouseholds)
+    private val _households = MutableStateFlow(emptyList<Household>())
     val households: StateFlow<List<Household>> = _households.asStateFlow()
 
     // Officials
-    private val _officials = MutableStateFlow(DemoData.officials)
+    private val _officials = MutableStateFlow(emptyList<BarangayOfficial>())
     val officials: StateFlow<List<BarangayOfficial>> = _officials.asStateFlow()
 
     // Hotlines
-    val hotlines: List<OfficialHotline> = DemoData.hotlines
+    val hotlines: List<OfficialHotline> = emptyList()
 
     // Notifications
-    private val _notifications = MutableStateFlow(DemoData.notifications)
+    private val _notifications = MutableStateFlow(emptyList<BarangayNotification>())
     val notifications: StateFlow<List<BarangayNotification>> = _notifications.asStateFlow()
 
     // Audit Logs
-    private val _auditLogs = MutableStateFlow(DemoData.auditLogs)
+    private val _auditLogs = MutableStateFlow(emptyList<AuditLog>())
     val auditLogs: StateFlow<List<AuditLog>> = _auditLogs.asStateFlow()
 
     private var requestCounter = 124
 
-    // Role switcher (useful for testing Resident, Staff, Official, Administrator views)
-    fun switchRole(newRole: UserRole) {
-        val current = _currentUser.value
-        _currentUser.value = current.copy(role = newRole)
-        addAuditLog(
-            action = "ROLE_SWITCH",
-            targetType = "UserSession",
-            targetId = current.uid,
-            previousState = current.role.displayName,
-            newState = newRole.displayName
-        )
+    private val ioScope = CoroutineScope(Dispatchers.IO)
+
+    init { refreshPublicData() }
+
+    private fun rowData(row: io.appwrite.models.Row<Map<String, Any>>): Map<String, Any> = row.data
+    private fun str(data: Map<String, Any>, key: String) = data[key]?.toString().orEmpty()
+    private fun bool(data: Map<String, Any>, key: String) = data[key]?.toString()?.toBooleanStrictOrNull() ?: false
+    private fun int(data: Map<String, Any>, key: String) = data[key]?.toString()?.toIntOrNull() ?: 0
+
+    private fun refreshPublicData() {
+        ioScope.launch {
+            try {
+                val db = Appwrite.tablesDB()
+                _services.value = db.listRows(Appwrite.DATABASE_ID, Appwrite.SERVICES_TABLE).rows.map { row ->
+                    val d = rowData(row)
+                    BarangayService(row.id, str(d,"name"), str(d,"category"), str(d,"description"),
+                        parseJsonArray(str(d,"purposeExamples")),
+                        parseJsonArray(str(d,"requirements")).map { ServiceRequirement(it, it, true) },
+                        str(d,"processingDays"), str(d,"feeDescription"), str(d,"iconKey"))
+                }
+                _announcements.value = db.listRows(Appwrite.DATABASE_ID, Appwrite.ANNOUNCEMENTS_TABLE).rows.map { row ->
+                    val d = rowData(row)
+                    Announcement(row.id, str(d,"title"), str(d,"body"),
+                        runCatching { AnnouncementCategory.valueOf(str(d,"category").uppercase().replace(" & ","_").replace(" ","_")) }.getOrDefault(AnnouncementCategory.GENERAL),
+                        runCatching { AnnouncementPriority.valueOf(str(d,"priority").uppercase()) }.getOrDefault(AnnouncementPriority.NORMAL),
+                        str(d,"publishedAt").substringBefore("T"), str(d,"authorName"), str(d,"authorRole"), bool(d,"isPinned"))
+                }
+                _events.value = db.listRows(Appwrite.DATABASE_ID, Appwrite.EVENTS_TABLE).rows.map { row ->
+                    val d = rowData(row)
+                    BarangayEvent(row.id, str(d,"title"), str(d,"description"), str(d,"startsAt").substringBefore("T"),
+                        str(d,"startsAt").substringAfter("T").take(5), str(d,"location"), str(d,"organizer"), str(d,"category"), int(d,"rsvpCount"), false)
+                }
+                _isOnline.value = true
+            } catch (_: Exception) { _isOnline.value = false }
+        }
     }
+
+    private fun parseJsonArray(value: String): List<String> = runCatching {
+        val a = org.json.JSONArray(value)
+        List(a.length()) { i -> a.optString(i) }.filter { it.isNotBlank() }
+    }.getOrDefault(emptyList())
+
+    suspend fun login(email: String, password: String): Result<UserSession> = runCatching {
+        Appwrite.account().createEmailPasswordSession(email=email, password=password)
+        val a = Appwrite.account().get()
+        val s = UserSession(a.id, a.email, UserRole.RESIDENT,
+            ResidentProfile(id=a.id, residentId=a.id, fullName=a.name.ifBlank { a.email.substringBefore("@") },
+                registrationStatus="Account Registered"))
+        _currentUser.value=s; _isOnline.value=true; s
+    }
+
+    suspend fun register(fullName: String, email: String, password: String, mobile: String, address: String): Result<UserSession> = runCatching {
+        val created = Appwrite.account().create(userId=ID.unique(), email=email, password=password, name=fullName)
+        Appwrite.account().createEmailPasswordSession(email=email, password=password)
+        val s = UserSession(created.id, created.email, UserRole.RESIDENT,
+            ResidentProfile(id=created.id, residentId=created.id, fullName=fullName, address=address, mobileNumber=mobile,
+                registrationStatus="Pending Verification"))
+        _currentUser.value=s; _isOnline.value=true; s
+    }
+
+    suspend fun logout() {
+        runCatching { Appwrite.account().deleteSession("current") }
+        _currentUser.value=UserSession()
+    }
+
 
     fun updateProfile(updated: ResidentProfile) {
         val current = _currentUser.value
