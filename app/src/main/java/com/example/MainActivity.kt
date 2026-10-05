@@ -83,7 +83,7 @@ fun EBarangaySuaApp() {
     }
 
     val isBottomBarVisible = when (currentScreen) {
-        Screen.Home, Screen.Services, Screen.Sua, Screen.Alerts, Screen.Profile -> true
+        Screen.Home, Screen.Services, Screen.Sua, Screen.Profile -> true
         else -> false
     }
 
@@ -100,7 +100,6 @@ fun EBarangaySuaApp() {
                         Triple(Screen.Home, "Home", Icons.Default.Home),
                         Triple(Screen.Services, "Services", Icons.Default.Widgets),
                         Triple(Screen.Sua, "Sua", Icons.Default.Waves),
-                        Triple(Screen.Alerts, "Alerts", Icons.Default.Campaign),
                         Triple(Screen.Profile, "Profile", Icons.Default.Person)
                     )
 
@@ -120,8 +119,9 @@ fun EBarangaySuaApp() {
                             label = {
                                 Text(
                                     text = label,
-                                    fontSize = 11.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    style = MaterialTheme.typography.labelMedium.copy(
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                    ),
                                     color = if (isSelected) DeepOceanBlue else DeepNavyMuted
                                 )
                             },
