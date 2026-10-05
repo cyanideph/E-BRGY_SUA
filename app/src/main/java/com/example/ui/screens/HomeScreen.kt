@@ -215,7 +215,7 @@ fun HomeScreen(
                                 color = RestrainedCoralRed
                             )
                             Text(
-                                text = "Need Help? Immediate Tanod & Medical response",
+                                text = "Get help from Tanod or medical responders",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = DeepNavySecondary
                             )
@@ -268,7 +268,7 @@ fun HomeScreen(
                 )
                 TextButton(onClick = onNavigateToServices) {
                     Text(
-                        text = "View All",
+                        text = "All services",
                         fontWeight = FontWeight.SemiBold,
                         color = SouthernSeaTealDark,
                         fontSize = 13.sp
@@ -278,7 +278,7 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 6 Primary Service Cards in a neat 2-row grid or horizontal scroll
+            // Keep the home screen focused; the full service catalog remains in Services.
             val primaryServices = services.take(4)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 for (chunk in primaryServices.chunked(2)) {
@@ -444,7 +444,7 @@ fun HomeScreen(
                 )
                 TextButton(onClick = onNavigateToAnnouncements) {
                     Text(
-                        text = "View All",
+                        text = "All announcements",
                         fontWeight = FontWeight.SemiBold,
                         color = SouthernSeaTealDark,
                         fontSize = 13.sp
@@ -511,7 +511,7 @@ fun HomeScreen(
                 )
                 TextButton(onClick = onNavigateToEvents) {
                     Text(
-                        text = "Calendar",
+                        text = "All events",
                         fontWeight = FontWeight.SemiBold,
                         color = SouthernSeaTealDark,
                         fontSize = 13.sp
