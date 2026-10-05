@@ -165,6 +165,51 @@ object CivicSyncService {
         createAudit(report.residentUid, "EMERGENCY_SOS", "EmergencyReport", report.id.take(36), report.type.displayName).getOrThrow()
     }
 
+    suspend fun updateEmergencyStatus(
+        reportId: String,
+        status: String,
+        responder: String,
+        notes: String,
+        actorUid: String
+    ): Result<Unit> = runCatching {
+        db.updateRow(
+            databaseId = Appwrite.DATABASE_ID,
+            tableId = Appwrite.EMERGENCIES_TABLE,
+            rowId = reportId,
+            data = mapOf("status" to status)
+        )
+        db.createRow(
+            databaseId = Appwrite.DATABASE_ID,
+            tableId = Appwrite.EMERGENCY_STATUS_HISTORY_TABLE,
+            rowId = ID.unique(),
+            data = mapOf(
+                "reportId" to reportId,
+                "status" to status,
+                "responder" to responder,
+                "notes" to notes,
+                "changedBy" to actorUid,
+                "changedAt" to Instant.now().toString()
+            )
+        )
+        val report = db.getRow(databaseId = Appwrite.DATABASE_ID, tableId = Appwrite.EMERGENCIES_TABLE, rowId = reportId)
+        val residentUid = report.data["userId"]?.toString().orEmpty()
+        if (residentUid.isNotBlank()) {
+            createNotification(
+                residentUid,
+                BarangayNotification(
+                    id = ID.unique(),
+                    title = "Emergency Status Updated",
+                    message = "Your emergency report status is now $status.",
+                    timestamp = System.currentTimeMillis(),
+                    category = "Emergency",
+                    priority = "Emergency",
+                    referenceId = reportId
+                )
+            ).getOrThrow()
+        }
+        createAudit(actorUid, "UPDATE_EMERGENCY_STATUS", "EmergencyReport", reportId, status).getOrThrow()
+    }
+
     suspend fun createNotification(userId: String, notification: BarangayNotification): Result<Unit> = runCatching {
         db.createRow(
             databaseId = Appwrite.DATABASE_ID,
