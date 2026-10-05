@@ -35,6 +35,18 @@ object CivicSyncService {
                 "changedAt" to Instant.ofEpochMilli(request.createdAt).toString()
             )
         )
+        createNotification(
+            request.residentUid,
+            BarangayNotification(
+                id = ID.unique(),
+                title = "Request Submitted",
+                message = "Request ${request.referenceNumber} was received by the barangay.",
+                timestamp = request.createdAt,
+                category = "Service Request",
+                priority = "Normal",
+                referenceId = request.referenceNumber
+            )
+        ).getOrThrow()
         createAudit(request.residentUid, "CREATE_REQUEST", "DocumentRequest", request.id.take(36), request.referenceNumber).getOrThrow()
     }
 
@@ -70,7 +82,6 @@ object CivicSyncService {
             rowId = requestId,
             data = mapOf(
                 "status" to status,
-                "officialRemarks" to remarks,
                 "updatedAt" to Instant.now().toString()
             )
         )
@@ -86,6 +97,22 @@ object CivicSyncService {
                 "changedAt" to Instant.now().toString()
             )
         )
+        val request = db.getRow(databaseId = Appwrite.DATABASE_ID, tableId = Appwrite.REQUESTS_TABLE, rowId = requestId)
+        val residentUid = request.data["userId"]?.toString().orEmpty()
+        if (residentUid.isNotBlank()) {
+            createNotification(
+                residentUid,
+                BarangayNotification(
+                    id = ID.unique(),
+                    title = "Request Status Updated",
+                    message = "Your request status is now ${status}." + if (remarks.isBlank()) "" else " ${remarks}",
+                    timestamp = System.currentTimeMillis(),
+                    category = "Service Request",
+                    priority = if (status == RequestStatus.READY.label) "Important" else "Normal",
+                    referenceId = request.data["referenceNumber"]?.toString().orEmpty()
+                )
+            ).getOrThrow()
+        }
         createAudit(actorUid, "UPDATE_REQUEST_STATUS", "DocumentRequest", requestId, status).getOrThrow()
     }
 
