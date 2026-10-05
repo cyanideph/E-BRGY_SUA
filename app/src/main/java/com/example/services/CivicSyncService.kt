@@ -123,6 +123,18 @@ object CivicSyncService {
                 "changedAt" to Instant.ofEpochMilli(report.timestamp).toString()
             )
         )
+        createNotification(
+            report.residentUid,
+            BarangayNotification(
+                id = ID.unique(),
+                title = "Emergency Report Accepted",
+                message = "Emergency report ${report.id} was accepted by the barangay backend.",
+                timestamp = report.timestamp,
+                priority = "Emergency",
+                category = "Emergency",
+                referenceId = report.id
+            )
+        ).getOrThrow()
         createAudit(report.residentUid, "EMERGENCY_SOS", "EmergencyReport", report.id.take(36), report.type.displayName).getOrThrow()
     }
 
@@ -140,6 +152,31 @@ object CivicSyncService {
                 "createdAt" to Instant.ofEpochMilli(notification.timestamp).toString()
             )
         )
+    }
+
+
+    suspend fun listNotificationsForUser(userId: String): Result<List<BarangayNotification>> = runCatching {
+        db.listRows(
+            databaseId = Appwrite.DATABASE_ID,
+            tableId = Appwrite.NOTIFICATIONS_TABLE,
+            queries = listOf(
+                io.appwrite.Query.equal("userId", userId),
+                io.appwrite.Query.orderDesc("createdAt"),
+                io.appwrite.Query.limit(100)
+            )
+        ).rows.map { row ->
+            val d = row.data
+            BarangayNotification(
+                id = row.id,
+                title = d["title"]?.toString().orEmpty(),
+                message = d["body"]?.toString().orEmpty(),
+                timestamp = runCatching { Instant.parse(d["createdAt"]?.toString().orEmpty()).toEpochMilli() }.getOrDefault(System.currentTimeMillis()),
+                isRead = d["read"]?.toString()?.toBooleanStrictOrNull() ?: false,
+                category = d["type"]?.toString().orEmpty(),
+                priority = d["priority"]?.toString().orEmpty(),
+                referenceId = d["referenceId"]?.toString().orEmpty()
+            )
+        }
     }
 
     suspend fun createAudit(
