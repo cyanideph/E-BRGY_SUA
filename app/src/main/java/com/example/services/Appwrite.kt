@@ -47,4 +47,11 @@ object Appwrite {
     fun tablesDB(): TablesDB = TablesDB(requireClient())
     fun storage(): Storage = Storage(requireClient())
     fun realtime(): Realtime = Realtime(requireClient())
+
+    /**
+     * Verifies that the mobile client can reach this Appwrite project.
+     * This uses the SDK's unauthenticated /ping endpoint and does not require
+     * an API key or a signed-in user.
+     */
+    suspend fun ping(): String = requireClient().ping()
 }
