@@ -28,7 +28,7 @@ fun EventDetailsScreen(
     val repository = remember { BarangayRepository.instance }
     val events by repository.events.collectAsState()
     val event = remember(eventId, events) {
-        events.firstOrNull { it.id == eventId }
+        events.firstOrNull { it.id == eventId } ?: return@EventDetailsScreen
     }
 
     Scaffold(
