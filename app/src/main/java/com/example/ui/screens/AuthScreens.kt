@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,11 +37,13 @@ fun LoginScreen(
     onNavigateToRegister: () -> Unit
 ) {
     val repository = remember { BarangayRepository.instance }
-    var email by remember { mutableStateOf("elena.alcantara@sua.ph") }
-    var password by remember { mutableStateOf("sua2026") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background
@@ -163,7 +166,12 @@ fun LoginScreen(
                                 errorMessage = "Please enter both your email address and password."
                             } else {
                                 isLoading = true
-                                onLoginSuccess()
+                                scope.launch {
+                                    repository.login(email.trim(), password).fold(
+                                        onSuccess = { isLoading = false; onLoginSuccess() },
+                                        onFailure = { isLoading = false; errorMessage = it.message ?: "Sign in failed. Please check your credentials." }
+                                    )
+                                }
                             }
                         },
                         modifier = Modifier
@@ -189,54 +197,6 @@ fun LoginScreen(
             }
 
             Spacer(modifier = Modifier.height(20.dp))
-
-            // Quick Demo Access Selector
-            Text(
-                text = "Quick Demo Access (Select Role):",
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedButton(
-                    onClick = {
-                        repository.switchRole(UserRole.RESIDENT)
-                        onLoginSuccess()
-                    },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Text("Resident", fontSize = 12.sp)
-                }
-
-                OutlinedButton(
-                    onClick = {
-                        repository.switchRole(UserRole.STAFF)
-                        onLoginSuccess()
-                    },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Text("Staff", fontSize = 12.sp)
-                }
-
-                OutlinedButton(
-                    onClick = {
-                        repository.switchRole(UserRole.ADMIN)
-                        onLoginSuccess()
-                    },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Text("Admin", fontSize = 12.sp)
-                }
-            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -382,15 +342,12 @@ fun RegisterScreen(
                             if (fullName.isBlank() || email.isBlank() || password.isBlank()) {
                                 errorMessage = "Please fill in all required fields."
                             } else {
-                                val newProfile = ResidentProfile(
-                                    id = "res_${System.currentTimeMillis()}",
-                                    residentId = "RES-SUA-2026-${(100..999).random()}",
-                                    fullName = fullName,
-                                    address = address,
-                                    mobileNumber = mobile
-                                )
-                                repository.updateProfile(newProfile)
-                                onRegisterSuccess()
+                                scope.launch {
+                                    repository.register(fullName.trim(), email.trim(), password, mobile.trim(), address.trim()).fold(
+                                        onSuccess = { onRegisterSuccess() },
+                                        onFailure = { errorMessage = it.message ?: "Registration failed. Please try again." }
+                                    )
+                                }
                             }
                         },
                         modifier = Modifier
