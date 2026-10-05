@@ -31,6 +31,11 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
     var appwriteStatus by remember { mutableStateOf("Not checked") }
     var appwriteChecking by remember { mutableStateOf(false) }
+    val appwriteStatusColor = when {
+        appwriteStatus.startsWith("Connected") -> MaterialTheme.colorScheme.primary
+        appwriteStatus.startsWith("Connection failed") -> RestrainedCoralRed
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
 
     var pushNotifsEnabled by remember { mutableStateOf(true) }
     var emergencySmsEnabled by remember { mutableStateOf(true) }
@@ -183,11 +188,7 @@ fun SettingsScreen(
                     text = appwriteStatus,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = when {
-                        appwriteStatus.startsWith("Connected") -> MaterialTheme.colorScheme.primary,
-                        appwriteStatus.startsWith("Connection failed") -> RestrainedCoralRed,
-                        else -> MaterialTheme.colorScheme.onSurfaceVariant
-                    },
+                    color = appwriteStatusColor,
                     modifier = Modifier.testTag("appwrite_connection_status")
                 )
                 Spacer(modifier = Modifier.height(10.dp))
