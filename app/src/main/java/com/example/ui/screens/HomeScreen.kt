@@ -100,6 +100,15 @@ fun HomeScreen(
             }
         )
 
+        // Clear page title for wayfinding and screen-reader comprehension
+        Text(
+            text = "Barangay Sua",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+        )
+
         // Offline Banner
         if (!isOnline) {
             Surface(
@@ -215,7 +224,7 @@ fun HomeScreen(
                                 color = RestrainedCoralRed
                             )
                             Text(
-                                text = "Need Help? Immediate Tanod & Medical response",
+                                text = "Get help from Tanod or medical responders",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = DeepNavySecondary
                             )
@@ -261,25 +270,17 @@ fun HomeScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Quick Services",
+                    text = "Services for you",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                TextButton(onClick = onNavigateToServices) {
-                    Text(
-                        text = "View All",
-                        fontWeight = FontWeight.SemiBold,
-                        color = SouthernSeaTealDark,
-                        fontSize = 13.sp
-                    )
-                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 6 Primary Service Cards in a neat 2-row grid or horizontal scroll
-            val primaryServices = services.take(6)
+            // Keep the home screen focused; the full service catalog remains in Services.
+            val primaryServices = services.take(4)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 for (chunk in primaryServices.chunked(2)) {
                     Row(
@@ -360,7 +361,7 @@ fun HomeScreen(
                 )
                 TextButton(onClick = onNavigateToMyRequests) {
                     Text(
-                        text = "History (${requests.size})",
+                        text = "View all (${requests.size})",
                         fontWeight = FontWeight.SemiBold,
                         color = SouthernSeaTealDark,
                         fontSize = 13.sp
@@ -442,14 +443,6 @@ fun HomeScreen(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                TextButton(onClick = onNavigateToAnnouncements) {
-                    Text(
-                        text = "View All",
-                        fontWeight = FontWeight.SemiBold,
-                        color = SouthernSeaTealDark,
-                        fontSize = 13.sp
-                    )
-                }
             }
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -509,14 +502,6 @@ fun HomeScreen(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                TextButton(onClick = onNavigateToEvents) {
-                    Text(
-                        text = "Calendar",
-                        fontWeight = FontWeight.SemiBold,
-                        color = SouthernSeaTealDark,
-                        fontSize = 13.sp
-                    )
-                }
             }
 
             Spacer(modifier = Modifier.height(4.dp))
