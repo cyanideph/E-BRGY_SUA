@@ -159,7 +159,7 @@ object DemoData {
         BarangayOfficial("off_6", "JESUS D. POJAS", "Sangguniang Barangay Member", "Council", "0", "", "Barangay Council", false),
         BarangayOfficial("off_7", "MELBOY S. MONTER", "Sangguniang Barangay Member", "Council", "0", "", "Barangay Council", false),
         BarangayOfficial("off_8", "PANFILO S. CORAZON", "Sangguniang Barangay Member", "Council", "0", "", "Barangay Council", false),
-        BarangayOfficial("off_9", "ALEX F. QUIBAN", "SK Chairperson", "Youth Council", "N/A", "", "Sangguniang Kabataan", false),
+        BarangayOfficial("off_9", "ALEX F. QUIBAN", "SK Chairperson", "Youth Council", "N/A", "", "Sangguniang Kabataan", false, "quibanalex2@gmail.com"),
         BarangayOfficial("off_10", "ANALYN F. QUIBAN", "Barangay Secretary", "Administration", "0", "", "Barangay Secretariat & Records", false)
     )
 
