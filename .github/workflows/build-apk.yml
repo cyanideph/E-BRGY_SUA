@@ -35,34 +35,14 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
         with:
-          packages: platform-tools
-
-      - name: Update Android SDK package metadata
-        run: sdkmanager --update --channel=3
+          packages: platform-tools platforms;android-36
 
       - name: Accept Android SDK licenses
-        run: |
-          yes | sdkmanager --licenses >/dev/null || true
-
-      - name: Install Android 17 (API 37) SDK
-        run: |
-          set -euxo pipefail
-          sdkmanager --list --channel=3 | grep -E 'platforms;android-37|build-tools;37' || true
-          sdkmanager --channel=3 "platforms;android-37"
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager --list_installed | grep -E 'platforms;android-37|build-tools;37' || true
+        run: yes | sdkmanager --licenses >/dev/null || true
 
       - name: Create debug keystore
         run: |
-          keytool -genkeypair -v \
-            -keystore debug.keystore \
-            -storepass android \
-            -alias androiddebugkey \
-            -keypass android \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -dname "CN=Android Debug,O=Android,C=US"
+          keytool -genkeypair -v             -keystore debug.keystore             -storepass android             -alias androiddebugkey             -keypass android             -keyalg RSA             -keysize 2048             -validity 10000             -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
