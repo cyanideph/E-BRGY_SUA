@@ -283,9 +283,8 @@ class BarangayRepository {
         val fallbackName = account.name.ifBlank { account.email.substringBefore("@") }
         val row = runCatching {
             Appwrite.tablesDB()
-                .listRows(Appwrite.DATABASE_ID, Appwrite.USERS_TABLE,
-                    queries = listOf(io.appwrite.Query.equal("userId", account.id)))
-                .rows.firstOrNull()
+                .listRows(Appwrite.DATABASE_ID, Appwrite.USERS_TABLE)
+                .rows.firstOrNull { it.data["userId"]?.toString() == account.id }
         }.getOrNull()
         val data = row?.data ?: emptyMap()
         val role = roleFromBackend(data["role"]?.toString())
