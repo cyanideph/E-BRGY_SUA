@@ -176,7 +176,7 @@ fun SuaCommunityHubScreen(
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     Text(
-                        text = "Official Council of Barangay Sua (Demo Records)",
+                        text = "Current Barangay Sua Officials",
                         fontSize = 11.sp,
                         color = WarmSunGoldDark,
                         fontWeight = FontWeight.SemiBold
@@ -312,24 +312,37 @@ private fun OfficialCard(official: BarangayOfficial) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = "${official.contactNumber} • ${official.officeHours}",
-                    fontSize = 11.sp,
-                    color = DeepNavySecondary
-                )
+                if (official.contactNumber.isNotBlank() || official.officeHours.isNotBlank()) {
+                    Text(
+                        text = listOf(official.contactNumber, official.officeHours)
+                            .filter { it.isNotBlank() }
+                            .joinToString(" • "),
+                        fontSize = 11.sp,
+                        color = DeepNavySecondary
+                    )
+                }
+                if (official.email.isNotBlank()) {
+                    Text(
+                        text = official.email,
+                        fontSize = 11.sp,
+                        color = DeepOceanBlue
+                    )
+                }
             }
 
-            Surface(
-                shape = RoundedCornerShape(6.dp),
-                color = WarmSunGoldContainer.copy(alpha = 0.7f)
-            ) {
-                Text(
-                    text = "Demo",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = OnWarmSunGoldContainer,
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                )
+            if (official.isDemoRecord) {
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = WarmSunGoldContainer.copy(alpha = 0.7f)
+                ) {
+                    Text(
+                        text = "Demo",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = OnWarmSunGoldContainer,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
             }
         }
     }
