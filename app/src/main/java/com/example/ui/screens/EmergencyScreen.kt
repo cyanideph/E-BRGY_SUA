@@ -2,6 +2,8 @@ package com.example.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import android.location.LocationManager
+import java.util.Locale
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -55,9 +57,25 @@ fun EmergencyScreen(
         val coarseGranted = permissions[android.Manifest.permission.ACCESS_COARSE_LOCATION] == true
         if (fineGranted || coarseGranted) {
             isLocationPermissionGranted = true
-            // Coastal Coordinates for Barangay Sua, San Juan, Southern Leyte
-            locationCoordinates = Pair(10.3238, 124.9785)
-            locationNote = "GPS Captured: Lat 10.3238, Lng 124.9785 (Barangay Sua Coastal Sector)"
+            // Read a real device location. Never present a fixed coordinate as GPS.
+            val manager = context.getSystemService(android.content.Context.LOCATION_SERVICE) as LocationManager
+            val lastLocation = runCatching {
+                listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
+                    .asSequence()
+                    .filter { manager.isProviderEnabled(it) }
+                    .mapNotNull { provider -> manager.getLastKnownLocation(provider) }
+                    .maxByOrNull { it.time }
+            }.getOrNull()
+
+            if (lastLocation != null) {
+                locationCoordinates = Pair(lastLocation.latitude, lastLocation.longitude)
+                locationNote = "GPS Captured: %.6f, %.6f".format(
+                    Locale.US, lastLocation.latitude, lastLocation.longitude
+                )
+            } else {
+                locationCoordinates = null
+                locationNote = "Permission granted, but no recent GPS fix is available. Sua identity remains verified."
+            }
         } else {
             showPermissionRationale = true
         }
