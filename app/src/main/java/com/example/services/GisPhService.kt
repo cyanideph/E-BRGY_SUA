@@ -12,8 +12,7 @@ private const val GIS_PH_BASE_URL = "https://api.gis.ph/"
 
 @JsonClass(generateAdapter = true)
 data class GisPhBarangayResponse(
-    val data: List<GisPhBarangay> = emptyList(),
-    val error: Any? = null
+    val data: List<GisPhBarangay> = emptyList()
 )
 
 @JsonClass(generateAdapter = true)
