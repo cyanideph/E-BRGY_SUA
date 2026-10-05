@@ -46,6 +46,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun EBarangaySuaApp() {
+    val repository = remember { com.example.data.BarangayRepository.instance }
+    val scope = rememberCoroutineScope()
     val backStack = remember { mutableStateListOf<Screen>(Screen.Splash) }
     val currentScreen = backStack.lastOrNull() ?: Screen.Home
 
@@ -146,7 +148,7 @@ fun EBarangaySuaApp() {
                     is Screen.Onboarding -> {
                         OnboardingScreen(
                             onFinishOnboarding = {
-                                replaceTop(Screen.Home)
+                                replaceTop(Screen.Login)
                             }
                         )
                     }
@@ -276,7 +278,7 @@ fun EBarangaySuaApp() {
                         ProfileScreen(
                             onNavigateToSettings = { navigateTo(Screen.Settings) },
                             onNavigateToAdminDashboard = { navigateTo(Screen.AdminDashboard) },
-                            onLogout = { selectBottomTab(Screen.Login) }
+                            onLogout = { scope.launch { repository.logout(); selectBottomTab(Screen.Login) } }
                         )
                     }
                     is Screen.Settings -> {
