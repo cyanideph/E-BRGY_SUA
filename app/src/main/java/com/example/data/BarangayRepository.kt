@@ -49,7 +49,7 @@ class BarangayRepository {
     }
 
     // Offline / Online state
-    private val _isOnline = MutableStateFlow(true)
+    private val _isOnline = MutableStateFlow(false)
     val isOnline: StateFlow<Boolean> = _isOnline.asStateFlow()
 
     // Services
