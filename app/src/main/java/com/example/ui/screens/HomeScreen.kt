@@ -26,6 +26,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.BarangayRepository
 import com.example.model.*
+import com.example.services.CoastalTelemetry
+import com.example.services.OpenMeteoService
+import com.example.services.SeaSafety
 import com.example.ui.components.*
 import com.example.ui.theme.*
 
@@ -391,6 +394,11 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
+        // LIVE BARANGAY SAFETY SNAPSHOT
+        BarangaySafetySnapshot(onOpenEmergency = onNavigateToEmergency)
+
+        Spacer(modifier = Modifier.height(20.dp))
+
         // LATEST ANNOUNCEMENTS SECTION
         Column(modifier = Modifier.padding(horizontal = 16.dp)) {
             Row(
@@ -546,5 +554,71 @@ fun HomeScreen(
                 // Emergency report created in repository
             }
         )
+    }
+}
+
+
+@Composable
+private fun BarangaySafetySnapshot(onOpenEmergency: () -> Unit) {
+    var telemetry by remember { mutableStateOf<CoastalTelemetry?>(null) }
+
+    LaunchedEffect(Unit) {
+        telemetry = OpenMeteoService.fetchCoastalTelemetry()
+    }
+
+    SoftSkeuomorphicCard(
+        modifier = Modifier.fillMaxWidth(),
+        backgroundColor = DeepOceanContainer.copy(alpha = 0.72f)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Barangay Safety", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = DeepOceanBlue)
+                Text(
+                    telemetry?.let { it.conditionDescription + " • " + it.windSpeedKmH.toInt() + " km/h wind" }
+                        ?: "Checking live coastal conditions…",
+                    fontSize = 12.sp,
+                    color = DeepNavySecondary
+                )
+            }
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = when (telemetry?.safetyStatus) {
+                    SeaSafety.GALE_WARNING -> RestrainedCoralRedContainer
+                    SeaSafety.MODERATE_SWELL -> WarmAmberContainer
+                    else -> SouthernSeaTealContainer
+                }
+            ) {
+                Text(
+                    telemetry?.safetyStatus?.label ?: "CHECKING",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = when (telemetry?.safetyStatus) {
+                        SeaSafety.GALE_WARNING -> RestrainedCoralRed
+                        SeaSafety.MODERATE_SWELL -> WarmSunGoldDark
+                        else -> SouthernSeaTealDark
+                    },
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(10.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.Water, contentDescription = null, tint = DeepOceanBlue, modifier = Modifier.size(18.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                telemetry?.let { "Waves " + String.format(java.util.Locale.US, "%.1f", it.waveHeightMeters) + " m • Rain " + it.rainProbability + "%" }
+                    ?: "Live data is loading",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f)
+            )
+            TextButton(onClick = onOpenEmergency) {
+                Text("Safety", fontWeight = FontWeight.SemiBold)
+            }
+        }
     }
 }
