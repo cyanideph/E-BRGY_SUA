@@ -275,14 +275,6 @@ fun HomeScreen(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                TextButton(onClick = onNavigateToServices) {
-                    Text(
-                        text = "All services",
-                        fontWeight = FontWeight.SemiBold,
-                        color = SouthernSeaTealDark,
-                        fontSize = 13.sp
-                    )
-                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -451,14 +443,6 @@ fun HomeScreen(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                TextButton(onClick = onNavigateToAnnouncements) {
-                    Text(
-                        text = "All announcements",
-                        fontWeight = FontWeight.SemiBold,
-                        color = SouthernSeaTealDark,
-                        fontSize = 13.sp
-                    )
-                }
             }
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -518,14 +502,6 @@ fun HomeScreen(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                TextButton(onClick = onNavigateToEvents) {
-                    Text(
-                        text = "All events",
-                        fontWeight = FontWeight.SemiBold,
-                        color = SouthernSeaTealDark,
-                        fontSize = 13.sp
-                    )
-                }
             }
 
             Spacer(modifier = Modifier.height(4.dp))
