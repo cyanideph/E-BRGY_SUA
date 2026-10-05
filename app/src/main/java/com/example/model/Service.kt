@@ -45,7 +45,7 @@ data class DocumentRequest(
     val residentContact: String = "",
     val purpose: String = "",
     val remarks: String = "",
-    val deliveryMethod: String = "Pick-up at Barangay Hall",
+    val deliveryMethod: String = "",
     val status: RequestStatus = RequestStatus.SUBMITTED,
     val officialRemarks: String = "",
     val attachmentNames: List<String> = emptyList(),

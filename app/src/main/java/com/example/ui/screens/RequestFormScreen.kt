@@ -33,6 +33,7 @@ fun RequestFormScreen(
     onRequestSubmitted: (String) -> Unit
 ) {
     val repository = remember { BarangayRepository.instance }
+    val scope = rememberCoroutineScope()
     val userSession by repository.currentUser.collectAsState()
     val service = remember(serviceId) {
         repository.services.value.firstOrNull { it.id == serviceId }
@@ -42,17 +43,17 @@ fun RequestFormScreen(
     val baseFee: Double = remember(service.feeDescription) {
         val regex = Regex("""[0-9]+(\.[0-9]+)?""")
         val match = regex.find(service.feeDescription)
-        match?.value?.toDoubleOrNull() ?: 50.0
+        match?.value?.toDoubleOrNull() ?: 0.0
     }
 
     var purpose by remember { mutableStateOf(service.purposeExamples.firstOrNull() ?: "") }
     var customPurpose by remember { mutableStateOf("") }
-    var deliveryMethod by remember { mutableStateOf("Pick-up at Barangay Hall") }
+    var deliveryMethod by remember { mutableStateOf("") }
     var remarks by remember { mutableStateOf("") }
-    var attachments by remember { mutableStateOf(listOf("valid_id_attachment.jpg")) }
+    var attachments by remember { mutableStateOf(emptyList<String>()) }
     var selectedWaiver by remember { mutableStateOf(StatutoryWaiverType.NONE) }
     var calculatedFee by remember { mutableStateOf(baseFee) }
-    var agreedToTerms by remember { mutableStateOf(true) }
+    var agreedToTerms by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isSubmitting by remember { mutableStateOf(false) }
 
@@ -397,14 +398,23 @@ fun RequestFormScreen(
                             else "[Exemption: ${selectedWaiver.title} - Net: ₱${String.format("%.2f", calculatedFee)}]"
                         } else remarks
 
-                        val newRequest = repository.submitRequest(
-                            service = service,
-                            purpose = purpose,
-                            deliveryMethod = deliveryMethod,
-                            remarks = finalRemarks,
-                            attachmentNames = attachments
-                        )
-                        onRequestSubmitted(newRequest.referenceNumber)
+                        scope.launch {
+                            runCatching {
+                                repository.submitRequest(
+                                    service = service,
+                                    purpose = purpose,
+                                    deliveryMethod = deliveryMethod,
+                                    remarks = finalRemarks,
+                                    attachmentNames = attachments
+                                )
+                            }.onSuccess {
+                                isSubmitting = false
+                                onRequestSubmitted(it.referenceNumber)
+                            }.onFailure {
+                                isSubmitting = false
+                                errorMessage = it.message ?: "Unable to submit the request. Please try again."
+                            }
+                        }
                     }
                 },
                 modifier = Modifier

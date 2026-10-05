@@ -33,6 +33,9 @@ object Appwrite {
     const val NOTIFICATIONS_TABLE = "notifications"
     const val AUDIT_LOGS_TABLE = "auditLogs"
     const val FACILITIES_TABLE = "facilities"
+    const val OFFICIALS_TABLE = "officials"
+    const val HOTLINES_TABLE = "hotlines"
+    const val HOUSEHOLDS_TABLE = "households"
     const val REQUEST_STATUS_HISTORY_TABLE = "requestStatusHistory"
     const val EMERGENCY_STATUS_HISTORY_TABLE = "emergencyStatusHistory"
 
