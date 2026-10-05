@@ -38,6 +38,10 @@ class BarangayRepository {
     private val _currentUser = MutableStateFlow(UserSession())
     val currentUser: StateFlow<UserSession> = _currentUser.asStateFlow()
 
+    fun switchRole(newRole: UserRole) {
+        _currentUser.value = _currentUser.value.copy(role = newRole)
+    }
+
     // Offline / Online state
     private val _isOnline = MutableStateFlow(true)
     val isOnline: StateFlow<Boolean> = _isOnline.asStateFlow()
