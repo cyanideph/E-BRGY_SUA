@@ -2,6 +2,7 @@ package com.example.data
 
 import com.example.model.*
 import com.example.services.Appwrite
+import com.example.services.CivicSyncService
 import io.appwrite.ID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -222,6 +223,12 @@ class BarangayRepository {
         val updatedList = listOf(newRequest) + _requests.value
         _requests.value = updatedList
 
+        // Persist the same mutation server-side without blocking the UI.
+        ioScope.launch {
+            val sync = CivicSyncService.createRequest(newRequest)
+            if (sync.isFailure) _isOnline.value = false
+        }
+
         // In-app notification
         val notif = BarangayNotification(
             id = "notif_${System.currentTimeMillis()}",
@@ -234,6 +241,7 @@ class BarangayRepository {
             referenceId = refNum
         )
         _notifications.value = listOf(notif) + _notifications.value
+        ioScope.launch { CivicSyncService.createNotification(user.uid, notif) }
 
         addAuditLog(
             action = "CREATE_REQUEST",
@@ -321,6 +329,12 @@ class BarangayRepository {
             assignedResponder = "Barangay Tanod Immediate Dispatch"
         )
         _emergencyReports.value = listOf(report) + _emergencyReports.value
+
+        // Persist SOS + lifecycle history + audit trail.
+        ioScope.launch {
+            val sync = CivicSyncService.createEmergency(report)
+            if (sync.isFailure) _isOnline.value = false
+        }
 
         val notif = BarangayNotification(
             id = "notif_${System.currentTimeMillis()}",
