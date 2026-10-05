@@ -41,10 +41,11 @@ jobs:
           APPWRITE_RESIDENT_FILES_BUCKET_ID: ${{ vars.APPWRITE_RESIDENT_FILES_BUCKET_ID }}
         run: |
           set -euo pipefail
-          : "${APPWRITE_ENDPOINT:?APPWRITE_ENDPOINT repository variable is required}"
-          : "${APPWRITE_PROJECT_ID:?APPWRITE_PROJECT_ID repository variable is required}"
-          : "${APPWRITE_DATABASE_ID:?APPWRITE_DATABASE_ID repository variable is required}"
-          : "${APPWRITE_RESIDENT_FILES_BUCKET_ID:?APPWRITE_RESIDENT_FILES_BUCKET_ID repository variable is required}"
+          # These are public Appwrite client identifiers, not secrets. Keep secrets out of the APK/CI.
+          APPWRITE_ENDPOINT="${APPWRITE_ENDPOINT:-https://sgp.cloud.appwrite.io/v1}"
+          APPWRITE_PROJECT_ID="${APPWRITE_PROJECT_ID:-6ac31e4000390af0f850}"
+          APPWRITE_DATABASE_ID="${APPWRITE_DATABASE_ID:-ebarangay-sua-db}"
+          APPWRITE_RESIDENT_FILES_BUCKET_ID="${APPWRITE_RESIDENT_FILES_BUCKET_ID:-resident-files}"
           printf 'APPWRITE_ENDPOINT=%s\nAPPWRITE_PROJECT_ID=%s\nAPPWRITE_DATABASE_ID=%s\nAPPWRITE_RESIDENT_FILES_BUCKET_ID=%s\n'             "$APPWRITE_ENDPOINT" "$APPWRITE_PROJECT_ID" "$APPWRITE_DATABASE_ID" "$APPWRITE_RESIDENT_FILES_BUCKET_ID" > .env
       - name: Install Gradle
         uses: gradle/actions/setup-gradle@v4
