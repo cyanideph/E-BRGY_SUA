@@ -174,6 +174,16 @@ class BarangayRepository {
         database = db
 
         ioScope.launch {
+            runCatching {
+                val account = Appwrite.account().get()
+                val session = loadAuthenticatedSession()
+                _currentUser.value = session
+                _isOnline.value = true
+                refreshAuthenticatedRequests(account.id)
+            }.onFailure { _isOnline.value = Appwrite.ENDPOINT.isNotBlank() }
+        }
+
+        ioScope.launch {
             db.documentRequestDao().getAllRequests().collect { entities ->
                 if (entities.isNotEmpty()) {
                     _requests.value = entities.map { it.toDomain() }
@@ -266,6 +276,44 @@ class BarangayRepository {
         }
     }
 
+    private suspend fun refreshAuthenticatedRequests(userId: String) {
+        val remote = CivicSyncService.listRequestsForUser(userId).getOrElse { return }
+        val current = _requests.value.toMutableList()
+        val knownRefs = current.map { it.referenceNumber }.toMutableSet()
+        remote.forEach { row ->
+            val ref = row["referenceNumber"]?.toString().orEmpty()
+            val idx = current.indexOfFirst { it.referenceNumber == ref }
+            if (ref.isBlank()) return@forEach
+            if (idx >= 0) {
+                val old = current[idx]
+                val mapped = RequestStatus.values().firstOrNull { it.label.equals(row["status"]?.toString().orEmpty(), true) } ?: old.status
+                current[idx] = old.copy(status = mapped, officialRemarks = row["officialRemarks"]?.toString() ?: old.officialRemarks)
+                return@forEach
+            }
+            if (knownRefs.contains(ref)) return@forEach
+            val serviceId = row["serviceId"]?.toString().orEmpty()
+            val service = _services.value.firstOrNull { it.id == serviceId }
+            val details = row["details"]?.toString().orEmpty().split("|", limit = 3)
+            val submittedAt = runCatching { java.time.Instant.parse(row["submittedAt"]?.toString().orEmpty()).toEpochMilli() }.getOrDefault(System.currentTimeMillis())
+            val status = RequestStatus.values().firstOrNull { it.label.equals(row["status"]?.toString().orEmpty(), true) } ?: RequestStatus.SUBMITTED
+            val request = DocumentRequest(
+                id = row["id"]?.toString() ?: ref, referenceNumber = ref, serviceId = serviceId,
+                serviceName = service?.name ?: "Barangay Service", residentUid = userId,
+                residentName = _currentUser.value.profile.fullName, residentAddress = _currentUser.value.profile.address,
+                residentContact = _currentUser.value.profile.mobileNumber, purpose = details.getOrNull(0).orEmpty(),
+                deliveryMethod = details.getOrNull(1).orEmpty(), remarks = details.getOrNull(2).orEmpty(), status = status,
+                officialRemarks = row["officialRemarks"]?.toString() ?: "Application received.", attachmentNames = emptyList(),
+                createdAt = submittedAt, updatedAt = submittedAt,
+                timeline = listOf(RequestTimelineEvent("Application Submitted", "Request synchronized from Barangay Sua backend", submittedAt, _currentUser.value.profile.fullName)),
+                isSyncedToServer = true
+            )
+            current.add(0, request)
+            knownRefs.add(ref)
+            database?.documentRequestDao()?.insertRequest(DocumentRequestEntity.fromDomain(request))
+        }
+        _requests.value = current
+    }
+
     private fun parseJsonArray(value: String): List<String> = runCatching {
         val a = org.json.JSONArray(value)
         List(a.length()) { i -> a.optString(i) }.filter { it.isNotBlank() }
@@ -300,66 +348,29 @@ class BarangayRepository {
     }
 
     suspend fun login(email: String, password: String): Result<UserSession> = runCatching {
-        if (Appwrite.ENDPOINT.isNotBlank()) {
-            Appwrite.account().createEmailPasswordSession(email=email, password=password)
-            val s = loadAuthenticatedSession()
-            _currentUser.value=s; _isOnline.value=true; s
-        } else {
-            val nameClean = email.substringBefore("@").replace(".", " ")
-                .split(" ").filter { it.isNotBlank() }
-                .joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
-                .ifEmpty { "Elena Santos" }
-            val s = UserSession("res_sua_001", email, UserRole.RESIDENT,
-                ResidentProfile(id="res_sua_001", residentId="SUA-2026-0012", fullName=nameClean,
-                    registrationStatus="Verified Resident"))
-            _currentUser.value=s; s
-        }
-    }.recoverCatching {
-        val nameClean = email.substringBefore("@").replace(".", " ")
-            .split(" ").filter { it.isNotBlank() }
-            .joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
-            .ifEmpty { "Elena Santos" }
-        val s = UserSession("res_sua_001", email, UserRole.RESIDENT,
-            ResidentProfile(id="res_sua_001", residentId="SUA-2026-0012", fullName=nameClean,
-                registrationStatus="Verified Resident"))
-        _currentUser.value=s
-        _isOnline.value=false
-        s
+        require(Appwrite.ENDPOINT.isNotBlank()) { "Appwrite is not configured for this build." }
+        Appwrite.account().createEmailPasswordSession(email = email, password = password)
+        val session = loadAuthenticatedSession()
+        _currentUser.value = session
+        _isOnline.value = true
+        refreshAuthenticatedRequests(session.uid)
+        session
     }
 
     suspend fun register(fullName: String, email: String, password: String, mobile: String, address: String): Result<UserSession> = runCatching {
-        if (Appwrite.ENDPOINT.isNotBlank()) {
-            val created = Appwrite.account().create(userId=ID.unique(), email=email, password=password, name=fullName)
-            Appwrite.account().createEmailPasswordSession(email=email, password=password)
-            val now = java.time.Instant.now().toString()
-            val userPermissions = listOf("read(\"user:${created.id}\")", "update(\"user:${created.id}\")")
-            Appwrite.tablesDB().createRow(
-                databaseId=Appwrite.DATABASE_ID, tableId=Appwrite.USERS_TABLE, rowId=created.id,
-                data=mapOf("userId" to created.id, "name" to fullName, "email" to email, "role" to "resident", "address" to address, "createdAt" to now),
-                permissions=userPermissions
-            )
-            Appwrite.tablesDB().createRow(
-                databaseId=Appwrite.DATABASE_ID, tableId=Appwrite.RESIDENTS_TABLE, rowId=created.id,
-                data=mapOf("userId" to created.id, "fullName" to fullName, "address" to address, "mobileNumber" to mobile, "residentId" to created.id, "verified" to false, "registrationStatus" to "Pending Verification", "createdAt" to now),
-                permissions=userPermissions
-            )
-            val s = UserSession(created.id, created.email, UserRole.RESIDENT,
-                ResidentProfile(id=created.id, residentId=created.id, fullName=fullName, address=address, mobileNumber=mobile,
-                    registrationStatus="Pending Verification"))
-            _currentUser.value=s; _isOnline.value=true; s
-        } else {
-            val s = UserSession("res_${System.currentTimeMillis()}", email, UserRole.RESIDENT,
-                ResidentProfile(id="res_${System.currentTimeMillis()}", residentId="SUA-2026-${String.format(Locale.US, "%04d", requestCounter)}",
-                    fullName=fullName, address=address, mobileNumber=mobile, registrationStatus="Pending Verification"))
-            _currentUser.value=s; s
-        }
-    }.recoverCatching {
-        val s = UserSession("res_${System.currentTimeMillis()}", email, UserRole.RESIDENT,
-            ResidentProfile(id="res_${System.currentTimeMillis()}", residentId="SUA-2026-${String.format(Locale.US, "%04d", requestCounter)}",
-                fullName=fullName, address=address, mobileNumber=mobile, registrationStatus="Pending Verification"))
-        _currentUser.value=s
-        _isOnline.value=false
-        s
+        require(Appwrite.ENDPOINT.isNotBlank()) { "Appwrite is not configured for this build." }
+        val created = Appwrite.account().create(userId = ID.unique(), email = email, password = password, name = fullName)
+        Appwrite.account().createEmailPasswordSession(email = email, password = password)
+        val now = java.time.Instant.now().toString()
+        val userPermissions = listOf("read(\"user:${created.id}\")", "update(\"user:${created.id}\")")
+        Appwrite.tablesDB().createRow(databaseId = Appwrite.DATABASE_ID, tableId = Appwrite.USERS_TABLE, rowId = created.id,
+            data = mapOf("userId" to created.id, "name" to fullName, "email" to email, "role" to "resident", "address" to address, "phone" to mobile, "registrationStatus" to "Pending Verification", "createdAt" to now), permissions = userPermissions)
+        Appwrite.tablesDB().createRow(databaseId = Appwrite.DATABASE_ID, tableId = Appwrite.RESIDENTS_TABLE, rowId = created.id,
+            data = mapOf("userId" to created.id, "fullName" to fullName, "address" to address, "mobileNumber" to mobile, "residentId" to created.id, "verified" to false, "registrationStatus" to "Pending Verification", "createdAt" to now), permissions = userPermissions)
+        val session = loadAuthenticatedSession()
+        _currentUser.value = session
+        _isOnline.value = true
+        session
     }
 
     suspend fun logout() {
@@ -507,6 +518,11 @@ class BarangayRepository {
 
             ioScope.launch {
                 database?.documentRequestDao()?.insertRequest(DocumentRequestEntity.fromDomain(updated))
+            }
+
+            ioScope.launch {
+                val result = CivicSyncService.updateRequestStatus(old.id, newStatus.label, officialRemarks, user.uid)
+                if (result.isFailure) _isOnline.value = false
             }
 
             // Notification for resident
