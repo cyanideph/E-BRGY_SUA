@@ -573,8 +573,8 @@ class BarangayRepository {
         refreshAuthenticatedNotifications(user.uid)
     }
 
-    // Announcements
-    fun publishAnnouncement(
+    // Announcements — persisted in Appwrite before local/cache refresh.
+    suspend fun publishAnnouncement(
         title: String,
         description: String,
         category: AnnouncementCategory,
@@ -582,40 +582,17 @@ class BarangayRepository {
         isPinned: Boolean
     ) {
         val user = _currentUser.value
-        val dateFormat = SimpleDateFormat("MMMM d, yyyy", Locale.US)
-        val now = System.currentTimeMillis()
-        val announcement = Announcement(
-            id = "ann_${now}",
+        require(user.uid.isNotBlank()) { "You must be signed in." }
+        CivicSyncService.createAnnouncement(
             title = title,
             description = description,
             category = category,
             priority = priority,
-            publishedDate = dateFormat.format(Date(now)),
+            isPinned = isPinned,
             authorName = user.profile.fullName,
-            authorRole = user.role.displayName,
-            isPinned = isPinned
-        )
-        _announcements.value = listOf(announcement) + _announcements.value
-
-        val notif = BarangayNotification(
-            id = "notif_$now",
-            title = "New Official Announcement",
-            message = title,
-            timestamp = now,
-            isRead = false,
-            category = "Announcement",
-            priority = if (priority == AnnouncementPriority.EMERGENCY) "Emergency" else "Normal",
-            referenceId = announcement.id
-        )
-        _notifications.value = listOf(notif) + _notifications.value
-
-        addAuditLog(
-            action = "PUBLISH_ANNOUNCEMENT",
-            targetType = "Announcement",
-            targetId = announcement.id,
-            previousState = null,
-            newState = title
-        )
+            authorRole = user.role.displayName
+        ).getOrThrow()
+        refreshPublicData()
     }
 
     // Events
@@ -643,22 +620,34 @@ class BarangayRepository {
         refreshPublicData()
     }
 
-    // Notifications
+    // Notifications — Appwrite is authoritative; Room is cache only.
     fun markNotificationAsRead(id: String) {
-        val list = _notifications.value.map {
-            if (it.id == id) it.copy(isRead = true) else it
-        }
-        _notifications.value = list
+        val userId = _currentUser.value.uid
+        if (userId.isBlank()) return
         ioScope.launch {
-            database?.notificationDao()?.markAsRead(id)
+            CivicSyncService.markNotificationRead(userId, id)
+                .onSuccess { refreshAuthenticatedNotifications(userId) }
+                .onFailure { _isOnline.value = false }
         }
     }
 
     fun markAllNotificationsAsRead() {
-        val list = _notifications.value.map { it.copy(isRead = true) }
-        _notifications.value = list
+        val userId = _currentUser.value.uid
+        if (userId.isBlank()) return
         ioScope.launch {
-            database?.notificationDao()?.markAllAsRead()
+            val notifications = _notifications.value
+            var failed = false
+            for (notification in notifications.filter { !it.isRead }) {
+                if (CivicSyncService.markNotificationRead(userId, notification.id).isFailure) {
+                    failed = true
+                    break
+                }
+            }
+            if (failed) {
+                _isOnline.value = false
+            } else {
+                refreshAuthenticatedNotifications(userId)
+            }
         }
     }
 
