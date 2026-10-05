@@ -97,7 +97,7 @@ fun LoginScreen(
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "Resident Sign In",
+                        text = "Sign In",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -197,6 +197,7 @@ fun LoginScreen(
 
                     OutlinedButton(
                         onClick = {
+                            repository.loginAsAdminDemo()
                             onLoginSuccess()
                         },
                         modifier = Modifier
@@ -207,7 +208,7 @@ fun LoginScreen(
                         Icon(Icons.Default.VerifiedUser, contentDescription = null, tint = SouthernSeaTealDark)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Continue as Resident (Elena Santos)",
+                            text = "Continue as System Admin (admindemo)",
                             color = DeepOceanBlue,
                             fontWeight = FontWeight.SemiBold
                         )
