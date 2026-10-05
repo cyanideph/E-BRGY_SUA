@@ -78,11 +78,6 @@ jobs:
             printf 'APPWRITE_RESIDENT_FILES_BUCKET_ID=%s\n' "$APPWRITE_RESIDENT_FILES_BUCKET_ID"
           } > .env
 
-      - name: Verify Appwrite endpoint
-        env:
-          APPWRITE_ENDPOINT: ${{ vars.APPWRITE_ENDPOINT }}
-        run: curl --fail --silent --show-error --retry 3 --retry-delay 2 "$APPWRITE_ENDPOINT/health" >/dev/null
-
       - name: Install Gradle ${{ env.GRADLE_VERSION }}
         uses: gradle/actions/setup-gradle@v4
         with:
