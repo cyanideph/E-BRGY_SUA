@@ -39,11 +39,11 @@ fun EmergencyScreen(
     val context = LocalContext.current
     val repository = remember { BarangayRepository.instance }
     val userSession by repository.currentUser.collectAsState()
-    val hotlines = remember { repository.hotlines }
+    val hotlines by repository.hotlines.collectAsState()
 
     var selectedType by remember { mutableStateOf(EmergencyType.BARANGAY_EMERGENCY) }
     var description by remember { mutableStateOf("") }
-    var locationNote by remember { mutableStateOf("Barangay Sua, San Juan, Southern Leyte") }
+    var locationNote by remember { mutableStateOf("") }
     var locationCoordinates by remember { mutableStateOf<Pair<Double, Double>?>(null) }
     var isLocationPermissionGranted by remember { mutableStateOf(false) }
     var isSubmitting by remember { mutableStateOf(false) }
@@ -123,7 +123,7 @@ fun EmergencyScreen(
                                 color = NaturalGreen
                             )
                             Text(
-                                text = "Report ID: ${submittedReport?.id}. Barangay Tanods & San Juan MDRRMO notified.",
+                                text = "Report ID: ${submittedReport?.id}. Emergency report was accepted by the barangay backend.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = DeepNavy
                             )
@@ -271,7 +271,7 @@ fun EmergencyScreen(
                         isSubmitting = true
                         val report = repository.submitEmergency(
                             type = selectedType,
-                            description = description.ifEmpty { "Immediate emergency assistance requested in Barangay Sua." },
+                            description = description,
                             latitude = locationCoordinates?.first,
                             longitude = locationCoordinates?.second,
                             locationDescription = locationNote
