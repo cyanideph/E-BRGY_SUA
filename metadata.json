@@ -1,0 +1,6 @@
+{
+  "name": "e-Barangay Sua",
+  "description": "Digital community and public-service platform for Barangay Sua, San Juan, Southern Leyte, Philippines.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
