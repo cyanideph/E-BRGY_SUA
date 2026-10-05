@@ -40,23 +40,21 @@ class BarangayRepository {
     // Current User Session
     private val _currentUser = MutableStateFlow(
         UserSession(
-            uid = "res_sua_001",
-            email = "elena.santos@barangaysua.ph",
-            role = UserRole.RESIDENT,
+            uid = "admin_demo",
+            email = "admindemo@barangaysua.ph",
+            role = UserRole.ADMIN,
             profile = ResidentProfile(
-                id = "res_sua_001",
-                residentId = "SUA-2026-0012",
-                fullName = "Elena Santos",
-                address = "Purok 1 Coastal Boulevard, Barangay Sua, San Juan, Southern Leyte",
-                mobileNumber = "+63 917 555 0192",
-                dateOfBirth = "1994-08-22",
-                civilStatus = "Single",
-                sex = "Female",
-                occupation = "Fisheries Co-op Member",
-                householdId = "HH-SUA-0012",
-                registrationStatus = "Verified Resident",
-                emergencyContactName = "Ernesto Santos (Father)",
-                emergencyContactPhone = "+63 920 123 4567"
+                id = "admin_demo",
+                residentId = "ADMIN-DEMO",
+                fullName = "admindemo",
+                address = "Barangay Sua Municipal Administration",
+                mobileNumber = "",
+                dateOfBirth = "",
+                civilStatus = "",
+                sex = "",
+                occupation = "System Administrator (Demo)",
+                householdId = "",
+                registrationStatus = "System Admin Demo Account"
             )
         )
     )
@@ -65,6 +63,30 @@ class BarangayRepository {
     fun switchRole(newRole: UserRole) {
         _currentUser.value = _currentUser.value.copy(role = newRole)
     }
+
+    /**
+     * Local QA/admin demo session. This is intentionally credential-free so the
+     * test account can exercise every admin UI flow without embedding a password
+     * or bypassing real Appwrite authentication.
+     */
+    fun loginAsAdminDemo(): UserSession {
+        val session = UserSession(
+            uid = "admin_demo",
+            email = "admindemo@barangaysua.ph",
+            role = UserRole.ADMIN,
+            profile = ResidentProfile(
+                id = "admin_demo",
+                residentId = "ADMIN-DEMO",
+                fullName = "admindemo",
+                address = "Barangay Sua Municipal Administration",
+                occupation = "System Administrator (Demo)",
+                registrationStatus = "System Admin Demo Account"
+            )
+        )
+        _currentUser.value = session
+        return session
+    }
+
 
     // Offline / Online state
     private val _isOnline = MutableStateFlow(true)
@@ -93,7 +115,6 @@ class BarangayRepository {
     // Residents (Admin / Staff only)
     private val _residents = MutableStateFlow(
         listOf(
-            _currentUser.value.profile,
             ResidentProfile(
                 id = "res_sua_002",
                 residentId = "SUA-2026-0028",
@@ -250,13 +271,38 @@ class BarangayRepository {
         List(a.length()) { i -> a.optString(i) }.filter { it.isNotBlank() }
     }.getOrDefault(emptyList())
 
+    private fun roleFromBackend(value: String?): UserRole = when (value?.trim()?.lowercase()) {
+        "admin" -> UserRole.ADMIN
+        "official" -> UserRole.OFFICIAL
+        "staff" -> UserRole.STAFF
+        else -> UserRole.RESIDENT
+    }
+
+    private suspend fun loadAuthenticatedSession(): UserSession {
+        val account = Appwrite.account().get()
+        val fallbackName = account.name.ifBlank { account.email.substringBefore("@") }
+        val row = runCatching {
+            Appwrite.tablesDB()
+                .listRows(Appwrite.DATABASE_ID, Appwrite.USERS_TABLE)
+                .rows.firstOrNull { it.data["userId"]?.toString() == account.id }
+        }.getOrNull()
+        val data = row?.data ?: emptyMap()
+        val role = roleFromBackend(data["role"]?.toString())
+        val profile = ResidentProfile(
+            id = account.id,
+            residentId = data["residentId"]?.toString()?.ifBlank { account.id } ?: account.id,
+            fullName = data["name"]?.toString()?.ifBlank { fallbackName } ?: fallbackName,
+            address = data["address"]?.toString()?.ifBlank { ResidentProfile().address } ?: ResidentProfile().address,
+            mobileNumber = data["phone"]?.toString().orEmpty(),
+            registrationStatus = data["registrationStatus"]?.toString()?.ifBlank { "Account Registered" } ?: "Account Registered"
+        )
+        return UserSession(account.id, account.email, role, profile)
+    }
+
     suspend fun login(email: String, password: String): Result<UserSession> = runCatching {
         if (Appwrite.ENDPOINT.isNotBlank()) {
             Appwrite.account().createEmailPasswordSession(email=email, password=password)
-            val a = Appwrite.account().get()
-            val s = UserSession(a.id, a.email, UserRole.RESIDENT,
-                ResidentProfile(id=a.id, residentId=a.id, fullName=a.name.ifBlank { a.email.substringBefore("@") },
-                    registrationStatus="Account Registered"))
+            val s = loadAuthenticatedSession()
             _currentUser.value=s; _isOnline.value=true; s
         } else {
             val nameClean = email.substringBefore("@").replace(".", " ")
