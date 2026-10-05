@@ -41,7 +41,7 @@ fun AssistantScreen(
     val announcements by repository.announcements.collectAsState()
     val events by repository.events.collectAsState()
     val officials by repository.officials.collectAsState()
-    val hotlines = remember { repository.hotlines }
+    val hotlines by repository.hotlines.collectAsState()
 
     val coroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
