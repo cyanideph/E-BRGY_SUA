@@ -30,6 +30,7 @@ import com.example.model.EmergencyReport
 import com.example.model.EmergencyType
 import com.example.ui.components.SoftSkeuomorphicCard
 import com.example.ui.theme.*
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
