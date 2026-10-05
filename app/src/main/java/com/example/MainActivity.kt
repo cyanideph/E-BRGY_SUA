@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import com.example.ui.navigation.Screen
 import com.example.ui.screens.*
 import com.example.ui.theme.*
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
