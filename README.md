@@ -271,6 +271,12 @@ E-BRGY_SUA/
 
 ## 📜 License
 
-No public license is currently declared in the repository. Until a license is added, treat the source as **all rights reserved** and do not redistribute it as an open-source project.
+This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for the complete license text.
+
+### Attribution
+
+**Created by Cy / cyanideph** — Copyright © 2026 Cy / cyanideph.
+
+See [NOTICE.md](NOTICE.md) for project attribution. Third-party libraries and services remain subject to their respective licenses and terms.
 
 <p align="center"><strong>🌊 e-Barangay Sua</strong><br/><sub>Service. Community. Sua.</sub></p>
