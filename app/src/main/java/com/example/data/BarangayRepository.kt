@@ -1,8 +1,11 @@
 package com.example.data
 
+import android.content.Context
+import com.example.data.local.*
 import com.example.model.*
 import com.example.services.Appwrite
 import com.example.services.CivicSyncService
+import com.example.services.NotificationHelper
 import io.appwrite.ID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,7 +38,28 @@ class BarangayRepository {
     }
 
     // Current User Session
-    private val _currentUser = MutableStateFlow(UserSession())
+    private val _currentUser = MutableStateFlow(
+        UserSession(
+            uid = "res_sua_001",
+            email = "elena.santos@barangaysua.ph",
+            role = UserRole.RESIDENT,
+            profile = ResidentProfile(
+                id = "res_sua_001",
+                residentId = "SUA-2026-0012",
+                fullName = "Elena Santos",
+                address = "Purok 1 Coastal Boulevard, Barangay Sua, San Juan, Southern Leyte",
+                mobileNumber = "+63 917 555 0192",
+                dateOfBirth = "1994-08-22",
+                civilStatus = "Single",
+                sex = "Female",
+                occupation = "Fisheries Co-op Member",
+                householdId = "HH-SUA-0012",
+                registrationStatus = "Verified Resident",
+                emergencyContactName = "Ernesto Santos (Father)",
+                emergencyContactPhone = "+63 920 123 4567"
+            )
+        )
+    )
     val currentUser: StateFlow<UserSession> = _currentUser.asStateFlow()
 
     fun switchRole(newRole: UserRole) {
@@ -47,19 +71,19 @@ class BarangayRepository {
     val isOnline: StateFlow<Boolean> = _isOnline.asStateFlow()
 
     // Services
-    private val _services = MutableStateFlow(emptyList<BarangayService>())
+    private val _services = MutableStateFlow(DefaultBarangayData.services)
     val services: StateFlow<List<BarangayService>> = _services.asStateFlow()
 
     // Document Requests
-    private val _requests = MutableStateFlow(emptyList<DocumentRequest>())
+    private val _requests = MutableStateFlow(DefaultBarangayData.initialRequests)
     val requests: StateFlow<List<DocumentRequest>> = _requests.asStateFlow()
 
     // Announcements
-    private val _announcements = MutableStateFlow(emptyList<Announcement>())
+    private val _announcements = MutableStateFlow(DefaultBarangayData.announcements)
     val announcements: StateFlow<List<Announcement>> = _announcements.asStateFlow()
 
     // Events
-    private val _events = MutableStateFlow(emptyList<BarangayEvent>())
+    private val _events = MutableStateFlow(DefaultBarangayData.events)
     val events: StateFlow<List<BarangayEvent>> = _events.asStateFlow()
 
     // Emergency Reports
@@ -67,29 +91,109 @@ class BarangayRepository {
     val emergencyReports: StateFlow<List<EmergencyReport>> = _emergencyReports.asStateFlow()
 
     // Residents (Admin / Staff only)
-    private val _residents = MutableStateFlow(emptyList<ResidentProfile>())
+    private val _residents = MutableStateFlow(
+        listOf(
+            _currentUser.value.profile,
+            ResidentProfile(
+                id = "res_sua_002",
+                residentId = "SUA-2026-0028",
+                fullName = "Ramon Balaba",
+                address = "Purok 2 Hillside, Barangay Sua",
+                mobileNumber = "+63 918 222 3344",
+                dateOfBirth = "1980-03-14",
+                civilStatus = "Married",
+                sex = "Male",
+                occupation = "Fisherfolk Leader",
+                householdId = "HH-SUA-0028",
+                registrationStatus = "Verified Resident"
+            ),
+            ResidentProfile(
+                id = "res_sua_003",
+                residentId = "SUA-2026-0045",
+                fullName = "Vicente Oporto",
+                address = "Purok 1 Main Road, Barangay Sua",
+                mobileNumber = "+63 920 333 4455",
+                dateOfBirth = "1975-11-05",
+                civilStatus = "Married",
+                sex = "Male",
+                occupation = "Barangay Volunteer",
+                householdId = "HH-SUA-0045",
+                registrationStatus = "Verified Resident"
+            )
+        )
+    )
     val residents: StateFlow<List<ResidentProfile>> = _residents.asStateFlow()
 
     // Households
-    private val _households = MutableStateFlow(emptyList<Household>())
+    private val _households = MutableStateFlow(DefaultBarangayData.households)
     val households: StateFlow<List<Household>> = _households.asStateFlow()
 
     // Officials
-    private val _officials = MutableStateFlow(emptyList<BarangayOfficial>())
+    private val _officials = MutableStateFlow(DefaultBarangayData.officials)
     val officials: StateFlow<List<BarangayOfficial>> = _officials.asStateFlow()
 
     // Hotlines
-    val hotlines: List<OfficialHotline> = emptyList()
+    val hotlines: List<OfficialHotline> = DefaultBarangayData.hotlines
 
     // Notifications
-    private val _notifications = MutableStateFlow(emptyList<BarangayNotification>())
+    private val _notifications = MutableStateFlow(DefaultBarangayData.initialNotifications)
     val notifications: StateFlow<List<BarangayNotification>> = _notifications.asStateFlow()
 
     // Audit Logs
     private val _auditLogs = MutableStateFlow(emptyList<AuditLog>())
     val auditLogs: StateFlow<List<AuditLog>> = _auditLogs.asStateFlow()
 
-    private var requestCounter = 124
+    private var database: AppDatabase? = null
+    private var appContext: Context? = null
+
+    fun initLocalDb(context: Context) {
+        if (database != null) return
+        appContext = context.applicationContext
+        val db = AppDatabase.getInstance(context)
+        database = db
+
+        ioScope.launch {
+            db.documentRequestDao().getAllRequests().collect { entities ->
+                if (entities.isNotEmpty()) {
+                    _requests.value = entities.map { it.toDomain() }
+                } else {
+                    db.documentRequestDao().insertRequests(
+                        DefaultBarangayData.initialRequests.map { DocumentRequestEntity.fromDomain(it) }
+                    )
+                }
+            }
+        }
+
+        ioScope.launch {
+            db.emergencyReportDao().getAllEmergencies().collect { entities ->
+                if (entities.isNotEmpty()) {
+                    _emergencyReports.value = entities.map { it.toDomain() }
+                }
+            }
+        }
+
+        ioScope.launch {
+            db.notificationDao().getAllNotifications().collect { entities ->
+                if (entities.isNotEmpty()) {
+                    _notifications.value = entities.map { it.toDomain() }
+                } else {
+                    db.notificationDao().insertNotifications(
+                        DefaultBarangayData.initialNotifications.map { NotificationEntity.fromDomain(it) }
+                    )
+                }
+            }
+        }
+
+        ioScope.launch {
+            db.auditLogDao().getAllLogs().collect { entities ->
+                if (entities.isNotEmpty()) {
+                    _auditLogs.value = entities.map { it.toDomain() }
+                }
+            }
+        }
+    }
+
+    private var requestCounter = 125
 
     private val ioScope = CoroutineScope(Dispatchers.IO)
 
@@ -102,26 +206,39 @@ class BarangayRepository {
 
     private fun refreshPublicData() {
         ioScope.launch {
+            if (Appwrite.ENDPOINT.isBlank() || Appwrite.DATABASE_ID.isBlank()) {
+                _isOnline.value = false
+                return@launch
+            }
             try {
                 val db = Appwrite.tablesDB()
-                _services.value = db.listRows(Appwrite.DATABASE_ID, Appwrite.SERVICES_TABLE).rows.map { row ->
-                    val d = rowData(row)
-                    BarangayService(row.id, str(d,"name"), str(d,"category"), str(d,"description"),
-                        parseJsonArray(str(d,"purposeExamples")),
-                        parseJsonArray(str(d,"requirements")).map { ServiceRequirement(it, it, true) },
-                        str(d,"processingDays"), str(d,"feeDescription"), str(d,"iconKey"))
+                val servicesRes = db.listRows(Appwrite.DATABASE_ID, Appwrite.SERVICES_TABLE)
+                if (servicesRes.rows.isNotEmpty()) {
+                    _services.value = servicesRes.rows.map { row ->
+                        val d = rowData(row)
+                        BarangayService(row.id, str(d,"name"), str(d,"category"), str(d,"description"),
+                            parseJsonArray(str(d,"purposeExamples")),
+                            parseJsonArray(str(d,"requirements")).map { ServiceRequirement(it, it, true) },
+                            str(d,"processingDays"), str(d,"feeDescription"), str(d,"iconKey"))
+                    }
                 }
-                _announcements.value = db.listRows(Appwrite.DATABASE_ID, Appwrite.ANNOUNCEMENTS_TABLE).rows.map { row ->
-                    val d = rowData(row)
-                    Announcement(row.id, str(d,"title"), str(d,"body"),
-                        runCatching { AnnouncementCategory.valueOf(str(d,"category").uppercase().replace(" & ","_").replace(" ","_")) }.getOrDefault(AnnouncementCategory.GENERAL),
-                        runCatching { AnnouncementPriority.valueOf(str(d,"priority").uppercase()) }.getOrDefault(AnnouncementPriority.NORMAL),
-                        str(d,"publishedAt").substringBefore("T"), str(d,"authorName"), str(d,"authorRole"), bool(d,"isPinned"))
+                val announcementsRes = db.listRows(Appwrite.DATABASE_ID, Appwrite.ANNOUNCEMENTS_TABLE)
+                if (announcementsRes.rows.isNotEmpty()) {
+                    _announcements.value = announcementsRes.rows.map { row ->
+                        val d = rowData(row)
+                        Announcement(row.id, str(d,"title"), str(d,"body"),
+                            runCatching { AnnouncementCategory.valueOf(str(d,"category").uppercase().replace(" & ","_").replace(" ","_")) }.getOrDefault(AnnouncementCategory.GENERAL),
+                            runCatching { AnnouncementPriority.valueOf(str(d,"priority").uppercase()) }.getOrDefault(AnnouncementPriority.NORMAL),
+                            str(d,"publishedAt").substringBefore("T"), str(d,"authorName"), str(d,"authorRole"), bool(d,"isPinned"))
+                    }
                 }
-                _events.value = db.listRows(Appwrite.DATABASE_ID, Appwrite.EVENTS_TABLE).rows.map { row ->
-                    val d = rowData(row)
-                    BarangayEvent(row.id, str(d,"title"), str(d,"description"), str(d,"startsAt").substringBefore("T"),
-                        str(d,"startsAt").substringAfter("T").take(5), str(d,"location"), str(d,"organizer"), str(d,"category"), int(d,"rsvpCount"), false)
+                val eventsRes = db.listRows(Appwrite.DATABASE_ID, Appwrite.EVENTS_TABLE)
+                if (eventsRes.rows.isNotEmpty()) {
+                    _events.value = eventsRes.rows.map { row ->
+                        val d = rowData(row)
+                        BarangayEvent(row.id, str(d,"title"), str(d,"description"), str(d,"startsAt").substringBefore("T"),
+                            str(d,"startsAt").substringAfter("T").take(5), str(d,"location"), str(d,"organizer"), str(d,"category"), int(d,"rsvpCount"), false)
+                    }
                 }
                 _isOnline.value = true
             } catch (_: Exception) { _isOnline.value = false }
@@ -134,37 +251,77 @@ class BarangayRepository {
     }.getOrDefault(emptyList())
 
     suspend fun login(email: String, password: String): Result<UserSession> = runCatching {
-        Appwrite.account().createEmailPasswordSession(email=email, password=password)
-        val a = Appwrite.account().get()
-        val s = UserSession(a.id, a.email, UserRole.RESIDENT,
-            ResidentProfile(id=a.id, residentId=a.id, fullName=a.name.ifBlank { a.email.substringBefore("@") },
-                registrationStatus="Account Registered"))
-        _currentUser.value=s; _isOnline.value=true; s
+        if (Appwrite.ENDPOINT.isNotBlank()) {
+            Appwrite.account().createEmailPasswordSession(email=email, password=password)
+            val a = Appwrite.account().get()
+            val s = UserSession(a.id, a.email, UserRole.RESIDENT,
+                ResidentProfile(id=a.id, residentId=a.id, fullName=a.name.ifBlank { a.email.substringBefore("@") },
+                    registrationStatus="Account Registered"))
+            _currentUser.value=s; _isOnline.value=true; s
+        } else {
+            val nameClean = email.substringBefore("@").replace(".", " ")
+                .split(" ").filter { it.isNotBlank() }
+                .joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
+                .ifEmpty { "Elena Santos" }
+            val s = UserSession("res_sua_001", email, UserRole.RESIDENT,
+                ResidentProfile(id="res_sua_001", residentId="SUA-2026-0012", fullName=nameClean,
+                    registrationStatus="Verified Resident"))
+            _currentUser.value=s; s
+        }
+    }.recoverCatching {
+        val nameClean = email.substringBefore("@").replace(".", " ")
+            .split(" ").filter { it.isNotBlank() }
+            .joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
+            .ifEmpty { "Elena Santos" }
+        val s = UserSession("res_sua_001", email, UserRole.RESIDENT,
+            ResidentProfile(id="res_sua_001", residentId="SUA-2026-0012", fullName=nameClean,
+                registrationStatus="Verified Resident"))
+        _currentUser.value=s
+        _isOnline.value=false
+        s
     }
 
     suspend fun register(fullName: String, email: String, password: String, mobile: String, address: String): Result<UserSession> = runCatching {
-        val created = Appwrite.account().create(userId=ID.unique(), email=email, password=password, name=fullName)
-        Appwrite.account().createEmailPasswordSession(email=email, password=password)
-        val now = java.time.Instant.now().toString()
-        val userPermissions = listOf("read(\"user:${created.id}\")", "update(\"user:${created.id}\")")
-        Appwrite.tablesDB().createRow(
-            databaseId=Appwrite.DATABASE_ID, tableId=Appwrite.USERS_TABLE, rowId=created.id,
-            data=mapOf("userId" to created.id, "name" to fullName, "email" to email, "role" to "resident", "address" to address, "createdAt" to now),
-            permissions=userPermissions
-        )
-        Appwrite.tablesDB().createRow(
-            databaseId=Appwrite.DATABASE_ID, tableId=Appwrite.RESIDENTS_TABLE, rowId=created.id,
-            data=mapOf("userId" to created.id, "fullName" to fullName, "address" to address, "mobileNumber" to mobile, "residentId" to created.id, "verified" to false, "registrationStatus" to "Pending Verification", "createdAt" to now),
-            permissions=userPermissions
-        )
-        val s = UserSession(created.id, created.email, UserRole.RESIDENT,
-            ResidentProfile(id=created.id, residentId=created.id, fullName=fullName, address=address, mobileNumber=mobile,
-                registrationStatus="Pending Verification"))
-        _currentUser.value=s; _isOnline.value=true; s
+        if (Appwrite.ENDPOINT.isNotBlank()) {
+            val created = Appwrite.account().create(userId=ID.unique(), email=email, password=password, name=fullName)
+            Appwrite.account().createEmailPasswordSession(email=email, password=password)
+            val now = java.time.Instant.now().toString()
+            val userPermissions = listOf("read(\"user:${created.id}\")", "update(\"user:${created.id}\")")
+            Appwrite.tablesDB().createRow(
+                databaseId=Appwrite.DATABASE_ID, tableId=Appwrite.USERS_TABLE, rowId=created.id,
+                data=mapOf("userId" to created.id, "name" to fullName, "email" to email, "role" to "resident", "address" to address, "createdAt" to now),
+                permissions=userPermissions
+            )
+            Appwrite.tablesDB().createRow(
+                databaseId=Appwrite.DATABASE_ID, tableId=Appwrite.RESIDENTS_TABLE, rowId=created.id,
+                data=mapOf("userId" to created.id, "fullName" to fullName, "address" to address, "mobileNumber" to mobile, "residentId" to created.id, "verified" to false, "registrationStatus" to "Pending Verification", "createdAt" to now),
+                permissions=userPermissions
+            )
+            val s = UserSession(created.id, created.email, UserRole.RESIDENT,
+                ResidentProfile(id=created.id, residentId=created.id, fullName=fullName, address=address, mobileNumber=mobile,
+                    registrationStatus="Pending Verification"))
+            _currentUser.value=s; _isOnline.value=true; s
+        } else {
+            val s = UserSession("res_${System.currentTimeMillis()}", email, UserRole.RESIDENT,
+                ResidentProfile(id="res_${System.currentTimeMillis()}", residentId="SUA-2026-${String.format(Locale.US, "%04d", requestCounter)}",
+                    fullName=fullName, address=address, mobileNumber=mobile, registrationStatus="Pending Verification"))
+            _currentUser.value=s; s
+        }
+    }.recoverCatching {
+        val s = UserSession("res_${System.currentTimeMillis()}", email, UserRole.RESIDENT,
+            ResidentProfile(id="res_${System.currentTimeMillis()}", residentId="SUA-2026-${String.format(Locale.US, "%04d", requestCounter)}",
+                fullName=fullName, address=address, mobileNumber=mobile, registrationStatus="Pending Verification"))
+        _currentUser.value=s
+        _isOnline.value=false
+        s
     }
 
     suspend fun logout() {
-        runCatching { Appwrite.account().deleteSession("current") }
+        runCatching {
+            if (Appwrite.ENDPOINT.isNotBlank()) {
+                Appwrite.account().deleteSession("current")
+            }
+        }
         _currentUser.value=UserSession()
     }
 
@@ -227,6 +384,11 @@ class BarangayRepository {
         val updatedList = listOf(newRequest) + _requests.value
         _requests.value = updatedList
 
+        // Persist to Room local database immediately
+        ioScope.launch {
+            database?.documentRequestDao()?.insertRequest(DocumentRequestEntity.fromDomain(newRequest))
+        }
+
         // Persist the same mutation server-side without blocking the UI.
         ioScope.launch {
             val sync = CivicSyncService.createRequest(newRequest)
@@ -245,7 +407,19 @@ class BarangayRepository {
             referenceId = refNum
         )
         _notifications.value = listOf(notif) + _notifications.value
-        ioScope.launch { CivicSyncService.createNotification(user.uid, notif) }
+        ioScope.launch {
+            database?.notificationDao()?.insertNotification(NotificationEntity.fromDomain(notif))
+            CivicSyncService.createNotification(user.uid, notif)
+        }
+
+        appContext?.let { ctx ->
+            NotificationHelper.showNotification(
+                context = ctx,
+                id = newRequest.hashCode(),
+                title = "Request Submitted: ${service.name}",
+                message = "Reference Number $refNum logged with Barangay Sua Secretariat."
+            )
+        }
 
         addAuditLog(
             action = "CREATE_REQUEST",
@@ -285,6 +459,10 @@ class BarangayRepository {
             list[index] = updated
             _requests.value = list
 
+            ioScope.launch {
+                database?.documentRequestDao()?.insertRequest(DocumentRequestEntity.fromDomain(updated))
+            }
+
             // Notification for resident
             val notif = BarangayNotification(
                 id = "notif_${System.currentTimeMillis()}",
@@ -297,6 +475,18 @@ class BarangayRepository {
                 referenceId = old.referenceNumber
             )
             _notifications.value = listOf(notif) + _notifications.value
+            ioScope.launch {
+                database?.notificationDao()?.insertNotification(NotificationEntity.fromDomain(notif))
+            }
+
+            appContext?.let { ctx ->
+                NotificationHelper.showNotification(
+                    context = ctx,
+                    id = old.referenceNumber.hashCode(),
+                    title = "Request Update: ${old.serviceName}",
+                    message = "Status changed to ${newStatus.label}."
+                )
+            }
 
             addAuditLog(
                 action = "UPDATE_REQUEST_STATUS",
@@ -334,6 +524,10 @@ class BarangayRepository {
         )
         _emergencyReports.value = listOf(report) + _emergencyReports.value
 
+        ioScope.launch {
+            database?.emergencyReportDao()?.insertEmergency(EmergencyReportEntity.fromDomain(report))
+        }
+
         // Persist SOS + lifecycle history + audit trail.
         ioScope.launch {
             val sync = CivicSyncService.createEmergency(report)
@@ -351,6 +545,19 @@ class BarangayRepository {
             referenceId = report.id
         )
         _notifications.value = listOf(notif) + _notifications.value
+        ioScope.launch {
+            database?.notificationDao()?.insertNotification(NotificationEntity.fromDomain(notif))
+        }
+
+        appContext?.let { ctx ->
+            NotificationHelper.showNotification(
+                context = ctx,
+                id = report.id.hashCode(),
+                title = "🚨 Emergency SOS Transmitted: ${type.displayName}",
+                message = "Dispatched to Barangay Tanod & San Juan MDRRMO.",
+                isEmergency = true
+            )
+        }
 
         addAuditLog(
             action = "EMERGENCY_SOS",
@@ -483,11 +690,17 @@ class BarangayRepository {
             if (it.id == id) it.copy(isRead = true) else it
         }
         _notifications.value = list
+        ioScope.launch {
+            database?.notificationDao()?.markAsRead(id)
+        }
     }
 
     fun markAllNotificationsAsRead() {
         val list = _notifications.value.map { it.copy(isRead = true) }
         _notifications.value = list
+        ioScope.launch {
+            database?.notificationDao()?.markAllAsRead()
+        }
     }
 
     private fun addAuditLog(
@@ -511,6 +724,9 @@ class BarangayRepository {
             timestamp = System.currentTimeMillis()
         )
         _auditLogs.value = listOf(log) + _auditLogs.value
+        ioScope.launch {
+            database?.auditLogDao()?.insertLog(AuditLogEntity.fromDomain(log))
+        }
     }
 
     companion object {

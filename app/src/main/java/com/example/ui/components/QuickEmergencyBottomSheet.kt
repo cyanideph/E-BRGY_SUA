@@ -229,12 +229,23 @@ fun QuickEmergencyBottomSheet(
             Button(
                 onClick = {
                     isSending = true
+                    val locManager = context.getSystemService(android.content.Context.LOCATION_SERVICE) as? android.location.LocationManager
+                    val lastLoc = runCatching {
+                        listOf(android.location.LocationManager.GPS_PROVIDER, android.location.LocationManager.NETWORK_PROVIDER)
+                            .asSequence()
+                            .filter { locManager?.isProviderEnabled(it) == true }
+                            .mapNotNull { locManager?.getLastKnownLocation(it) }
+                            .maxByOrNull { it.time }
+                    }.getOrNull()
+
                     val report = repository.submitEmergency(
                         type = selectedType,
                         description = if (incidentNotes.isNotBlank()) "$locationDescription - $incidentNotes" else locationDescription,
-                        latitude = 10.3340,
-                        longitude = 124.9810,
-                        locationDescription = locationDescription
+                        latitude = lastLoc?.latitude,
+                        longitude = lastLoc?.longitude,
+                        locationDescription = if (lastLoc != null) {
+                            "$locationDescription (GPS: %.5f, %.5f)".format(java.util.Locale.US, lastLoc.latitude, lastLoc.longitude)
+                        } else locationDescription
                     )
                     Toast.makeText(context, "SOS Sent! Tanod & Responders dispatched.", Toast.LENGTH_LONG).show()
                     isSending = false

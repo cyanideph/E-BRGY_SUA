@@ -192,12 +192,30 @@ fun LoginScreen(
                             Text(text = "Sign In", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedButton(
+                        onClick = {
+                            onLoginSuccess()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Icon(Icons.Default.VerifiedUser, contentDescription = null, tint = SouthernSeaTealDark)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Continue as Resident (Elena Santos)",
+                            color = DeepOceanBlue,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Row(
                 verticalAlignment = Alignment.CenterVertically

@@ -18,10 +18,10 @@ import io.appwrite.services.TablesDB
  * configuration so CI and local builds use the same configuration path.
  */
 object Appwrite {
-    const val ENDPOINT = BuildConfig.APPWRITE_ENDPOINT
-    const val PROJECT_ID = BuildConfig.APPWRITE_PROJECT_ID
-    const val DATABASE_ID = BuildConfig.APPWRITE_DATABASE_ID
-    const val RESIDENT_FILES_BUCKET_ID = BuildConfig.APPWRITE_RESIDENT_FILES_BUCKET_ID
+    val ENDPOINT: String get() = BuildConfig.APPWRITE_ENDPOINT
+    val PROJECT_ID: String get() = BuildConfig.APPWRITE_PROJECT_ID
+    val DATABASE_ID: String get() = BuildConfig.APPWRITE_DATABASE_ID
+    val RESIDENT_FILES_BUCKET_ID: String get() = BuildConfig.APPWRITE_RESIDENT_FILES_BUCKET_ID
 
     const val USERS_TABLE = "users"
     const val RESIDENTS_TABLE = "residents"
@@ -40,9 +40,16 @@ object Appwrite {
 
     fun init(context: Context) {
         if (::client.isInitialized) return
-        client = Client(context)
-            .setEndpoint(ENDPOINT)
-            .setProject(PROJECT_ID)
+        val c = Client(context)
+        runCatching {
+            if (ENDPOINT.isNotBlank() && ENDPOINT.startsWith("http")) {
+                c.setEndpoint(ENDPOINT)
+            }
+            if (PROJECT_ID.isNotBlank()) {
+                c.setProject(PROJECT_ID)
+            }
+        }
+        client = c
     }
 
     private fun requireClient(): Client {

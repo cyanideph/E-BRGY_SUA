@@ -199,4 +199,54 @@ fun RoleBadge(
     }
 }
 
+@Composable
+fun EmergencyStatusBadge(
+    status: EmergencyStatus,
+    modifier: Modifier = Modifier
+) {
+    val (bgColor, textColor, icon) = when (status) {
+        EmergencyStatus.RECEIVED -> Triple(
+            WarmAmberContainer,
+            WarmAmber,
+            Icons.Default.HourglassTop
+        )
+        EmergencyStatus.RESPONDING -> Triple(
+            RestrainedCoralRedContainer,
+            RestrainedCoralRed,
+            Icons.Default.DirectionsRun
+        )
+        EmergencyStatus.RESOLVED -> Triple(
+            NaturalGreenContainer,
+            NaturalGreen,
+            Icons.Default.CheckCircle
+        )
+    }
+
+    Surface(
+        modifier = modifier,
+        color = bgColor,
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, textColor.copy(alpha = 0.35f))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = textColor,
+                modifier = Modifier.size(13.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = status.label,
+                color = textColor,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
 private data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)

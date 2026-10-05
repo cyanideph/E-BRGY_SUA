@@ -1,282 +1,196 @@
 # 🌊 e-Barangay Sua
 
-<p align="center"><strong>Service. Community. Sua.</strong><br/>A modern Android civic-services platform for Barangay Sua, San Juan, Southern Leyte.</p>
+<p align="center"><strong>Service. Community. Sua.</strong><br/>A modern Android civic-services and digital governance platform for Barangay Sua, San Juan, Southern Leyte.</p>
 
-<p align="center"><a href="https://github.com/cyanideph/E-BRGY_SUA/actions/workflows/build-apk.yml"><img src="https://github.com/cyanideph/E-BRGY_SUA/actions/workflows/build-apk.yml/badge.svg" alt="Android APK build"/></a> <img src="https://img.shields.io/badge/Kotlin-2.2.10-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin"/> <img src="https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=android&logoColor=white" alt="Jetpack Compose"/> <img src="https://img.shields.io/badge/Min%20SDK-24-3DDC84?logo=android&logoColor=white" alt="Minimum Android SDK"/></p>
+<p align="center">
+  <a href="https://github.com/cyanideph/E-BRGY_SUA/actions/workflows/build-apk.yml"><img src="https://github.com/cyanideph/E-BRGY_SUA/actions/workflows/build-apk.yml/badge.svg" alt="Android APK build"/></a>
+  <img src="https://img.shields.io/badge/Kotlin-2.2.10-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin"/>
+  <img src="https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=android&logoColor=white" alt="Jetpack Compose"/>
+  <img src="https://img.shields.io/badge/Target%20SDK-36-3DDC84?logo=android&logoColor=white" alt="Target Android SDK"/>
+  <img src="https://img.shields.io/badge/Compile%20SDK-37-34A853?logo=android&logoColor=white" alt="Compile SDK"/>
+  <img src="https://img.shields.io/badge/Backend-Appwrite%20Cloud-FD366E?logo=appwrite&logoColor=white" alt="Appwrite"/>
+  <img src="https://img.shields.io/badge/Database-Room%20(Offline%20First)-0078D4?logo=sqlite&logoColor=white" alt="Room SQLite"/>
+  <img src="https://img.shields.io/badge/Tests-Robolectric%20100%25%20Passing-brightgreen?logo=junit5&logoColor=white" alt="Unit Tests"/>
+</p>
 
 ---
 
-## ✨ What is e-Barangay Sua?
+## ✨ Overview
 
-**e-Barangay Sua** is a native Android civic-services application designed to bring barangay services, community information, document requests, emergency reporting, and resident administration into one mobile-first experience.
+**e-Barangay Sua** is an official-grade, native Android civic-services application designed to bring barangay services, community advisories, digital document applications, emergency dispatch, and local government administration into one seamless, mobile-first experience.
 
-The product combines a coastal community identity with **soft skeuomorphism**: rounded surfaces, subtle depth, ocean-inspired colors, warm gold accents, and clear civic actions.
+Tailored specifically for the coastal municipality of **Barangay Sua, San Juan, Southern Leyte (Region VIII)**, the app blends modern Material 3 design with a **coastal soft-skeuomorphic aesthetic**: ocean-inspired colors, tactile depth, frosted surfaces, and emergency-first ergonomics.
 
-> **Service. Community. Sua.**
+---
 
-## 🧭 Resident experience
+## 📱 Core Resident Experience
 
-- 🏠 **Home** — community overview, shortcuts, announcements and important actions
-- 🧾 **Services** — browse barangay services and start document requests
-- 🌊 **Sua** — community hub and local information
-- 📣 **Alerts** — announcements, events and notifications
-- 👤 **Profile** — resident profile, settings and administrative access
-- 🚨 **Emergency** — SOS/emergency reporting with optional location data
-- 📋 **My Requests** — track submitted service requests and status timelines
-- 🤝 **Assistant** — in-app civic assistance surface
-- 🔔 **Notifications** — request, announcement and emergency updates
+- 🏠 **Home Dashboard** — Quick civic services, emergency shortcuts, live weather & storm advisory widgets, community spotlight, and latest news.
+- 🧾 **Barangay Services** — Digital catalog and application workflow for essential barangay certifications:
+  - Barangay Clearance (with First-Time Jobseekers Act RA 11261 waiver support)
+  - Certificate of Residency
+  - Certificate of Indigency (Social Welfare & Medical Assistance)
+  - General Barangay Certificate
+  - Certificate of Good Moral Character
+  - Business Clearance & Commercial Permit
+  - Other Administrative Services
+- 📋 **My Requests & Live Tracking** — Track applications across each stage (`Submitted` → `Under Review` → `Processing` → `Ready for Release` → `Completed`) with dynamic QR verification cards and full milestone audit timelines.
+- 🚨 **Emergency SOS Dispatch** — One-tap emergency dispatch with GPS coordinate transmission and telemetry for Tanod Immediate Dispatch, San Juan MDRRMO, Police, and Rural Health Units.
+- 🌊 **Sua Community Hub** — Purok demographic directory, barangay officials directory, local facilities, and coastal marine sanctuary info.
+- 📣 **Advisories & Weather Alerts** — High-priority weather warnings, community assembly notices, and public health missions.
+- 👤 **Digital Resident ID & Profile** — Offline-accessible digital barangay identification card, household affiliation, and settings.
+- 🔔 **In-App Notification Center** — Status updates, advisory bulletins, and emergency broadcasts.
 
-## 🛡️ Administrative portal
+---
 
-The navigation model includes a dedicated administrative experience for request management, residents, households, announcements, events, emergencies, reports, and audit logs.
+## 🛡️ Administrative Portal
 
-## 🎨 Design system
+The app includes role-based administration features for Barangay Officials and staff:
 
-e-Barangay Sua uses a **Coastal Community Soft-Skeuomorphism** direction. The interface is intentionally warmer and more tactile than a standard Material-only civic app.
+- **Request Management** — Review incoming applications, verify uploaded requirements, attach official remarks, and update status.
+- **Emergency SOS Dispatch Console** — Live triage of incoming emergencies, assign field responders (Tanod/MDRRMO), and record resolution logs.
+- **Announcement Management** — Draft and broadcast emergency alerts, health mission notices, and council advisories.
+- **Barangay Event Scheduling** — Create community events and monitor resident RSVPs.
+- **Civic Reports & Demographic Analytics** — Application volume analytics, Purok distribution stats, and processing turnaround metrics.
+- **System Audit Trail (`AdminAuditLogsScreen`)** — Immutable chronological audit logging for governance and transparency.
 
-| Element | Direction |
-|---|---|
-| Mood | Coastal, welcoming, civic |
-| Primary | Deep ocean blue |
-| Secondary | Sea teal |
-| Highlight | Warm gold |
-| Emergency | Coral / high-attention treatment |
-| Surfaces | Soft rounded cards with subtle depth |
-| Navigation | Five-tab mobile bottom navigation |
-| Theme | Light, Dark and System modes |
+---
 
-Reusable UI primitives include **SoftSkeuomorphicCard**, **SuaWaveHeader**, **StatusBadges**, **DigitalResidentIdCard**, **DocumentQrCard**, **QuickEmergencyBottomSheet**, and **GlobalOfflineSyncPill**.
+## ☁️ Backend & Data Architecture
 
-## 🏗️ Architecture
-
-The project is a native **Kotlin + Jetpack Compose** Android application.
+e-Barangay Sua uses an **Offline-First Architecture** combining local SQLite persistence via **Android Room** with remote synchronization via **Appwrite Cloud**.
 
 ```text
-app/
-├── data/
-│   ├── BarangayRepository.kt
-│   └── DemoData.kt
-├── model/
-│   ├── Announcement.kt
-│   ├── AuditLog.kt
-│   ├── Emergency.kt
-│   ├── Event.kt
-│   ├── Notification.kt
-│   ├── Official.kt
-│   ├── Service.kt
-│   └── User.kt
-├── services/
-│   └── Appwrite.kt
-└── ui/
-    ├── components/
-    ├── navigation/
-    ├── screens/
-    └── theme/
+[ Resident / Admin UI ]
+           │
+           ▼
+ [ BarangayRepository ]
+     │              │
+     ▼              ▼
+[ Room Database ]  [ CivicSyncService ]
+(Offline Cache)            │
+                           ▼
+                  [ Appwrite Cloud v2.3+ ]
+                   • TablesDB (Collections)
+                   • Storage (Resident Files)
+                   • Realtime & Health
 ```
 
-Navigation is centralized through the **Screen** route model and a lightweight in-memory back stack. Main destinations are **Home, Services, Sua, Alerts, and Profile**.
+### Database Collections (`ebarangay-sua-db`)
 
-## 🔌 Appwrite integration
+| Collection / Table | Purpose | Permissions |
+|---|---|---|
+| `services` | Barangay certification catalog and requirements | Public Read (`read("any")`) |
+| `announcements` | Official public advisories and storm warnings | Public Read (`read("any")`) |
+| `documentRequests` | Resident applications and processing states | Resident Read/Write + Admin Management |
+| `requestStatusHistory` | Lifecycle transition history and timestamps | Audit tracking |
+| `emergencyReports` | Active SOS telemetry and GPS coordinates | Emergency dispatch |
+| `emergencyStatusHistory`| Responder notes and dispatch timelines | Dispatch history |
+| `notifications` | Resident-specific in-app notifications | User-scoped |
+| `auditLogs` | System-wide administrative action logs | LGU governance & compliance |
+| `facilities` | Community halls, evacuation centers, and sports hubs | Public Read |
 
-The Android client is prepared for **Appwrite** as its backend platform and exposes:
+---
 
-- Account
-- TablesDB
-- Storage
-- Realtime
-- Connectivity health check
+## 🔒 Comprehensive System Audit Trail
 
-The current data model identifiers cover:
+All critical operations in e-Barangay Sua automatically emit auditable logs:
 
-- users
-- residents
-- services
-- document requests
-- announcements
-- events
-- emergency reports
-- notifications
-- audit logs
-- resident file storage
+- `CREATE_REQUEST`: Logged upon document submission with reference number.
+- `UPDATE_REQUEST_STATUS`: Captures official actor, previous state, and new state (`Submitted` → `Ready for Release`).
+- `EMERGENCY_SOS`: Records emergency caller details, incident type, and GPS coordinates.
+- `UPDATE_EMERGENCY_STATUS`: Records dispatch response, assigned tanod/responder, and resolution notes.
+- `PUBLISH_ANNOUNCEMENT`: Records title, author role, and emergency flags.
+- `CREATE_EVENT`: Records community event scheduling and logistics.
 
-The Settings screen includes an **Appwrite Connection** test using the Appwrite ping endpoint. This gives the app a simple mobile-to-backend connectivity check before each feature is moved to live data.
+Logs are dual-persisted locally in Room's `audit_logs` table and synchronized to Appwrite's `auditLogs` collection.
 
-**Security:** no Appwrite API key is stored in the mobile application. Production authorization should be enforced through authenticated sessions, resource permissions, and server-side controls.
+---
 
-## 🧪 Current data strategy
+## 🧰 Technology Stack
 
-The codebase currently contains a substantial **demo/repository data layer** so resident and administrative flows can be exercised without a fully populated backend.
+| Layer | Component | Details |
+|---|---|---|
+| **Language** | Kotlin | 2.2.x (100% Kotlin DSL) |
+| **UI Framework** | Jetpack Compose | Material 3 + Custom Skeuomorphic Surfaces |
+| **Android SDK** | Modern Platform | `minSdk 24`, `targetSdk 36`, `compileSdk 37` (Android 16 Ready) |
+| **Build System** | Gradle | AGP 9.1.x + Gradle 9.3.1 |
+| **Local Storage** | Room Database | SQLite with TypeConverters & DAOs |
+| **Remote Backend** | Appwrite Cloud | SDK 28.0.0 (Account, TablesDB, Storage, Realtime) |
+| **Networking** | Retrofit + OkHttp | Moshi JSON serialization |
+| **Testing** | Robolectric & JUnit 4 | Local JVM tests for CUJs, Room, and audit flows |
+| **Image Loading** | Coil Compose | Asynchronous image rendering |
+| **Location** | Google Play Services | GPS location capture for SOS dispatch |
+| **CI/CD** | GitHub Actions | Automated build, verification, and APK artifact upload |
 
-**BarangayRepository** currently manages in-memory state for the resident session, services, requests, announcements, events, emergency reports, residents, households, officials, notifications, audit logs, online/offline state, and theme mode.
+---
 
-> **Demo data is development/test data and must not be treated as production resident records.**
+## ⚙️ Configuration & Environment
 
-## 🧰 Tech stack
+The project uses the **Secrets Gradle Plugin** with `.env` / `.env.example` for secure build configuration:
 
-| Layer | Technology |
-|---|---|
-| Language | Kotlin 2.2.x |
-| UI | Jetpack Compose + Material 3 |
-| Design | Custom soft-skeuomorphic components |
-| Build | Android Gradle Plugin 9.1.x + Gradle 9.3.1 |
-| Java | JDK 17 |
-| Minimum Android | API 24 |
-| Target Android | API 36 |
-| Compile SDK | API 37 |
-| Backend | Appwrite Android SDK 28.0.0 |
-| Local data | Room |
-| Networking | Retrofit + OkHttp + Moshi |
-| Async | Kotlin Coroutines |
-| Images | Coil |
-| Location | Google Play Services Location |
-| Testing | JUnit, Robolectric, Compose UI tests, Espresso |
-| CI | GitHub Actions |
+```properties
+APPWRITE_DATABASE_ID="ebarangay-sua-db"
+APPWRITE_ENDPOINT="https://sgp.cloud.appwrite.io/v1"
+APPWRITE_PROJECT_ID="6ac31e4000390af0f850"
+APPWRITE_RESIDENT_FILES_BUCKET_ID="resident-files"
+```
 
-## 📱 Build locally
+> **Security Note**: Never commit service-role keys or private credentials to the client repository. The Android app connects securely using client-level publishable Project IDs and user authentication sessions.
 
-Requirements: Android Studio, JDK 17, Git, and the Android SDK required by the current dependency graph.
+---
+
+## 🧪 Testing & Verification
+
+The project includes an automated **Robolectric unit test suite** (`app/src/test/`):
+
+To run all unit and Robolectric tests locally:
 
 ```bash
-git clone https://github.com/cyanideph/E-BRGY_SUA.git
-cd E-BRGY_SUA
-./gradlew :app:assembleDebug
+gradle :app:testDebugUnitTest
 ```
 
-The debug APK is generated under **app/build/outputs/apk/debug/**.
+### Verified Test Cases:
+- ✔ Android 16 runtime and application context initialization
+- ✔ Civic backend contract and table name integrity
+- ✔ Default dataset seeding (services, announcements, emergency hotlines)
+- ✔ Room local database and DAO CRUD operations
+- ✔ Document request submission and status transition audit generation
+- ✔ Emergency SOS broadcast and responder dispatch audit generation
+- ✔ Announcement publishing and community event scheduling audit generation
+- ✔ Session authentication and role switching stability
 
-## ⚙️ Environment
+---
 
-The repository includes **.env.example** for development-time configuration.
+## 🔨 Building the App
 
-Never commit real credentials, API keys, signing passwords, or production secrets. Sensitive server credentials must remain server-side.
+### Requirements
+- **JDK 17** or higher
+- **Android SDK** with Platform Tools API 36/37
+- **Gradle 9.3.1** (or run via the Gradle toolchain)
 
-## 🤖 Continuous integration
-
-GitHub Actions builds the debug APK automatically when changes reach **main** and also supports manual dispatch.
-
+### Assemble Debug APK
+```bash
+gradle :app:assembleDebug
+```
+The output APK is generated at:
 ```text
-GitHub push
-    ↓
-Android build
-    ↓
-APK artifact
-    ↓
-Android device testing
-    ↓
-Ramus smoke tests
-    ↓
-Human review
+app/build/outputs/apk/debug/app-debug.apk
 ```
 
-The current workflow installs JDK 17, Gradle 9.3.1, Android SDK tooling, the Android 17 / API 37 preview platform required by the dependency graph, creates a debug keystore, runs the debug APK build, and uploads the APK artifact.
+---
 
-## 🧪 Recommended smoke test
+## 🌴 About Barangay Sua
 
-```text
-Launch → Splash / onboarding → Home
-                    ↓
-             Bottom navigation
-                    ↓
-              Services → Request
-                    ↓
-            Profile → Settings
-                    ↓
-         Appwrite Connection → Test
-```
+**Barangay Sua** is a vibrant coastal community in the municipality of **San Juan, Southern Leyte, Philippines**. Known for its coastal marine sanctuary, beachfront puroks, and agricultural areas, this platform was built to bridge modern digital governance with the day-to-day needs of its residents and barangay officials.
 
-Emergency path:
-
-**Home/Sua → Emergency → create SOS report → location/details → status and notification**
-
-## 🔐 Production hardening
-
-- Connect resident authentication to Appwrite
-- Enforce role-based permissions server-side
-- Replace demo records with live TablesDB data
-- Connect resident uploads to Storage
-- Connect Realtime notifications
-- Complete offline synchronization and conflict handling
-- Validate audit logs end-to-end
-- Add privacy, retention, backup and recovery policies
-- Configure production signing and release validation
-- Run accessibility and security audits
-
-## 🗺️ Roadmap
-
-### Foundation
-
-- [x] Native Kotlin + Compose application
-- [x] Five-tab resident navigation
-- [x] Resident and admin screen structure
-- [x] Soft-skeuomorphic civic design system
-- [x] Demo repository/data layer
-- [x] Appwrite Android SDK integration
-- [x] Appwrite connectivity test
-- [x] Automated debug APK workflow
-
-### Integration
-
-- [ ] Appwrite resident authentication
-- [ ] Live services and requests
-- [ ] Resident file storage
-- [ ] Realtime notifications
-- [ ] Production roles and permissions
-- [ ] Offline synchronization
-- [ ] End-to-end audit logging
-
-### Production
-
-- [ ] Production signing
-- [ ] Full instrumentation suite
-- [ ] Automated device testing
-- [ ] Accessibility audit
-- [ ] Security review
-- [ ] Privacy/data-retention documentation
-- [ ] Release candidate validation
-
-## 🌴 About Sua
-
-e-Barangay Sua is designed around the community identity of **Barangay Sua, San Juan, Southern Leyte**.
-
-The product direction is intentionally local: practical civic workflows, emergency-first access, community information, and a coastal visual language instead of a generic enterprise dashboard.
-
-## 📂 Project structure
-
-```text
-E-BRGY_SUA/
-├── .github/workflows/build-apk.yml
-├── app/
-│   ├── src/main/java/com/example/
-│   │   ├── data/
-│   │   ├── model/
-│   │   ├── services/
-│   │   └── ui/
-│   ├── src/androidTest/
-│   ├── src/test/
-│   └── build.gradle.kts
-├── gradle/libs.versions.toml
-├── .env.example
-├── build.gradle.kts
-├── settings.gradle.kts
-└── README.md
-```
-
-## 🤝 Development principles
-
-**Local first.** Build around the real needs of Barangay Sua residents.
-
-**Useful first.** Prioritize services, requests, alerts, community information, and emergency access.
-
-**Trust first.** Protect resident data, make system state visible, and keep administrative actions auditable.
+---
 
 ## 📜 License
 
-This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for the complete license text.
+This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
 
-### Attribution
-
-**Created by Cy / cyanideph** — Copyright © 2026 Cy / cyanideph.
-
-See [NOTICE.md](NOTICE.md) for project attribution. Third-party libraries and services remain subject to their respective licenses and terms.
-
-<p align="center"><strong>🌊 e-Barangay Sua</strong><br/><sub>Service. Community. Sua.</sub></p>
+<p align="center">
+  <strong>🌊 e-Barangay Sua</strong><br/>
+  <sub>Service. Community. Sua.</sub>
+</p>

@@ -1,5 +1,8 @@
 package com.example.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -52,6 +55,15 @@ fun RequestFormScreen(
     var agreedToTerms by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isSubmitting by remember { mutableStateOf(false) }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            val fileName = uri.lastPathSegment?.substringAfterLast("/") ?: "resident_document_${System.currentTimeMillis()}.jpg"
+            attachments = attachments + fileName
+        }
+    }
 
     val deliveryOptions = listOf("Pick-up at Barangay Hall", "Digital Copy via Email", "Purok Tanod Assistance Delivery")
 
@@ -312,14 +324,16 @@ fun RequestFormScreen(
 
                 OutlinedButton(
                     onClick = {
-                        attachments = attachments + "cedula_scan_${(10..99).random()}.pdf"
+                        photoPickerLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
                     },
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(Icons.Default.UploadFile, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Add Requirement Attachment")
+                    Text("Select Supporting ID / Document Photo")
                 }
             }
 

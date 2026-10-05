@@ -27,6 +27,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         com.example.services.Appwrite.init(applicationContext)
+        com.example.services.NotificationHelper.initChannels(applicationContext)
+        com.example.data.BarangayRepository.instance.initLocalDb(applicationContext)
         enableEdgeToEdge()
         setContent {
             val repository = remember { com.example.data.BarangayRepository.instance }

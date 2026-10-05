@@ -37,9 +37,14 @@ fun SettingsScreen(
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
-    var pushNotifsEnabled by remember { mutableStateOf(true) }
-    var emergencySmsEnabled by remember { mutableStateOf(true) }
-    var biometricsEnabled by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val prefs = remember { context.getSharedPreferences("barangay_sua_prefs", android.content.Context.MODE_PRIVATE) }
+    var pushNotifsEnabled by remember { mutableStateOf(prefs.getBoolean("push_notifs", true)) }
+    var emergencySmsEnabled by remember { mutableStateOf(prefs.getBoolean("emergency_sms", true)) }
+    var biometricsEnabled by remember { mutableStateOf(prefs.getBoolean("biometrics", false)) }
+
+    var showPrivacyDialog by remember { mutableStateOf(false) }
+    var showDeleteAccountDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -247,7 +252,13 @@ fun SettingsScreen(
                         Text("Document Status Alerts", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                         Text("Get notified when requests change status", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Switch(checked = pushNotifsEnabled, onCheckedChange = { pushNotifsEnabled = it })
+                    Switch(
+                        checked = pushNotifsEnabled,
+                        onCheckedChange = {
+                            pushNotifsEnabled = it
+                            prefs.edit().putBoolean("push_notifs", it).apply()
+                        }
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -261,7 +272,13 @@ fun SettingsScreen(
                         Text("High-Priority Coastal Advisories", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                         Text("Typhoon, swell, and emergency alerts", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Switch(checked = emergencySmsEnabled, onCheckedChange = { emergencySmsEnabled = it })
+                    Switch(
+                        checked = emergencySmsEnabled,
+                        onCheckedChange = {
+                            emergencySmsEnabled = it
+                            prefs.edit().putBoolean("emergency_sms", it).apply()
+                        }
+                    )
                 }
             }
 
@@ -307,7 +324,13 @@ fun SettingsScreen(
                         Text("Biometric Sign-In", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                         Text("Use fingerprint or face recognition", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Switch(checked = biometricsEnabled, onCheckedChange = { biometricsEnabled = it })
+                    Switch(
+                        checked = biometricsEnabled,
+                        onCheckedChange = {
+                            biometricsEnabled = it
+                            prefs.edit().putBoolean("biometrics", it).apply()
+                        }
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -318,6 +341,45 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 16.sp
                 )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                OutlinedButton(
+                    onClick = { showPrivacyDialog = true },
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Policy, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Read Data Privacy Policy (RA 10173)")
+                }
+            }
+
+            // Account & Data Deletion
+            SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "Resident Account Management",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "Residents have the statutory right under RA 10173 to request deletion or anonymization of digital records from the mobile platform.",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                OutlinedButton(
+                    onClick = { showDeleteAccountDialog = true },
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = RestrainedCoralRed),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.DeleteOutline, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Delete Resident Account & Data")
+                }
             }
 
             // About e-Barangay Sua
@@ -362,5 +424,72 @@ fun SettingsScreen(
                 Text("Log Out", fontWeight = FontWeight.Bold)
             }
         }
+    }
+
+    if (showPrivacyDialog) {
+        AlertDialog(
+            onDismissRequest = { showPrivacyDialog = false },
+            title = {
+                Text("Data Privacy Policy (RA 10173)", fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        text = "1. Information Collected:\nWe collect basic resident identity info (full name, address, contact, household ID) strictly for public certificate verification and life-safety SOS alerts.\n\n" +
+                                "2. Legal Basis:\nProcessing is authorized under Republic Act 10173 and Republic Act 7160 (Local Government Code of the Philippines).\n\n" +
+                                "3. Purpose:\nData is used solely to issue official barangay clearances, coordinate local first responders during typhoons/emergencies, and maintain the civil registry.\n\n" +
+                                "4. Non-Disclosure:\nYour information is never sold or shared with commercial entities. It is accessible solely to designated Barangay Sua administrative and emergency officers.\n\n" +
+                                "5. Data Subject Rights:\nYou have the right to inspect, correct, or request deletion of your digital records at any time.",
+                        fontSize = 12.sp,
+                        lineHeight = 18.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showPrivacyDialog = false }) {
+                    Text("Close", fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
+
+    if (showDeleteAccountDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAccountDialog = false },
+            title = {
+                Text("Delete Account & Data", fontWeight = FontWeight.Bold, color = RestrainedCoralRed)
+            },
+            text = {
+                Text(
+                    "Are you sure you want to delete your mobile resident account? This will permanently remove your stored local sessions, clearance requests, and notifications from this device. Physical municipal archives at Barangay Hall will remain intact as required by law.",
+                    fontSize = 13.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteAccountDialog = false
+                        scope.launch {
+                            repository.logout()
+                            prefs.edit().clear().apply()
+                            onLogout()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = RestrainedCoralRed)
+                ) {
+                    Text("Confirm Deletion", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteAccountDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
