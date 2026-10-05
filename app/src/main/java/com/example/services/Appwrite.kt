@@ -32,6 +32,9 @@ object Appwrite {
     const val EMERGENCIES_TABLE = "emergencyReports"
     const val NOTIFICATIONS_TABLE = "notifications"
     const val AUDIT_LOGS_TABLE = "auditLogs"
+    const val FACILITIES_TABLE = "facilities"
+    const val REQUEST_STATUS_HISTORY_TABLE = "requestStatusHistory"
+    const val EMERGENCY_STATUS_HISTORY_TABLE = "emergencyStatusHistory"
 
     private lateinit var client: Client
 
