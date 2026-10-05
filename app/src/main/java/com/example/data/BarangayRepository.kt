@@ -15,6 +15,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.time.ZoneId
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 enum class AppThemeMode(val displayName: String, val subtitle: String) {
     LIGHT("Light Mode (Default)", "Clean warm coastal daylight theme"),
@@ -57,36 +61,51 @@ class BarangayRepository {
     val requests: StateFlow<List<DocumentRequest>> = _requests.asStateFlow()
 
     // Announcements
-    private val _announcements = MutableStateFlow<List<Announcement>>(emptyList())
-    val announcements: StateFlow<List<Announcement>> = _announcements.asStateFlow()
+    suspend fun publishAnnouncement(
+        title: String,
+        description: String,
+        category: AnnouncementCategory,
+        priority: AnnouncementPriority,
+        isPinned: Boolean
+    ) {
+        val user = _currentUser.value
+        require(user.uid.isNotBlank()) { "You must be signed in." }
+        CivicSyncService.createAnnouncement(
+            title = title,
+            description = description,
+            category = category,
+            priority = priority,
+            isPinned = isPinned,
+            authorName = user.profile.fullName,
+            authorRole = user.role.displayName
+        ).getOrThrow()
+        refreshPublicData()
+    }
 
     // Events
-    private val _events = MutableStateFlow<List<BarangayEvent>>(emptyList())
-    val events: StateFlow<List<BarangayEvent>> = _events.asStateFlow()
-
-    // Emergency Reports
-    private val _emergencyReports = MutableStateFlow(emptyList<EmergencyReport>())
-    val emergencyReports: StateFlow<List<EmergencyReport>> = _emergencyReports.asStateFlow()
-
-    // Residents (Admin / Staff only)
-    private val _residents = MutableStateFlow<List<ResidentProfile>>(emptyList())
-    val residents: StateFlow<List<ResidentProfile>> = _residents.asStateFlow()
-
-    // Households
-    private val _households = MutableStateFlow<List<Household>>(emptyList())
-    val households: StateFlow<List<Household>> = _households.asStateFlow()
-
-    // Officials
-    private val _officials = MutableStateFlow<List<BarangayOfficial>>(emptyList())
-    val officials: StateFlow<List<BarangayOfficial>> = _officials.asStateFlow()
-
-    // Hotlines
-    private val _hotlines = MutableStateFlow<List<OfficialHotline>>(emptyList())
-    val hotlines: StateFlow<List<OfficialHotline>> = _hotlines.asStateFlow()
-
-    // Facilities
-    private val _facilities = MutableStateFlow<List<Facility>>(emptyList())
-    val facilities: StateFlow<List<Facility>> = _facilities.asStateFlow()
+    suspend fun createEvent(
+        title: String,
+        description: String,
+        date: String,
+        time: String,
+        location: String,
+        organizer: String,
+        category: String
+    ) {
+        val formatter = DateTimeFormatter.ofPattern("MMMM d, yyyy h:mm a", Locale.US)
+        val start = LocalDateTime.parse("$date $time", formatter).atZone(ZoneId.of("Asia/Manila")).toInstant()
+        val end = start.plusHours(2)
+        CivicSyncService.createEvent(
+            title = title,
+            description = description,
+            startsAt = start.toString(),
+            endsAt = end.toString(),
+            location = location,
+            organizer = organizer,
+            category = category
+        ).getOrThrow()
+        refreshPublicData()
+    }
 
     // Notifications
     private val _notifications = MutableStateFlow<List<BarangayNotification>>(emptyList())
