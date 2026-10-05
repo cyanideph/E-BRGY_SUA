@@ -1,41 +1,43 @@
-name: Build Android APK
+name: Main Android Build
 
 on:
-  workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: main-android-build-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  GRADLE_VERSION: '9.3.1'
+  JAVA_VERSION: '17'
+  ANDROID_API: '36'
+
 jobs:
-  build-apk:
+  build:
+    name: Main APK build
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: ${{ env.JAVA_VERSION }}
           cache: gradle
-
-      - name: Install Gradle and generate wrapper
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '9.3.1'
-
-      - name: Generate Gradle wrapper
-        run: gradle wrapper --gradle-version 9.3.1 --distribution-type bin
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
         with:
-          packages: platform-tools platforms;android-36
+          packages: platform-tools platforms;android-${{ env.ANDROID_API }}
 
       - name: Accept Android SDK licenses
         run: yes | sdkmanager --licenses >/dev/null || true
@@ -55,7 +57,10 @@ jobs:
               exit 1
             fi
           done
-          echo "Appwrite CI configuration is present."
+          case "$APPWRITE_ENDPOINT" in
+            https://*) ;;
+            *) echo "::error::APPWRITE_ENDPOINT must use HTTPS."; exit 1 ;;
+          esac
 
       - name: Generate CI Appwrite environment
         env:
@@ -73,14 +78,23 @@ jobs:
             printf 'APPWRITE_RESIDENT_FILES_BUCKET_ID=%s\n' "$APPWRITE_RESIDENT_FILES_BUCKET_ID"
           } > .env
 
-      - name: Create debug keystore
-        run: |
-          keytool -genkeypair -v             -keystore debug.keystore             -storepass android             -alias androiddebugkey             -keypass android             -keyalg RSA             -keysize 2048             -validity 10000             -dname "CN=Android Debug,O=Android,C=US"
+      - name: Verify Appwrite endpoint
+        env:
+          APPWRITE_ENDPOINT: ${{ vars.APPWRITE_ENDPOINT }}
+        run: curl --fail --silent --show-error --retry 3 --retry-delay 2 "$APPWRITE_ENDPOINT/health" >/dev/null
+
+      - name: Install Gradle ${{ env.GRADLE_VERSION }}
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: ${{ env.GRADLE_VERSION }}
+
+      - name: Generate Gradle wrapper
+        run: gradle wrapper --gradle-version "${GRADLE_VERSION}" --distribution-type bin
 
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
 
-      - name: Upload APK
+      - name: Upload main APK
         uses: actions/upload-artifact@v4
         with:
           name: e-barangay-sua-debug-apk
@@ -88,16 +102,14 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  ramus-smoke-test:
-    name: Ramus Android smoke test
-    needs: build-apk
+  ramus:
+    name: Main Android smoke test
+    needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      contents: read
+    timeout-minutes: 25
 
     steps:
-      - name: Download APK artifact
+      - name: Download main APK
         uses: actions/download-artifact@v4
         with:
           name: e-barangay-sua-debug-apk
@@ -107,7 +119,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          # No npm lockfile is required; Ramus CLI is invoked with npx.
 
       - name: Run Ramus smoke test
         env:
@@ -115,33 +126,22 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
-          if [[ -z "${RAMUS_API_KEY:-}" ]]; then
-            echo "::error::RAMUS_API_KEY is not configured. Create a Ramus API key and add it as a GitHub Actions secret named RAMUS_API_KEY."
-            exit 1
-          fi
+          test -n "${RAMUS_API_KEY:-}" || { echo "::error::RAMUS_API_KEY is not configured."; exit 1; }
 
           APK="$(find ramus-apk -type f -name '*.apk' -print -quit)"
-          if [[ -z "$APK" ]]; then
-            echo "::error::No APK was found in the downloaded artifact."
-            exit 1
-          fi
+          test -n "$APK" || { echo "::error::No APK found."; exit 1; }
 
           SESSION_JSON="$(npx --yes ramus-cli@0.1.13 session start --apk "$APK" --wait)"
           echo "$SESSION_JSON"
-
           SESSION="$(jq -r '.session // empty' <<<"$SESSION_JSON")"
           WATCH_URL="$(jq -r '.watchUrl // empty' <<<"$SESSION_JSON")"
-          if [[ -z "$SESSION" ]]; then
-            echo "::error::Ramus did not return a session id."
-            exit 1
-          fi
+          test -n "$SESSION" || { echo "::error::Ramus did not return a session id."; exit 1; }
 
-          echo "Ramus session: $SESSION"
           if [[ -n "$WATCH_URL" ]]; then
-            echo "Ramus watch URL: $WATCH_URL"
-            echo "### Ramus smoke test" >> "$GITHUB_STEP_SUMMARY"
-            echo "Watch: $WATCH_URL" >> "$GITHUB_STEP_SUMMARY"
+            {
+              echo "### Main Android smoke test"
+              echo "Watch: $WATCH_URL"
+            } >> "$GITHUB_STEP_SUMMARY"
           fi
 
           cleanup() {
@@ -152,17 +152,13 @@ jobs:
           npx --yes ramus-cli@0.1.13 wait --session "$SESSION" --stable
           SNAPSHOT="$(npx --yes ramus-cli@0.1.13 snapshot --session "$SESSION")"
           echo "$SNAPSHOT"
+          jq -e '.elements[]? | select((.text // "") == "e-Barangay Sua")' <<<"$SNAPSHOT" >/dev/null
 
-          if ! jq -e '.elements[]? | select((.text // "") == "e-Barangay Sua")' <<<"$SNAPSHOT" >/dev/null; then
-            echo "::error::Ramus smoke test could not find the e-Barangay Sua app identity on the first stable screen."
-            exit 1
-          fi
-
-          LOGCAT="$(npx --yes ramus-cli@0.1.13 logcat --session "$SESSION" --limit 200)"
+          LOGCAT="$(npx --yes ramus-cli@0.1.13 logcat --session "$SESSION" --limit 300)"
           if grep -Eiq 'FATAL EXCEPTION|AndroidRuntime.*FATAL' <<<"$LOGCAT"; then
-            echo "::error::Fatal Android exception detected in Ramus logcat."
+            echo "::error::Fatal Android exception detected."
             echo "$LOGCAT"
             exit 1
           fi
 
-          echo "Ramus smoke test passed: APK installed, app reached a stable screen, identity was detected, and no fatal exception was found."
+          echo "Main Android smoke test passed.";
