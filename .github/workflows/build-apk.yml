@@ -40,6 +40,39 @@ jobs:
       - name: Accept Android SDK licenses
         run: yes | sdkmanager --licenses >/dev/null || true
 
+      - name: Validate Appwrite CI configuration
+        env:
+          APPWRITE_ENDPOINT: ${{ vars.APPWRITE_ENDPOINT }}
+          APPWRITE_PROJECT_ID: ${{ vars.APPWRITE_PROJECT_ID }}
+          APPWRITE_DATABASE_ID: ${{ vars.APPWRITE_DATABASE_ID }}
+          APPWRITE_RESIDENT_FILES_BUCKET_ID: ${{ vars.APPWRITE_RESIDENT_FILES_BUCKET_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in APPWRITE_ENDPOINT APPWRITE_PROJECT_ID APPWRITE_DATABASE_ID APPWRITE_RESIDENT_FILES_BUCKET_ID; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::$name is not configured as a GitHub Actions repository variable."
+              exit 1
+            fi
+          done
+          echo "Appwrite CI configuration is present."
+
+      - name: Generate CI Appwrite environment
+        env:
+          APPWRITE_ENDPOINT: ${{ vars.APPWRITE_ENDPOINT }}
+          APPWRITE_PROJECT_ID: ${{ vars.APPWRITE_PROJECT_ID }}
+          APPWRITE_DATABASE_ID: ${{ vars.APPWRITE_DATABASE_ID }}
+          APPWRITE_RESIDENT_FILES_BUCKET_ID: ${{ vars.APPWRITE_RESIDENT_FILES_BUCKET_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            printf 'APPWRITE_ENDPOINT=%s\n' "$APPWRITE_ENDPOINT"
+            printf 'APPWRITE_PROJECT_ID=%s\n' "$APPWRITE_PROJECT_ID"
+            printf 'APPWRITE_DATABASE_ID=%s\n' "$APPWRITE_DATABASE_ID"
+            printf 'APPWRITE_RESIDENT_FILES_BUCKET_ID=%s\n' "$APPWRITE_RESIDENT_FILES_BUCKET_ID"
+          } > .env
+
       - name: Create debug keystore
         run: |
           keytool -genkeypair -v             -keystore debug.keystore             -storepass android             -alias androiddebugkey             -keypass android             -keyalg RSA             -keysize 2048             -validity 10000             -dname "CN=Android Debug,O=Android,C=US"
