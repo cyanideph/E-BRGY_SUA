@@ -151,18 +151,16 @@ object DemoData {
     )
 
     val officials = listOf(
-        BarangayOfficial("off_1", "Hon. Alejandro 'Jun' Fernandez", "Punong Barangay (Barangay Captain)", "Executive", "+63 917 555 1001", "Mon-Fri: 8:00 AM - 5:00 PM", "Overall Governance & Executive Action", true),
-        BarangayOfficial("off_2", "Hon. Maria Elena Ramos", "Barangay Kagawad", "Council", "+63 917 555 1002", "Tue, Thu: 9:00 AM - 4:00 PM", "Committee on Peace, Order & Public Safety", true),
-        BarangayOfficial("off_3", "Hon. Roberto Mendoza", "Barangay Kagawad", "Council", "+63 917 555 1003", "Mon, Wed: 8:30 AM - 4:00 PM", "Committee on Coastal Environment & Marine Sanctuary", true),
-        BarangayOfficial("off_4", "Hon. Carmen Del Rosario", "Barangay Kagawad", "Council", "+63 917 555 1004", "Mon, Fri: 9:00 AM - 5:00 PM", "Committee on Health, Sanitation & Social Welfare", true),
-        BarangayOfficial("off_5", "Hon. Dante O. Morales", "Barangay Kagawad", "Council", "+63 917 555 1005", "Wed, Fri: 8:00 AM - 4:00 PM", "Committee on Public Works & Infrastructure", true),
-        BarangayOfficial("off_6", "Hon. Grace C. Reyes", "Barangay Kagawad", "Council", "+63 917 555 1006", "Mon-Thu: 10:00 AM - 3:00 PM", "Committee on Appropriations, Ways & Means", true),
-        BarangayOfficial("off_7", "Hon. Danilo Villanueva", "Barangay Kagawad", "Council", "+63 917 555 1007", "Tue, Fri: 9:00 AM - 4:00 PM", "Committee on Education, Culture & Livelihood", true),
-        BarangayOfficial("off_8", "Hon. Joshua Miguel Tan", "SK Chairperson", "Youth Council", "+63 917 555 1008", "Mon, Wed, Fri: 1:00 PM - 5:00 PM", "Committee on Youth & Sports Development", true),
-        BarangayOfficial("off_9", "Ms. Arlene P. Castillo", "Barangay Secretary", "Administration", "+63 917 555 1009", "Mon-Fri: 8:00 AM - 5:00 PM", "Secretariat, Records & Document Issuance", true),
-        BarangayOfficial("off_10", "Mr. Edwin L. Gomez", "Barangay Treasurer", "Treasury", "+63 917 555 1010", "Mon-Fri: 8:00 AM - 5:00 PM", "Disbursements, Fees & Municipal Collections", true),
-        BarangayOfficial("off_11", "Mr. Victorino B. Santos", "Chief Tanod (Executive Officer)", "Security", "+63 917 555 1011", "24/7 On-Duty Rotation", "Barangay Tanod Force & Emergency Dispatch", true),
-        BarangayOfficial("off_12", "Mrs. Lilibeth M. Flores", "Head Barangay Health Worker (BHW)", "Health", "+63 917 555 1012", "Mon-Sat: 8:00 AM - 4:00 PM", "Barangay Health Center & Maternal Care", true)
+        BarangayOfficial("off_1", "RAYMUND Q. VASQUEZ", "Punong Barangay", "Executive", "0", "", "Barangay Executive Office", false),
+        BarangayOfficial("off_2", "LEONIDES Y. MALUBAY", "Sangguniang Barangay Member", "Council", "0", "", "Barangay Council", false),
+        BarangayOfficial("off_3", "RENE O. BALIC", "Sangguniang Barangay Member", "Council", "0", "", "Barangay Council", false),
+        BarangayOfficial("off_4", "MARCIANITO D. BALABA", "Sangguniang Barangay Member", "Council", "0", "", "Barangay Council", false),
+        BarangayOfficial("off_5", "EVELYN D. RANEZ", "Sangguniang Barangay Member", "Council", "0", "", "Barangay Council", false),
+        BarangayOfficial("off_6", "JESUS D. POJAS", "Sangguniang Barangay Member", "Council", "0", "", "Barangay Council", false),
+        BarangayOfficial("off_7", "MELBOY S. MONTER", "Sangguniang Barangay Member", "Council", "0", "", "Barangay Council", false),
+        BarangayOfficial("off_8", "PANFILO S. CORAZON", "Sangguniang Barangay Member", "Council", "0", "", "Barangay Council", false),
+        BarangayOfficial("off_9", "ALEX F. QUIBAN", "SK Chairperson", "Youth Council", "N/A", "", "Sangguniang Kabataan", false),
+        BarangayOfficial("off_10", "ANALYN F. QUIBAN", "Barangay Secretary", "Administration", "0", "", "Barangay Secretariat & Records", false)
     )
 
     val hotlines = listOf(
