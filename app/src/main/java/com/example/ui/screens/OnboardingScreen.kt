@@ -112,7 +112,10 @@ fun OnboardingScreen(
                             model = "file:///android_asset/onboarding/$imageName",
                             contentDescription = "Barangay Sua onboarding illustration",
                             modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
+                            // The supplied artwork already contains its own copy.
+                            // Fit the complete portrait so embedded text is never cropped
+                            // by the pager viewport.
+                            contentScale = ContentScale.Fit
                         )
                     } else {
                         // Graceful fallback while artwork is being added/replaced.
