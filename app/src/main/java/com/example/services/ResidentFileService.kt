@@ -27,8 +27,7 @@ object ResidentFileService {
                 bucketId = Appwrite.RESIDENT_FILES_BUCKET_ID,
                 fileId = ID.unique(),
                 file = InputFile.fromPath(cacheFile.absolutePath),
-                permissions = listOf(Permission.read(Role.user(userId)), Permission.write(Role.user(userId))),
-                folder = "residents/" + userId
+                permissions = listOf(Permission.read(Role.user(userId)), Permission.write(Role.user(userId)))
             )
             file.id
         } finally {
