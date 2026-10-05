@@ -112,6 +112,7 @@ class BarangayRepository {
                 _currentUser.value = session
                 _isOnline.value = true
                 refreshAuthenticatedRequests(account.id)
+                refreshAuthenticatedNotifications(account.id)
             }.onFailure { _isOnline.value = Appwrite.ENDPOINT.isNotBlank() }
         }
 
@@ -275,6 +276,14 @@ class BarangayRepository {
         _requests.value = current
     }
 
+    private suspend fun refreshAuthenticatedNotifications(userId: String) {
+        val remote = CivicSyncService.listNotificationsForUser(userId).getOrElse { return }
+        _notifications.value = remote
+        remote.forEach { notification ->
+            database?.notificationDao()?.insertNotification(NotificationEntity.fromDomain(notification))
+        }
+    }
+
     private fun parseJsonArray(value: String): List<String> = runCatching {
         val a = org.json.JSONArray(value)
         List(a.length()) { i -> a.optString(i) }.filter { it.isNotBlank() }
@@ -315,6 +324,7 @@ class BarangayRepository {
         _currentUser.value = session
         _isOnline.value = true
         refreshAuthenticatedRequests(session.uid)
+        refreshAuthenticatedNotifications(session.uid)
         session
     }
 
