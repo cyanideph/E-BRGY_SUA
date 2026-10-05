@@ -29,6 +29,7 @@ import kotlinx.coroutines.launch
 private val OnboardingImageShape = RoundedCornerShape(28.dp)
 
 private data class OnboardingPage(
+    val imageName: String,
     val fallbackIcon: ImageVector
 )
 
@@ -39,24 +40,19 @@ fun OnboardingScreen(
 ) {
     val context = LocalContext.current
 
-    val onboardingImages = remember {
+    // Keep the product order explicit. Alphabetical asset ordering would put
+    // Emergency first, which does not match the intended onboarding sequence.
+    val pages = listOf(
+        OnboardingPage("onboarding-services.png", Icons.Default.Description),
+        OnboardingPage("onboarding-emergency.png", Icons.Default.Emergency),
+        OnboardingPage("onboarding-governance.png", Icons.Default.Groups)
+    )
+
+    val availableAssets = remember {
         context.assets.list("onboarding")
-            ?.filter { name ->
-                val lower = name.lowercase()
-                lower.endsWith(".png") ||
-                    lower.endsWith(".jpg") ||
-                    lower.endsWith(".jpeg") ||
-                    lower.endsWith(".webp")
-            }
-            ?.sorted()
+            ?.toSet()
             .orEmpty()
     }
-
-    val pages = listOf(
-        OnboardingPage(Icons.Default.Description),
-        OnboardingPage(Icons.Default.Emergency),
-        OnboardingPage(Icons.Default.Groups)
-    )
 
     val pagerState = rememberPagerState(pageCount = { pages.size })
     val coroutineScope = rememberCoroutineScope()
@@ -98,7 +94,7 @@ fun OnboardingScreen(
                     .fillMaxWidth()
             ) { pageIndex ->
                 val page = pages[pageIndex]
-                val imageName = onboardingImages.getOrNull(pageIndex)
+                val imageName = page.imageName.takeIf { it in availableAssets }
 
                 Box(
                     modifier = Modifier
@@ -113,8 +109,8 @@ fun OnboardingScreen(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .clip(OnboardingImageShape),
-                            // Preserve the complete portrait artwork so embedded text
-                            // remains visible while the rounded shape clips the corners.
+                            // Fit is intentional: the artwork is portrait and contains
+                            // its own text. Never crop the image or its embedded copy.
                             contentScale = ContentScale.Fit
                         )
                     } else {
