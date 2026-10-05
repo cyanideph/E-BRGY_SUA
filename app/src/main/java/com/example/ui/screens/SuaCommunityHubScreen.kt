@@ -7,9 +7,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import android.content.Intent
-import android.net.Uri
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -222,15 +219,6 @@ fun SuaCommunityHubScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            CommunityMapAndInsights(
-                barangayProfile = barangayProfile,
-                serviceCount = repository.services.collectAsState().value.size,
-                announcementCount = repository.announcements.collectAsState().value.size,
-                eventCount = repository.events.collectAsState().value.size
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
             // Community Pillars & Facilities
             Text(
                 text = "Community Facilities & Programs",
@@ -319,84 +307,6 @@ fun SuaCommunityHubScreen(
             }
 
             Spacer(modifier = Modifier.height(30.dp))
-        }
-    }
-}
-
-@Composable
-private fun CommunityMapAndInsights(
-    barangayProfile: BarangayProfile?,
-    serviceCount: Int,
-    announcementCount: Int,
-    eventCount: Int
-) {
-    val context = LocalContext.current
-    val mapUri = Uri.parse("https://www.google.com/maps/search/?api=1&query=" + Uri.encode("Sua, San Juan, Southern Leyte"))
-    val categories = listOf("Services" to serviceCount, "Alerts" to announcementCount, "Events" to eventCount)
-    val maxValue = categories.maxOfOrNull { it.second }?.coerceAtLeast(1) ?: 1
-
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Sua Community Intelligence", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
-                Text("Local map, live content and civic activity at a glance", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            TextButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, mapUri)) }) {
-                Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Map")
-            }
-        }
-
-        SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth(), backgroundColor = DeepOceanContainer, elevation = 3.dp) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = RoundedCornerShape(16.dp), color = DeepOceanBlue, modifier = Modifier.size(58.dp)) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.LocationOn, contentDescription = "Sua map location", tint = Color.White, modifier = Modifier.size(30.dp))
-                    }
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Barangay Sua service area", fontWeight = FontWeight.Bold, color = DeepOceanBlue)
-                    Text(
-                        (barangayProfile?.municipality ?: "San Juan") + " • " + (barangayProfile?.province ?: "Southern Leyte"),
-                        fontSize = 12.sp,
-                        color = DeepNavySecondary
-                    )
-                    Text("PSGC " + (barangayProfile?.psgcCode ?: "0806414023"), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = SouthernSeaTealDark)
-                }
-            }
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(
-                "Map view uses the verified administrative identity for Sua. Boundary geometry and GPS service-area verification should be added when the authenticated GIS.PH geometry endpoint is enabled.",
-                fontSize = 10.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                lineHeight = 15.sp
-            )
-        }
-
-        SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth(), elevation = 2.dp) {
-            Text("Digital civic activity", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-            Spacer(modifier = Modifier.height(10.dp))
-            categories.forEach { (label, value) ->
-                Column(modifier = Modifier.padding(bottom = 9.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(value.toString(), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = DeepOceanBlue)
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    LinearProgressIndicator(
-                        progress = { value.toFloat() / maxValue.toFloat() },
-                        modifier = Modifier.fillMaxWidth().height(7.dp),
-                        color = SouthernSeaTealDark,
-                        trackColor = DeepOceanContainer
-                    )
-                }
-            }
         }
     }
 }
