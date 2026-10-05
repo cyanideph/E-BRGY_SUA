@@ -46,7 +46,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    }
 }
 
 @Composable
@@ -361,5 +360,6 @@ fun EBarangaySuaApp() {
                 }
             }
         }
+    }
     }
 }
