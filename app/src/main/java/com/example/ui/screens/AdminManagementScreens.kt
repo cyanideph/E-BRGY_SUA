@@ -603,6 +603,7 @@ fun AdminEmergenciesScreen(
     onNavigateBack: () -> Unit
 ) {
     val repository = remember { BarangayRepository.instance }
+    val scope = rememberCoroutineScope()
     val emergencies by repository.emergencyReports.collectAsState()
 
     var selectedReport by remember { mutableStateOf<EmergencyReport?>(null) }
@@ -674,7 +675,11 @@ fun AdminEmergenciesScreen(
                         if (emg.status == EmergencyStatus.RECEIVED) {
                             Button(
                                 onClick = {
-                                    repository.updateEmergencyStatus(emg.id, EmergencyStatus.RESPONDING, "Barangay Tanod Alpha", "Units dispatched to Purok location")
+                                    scope.launch {
+                                        runCatching {
+                                            repository.updateEmergencyStatus(emg.id, EmergencyStatus.RESPONDING, "", "")
+                                        }
+                                    }
                                 },
                                 colors = ButtonDefaults.buttonColors(containerColor = WarmAmber)
                             ) {
@@ -683,7 +688,11 @@ fun AdminEmergenciesScreen(
                         } else if (emg.status == EmergencyStatus.RESPONDING) {
                             Button(
                                 onClick = {
-                                    repository.updateEmergencyStatus(emg.id, EmergencyStatus.RESOLVED, emg.assignedResponder, "Situation stabilized and verified by on-duty tanod")
+                                    scope.launch {
+                                        runCatching {
+                                            repository.updateEmergencyStatus(emg.id, EmergencyStatus.RESOLVED, emg.assignedResponder, "")
+                                        }
+                                    }
                                 },
                                 colors = ButtonDefaults.buttonColors(containerColor = NaturalGreen)
                             ) {
