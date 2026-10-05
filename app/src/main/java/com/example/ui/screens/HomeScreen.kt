@@ -100,6 +100,15 @@ fun HomeScreen(
             }
         )
 
+        // Clear page title for wayfinding and screen-reader comprehension
+        Text(
+            text = "Barangay Sua",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+        )
+
         // Offline Banner
         if (!isOnline) {
             Surface(
