@@ -464,8 +464,8 @@ class BarangayRepository {
         }
     }
 
-    // Emergency / SOS
-    fun submitEmergency(
+    // Emergency / SOS. The backend must accept the report before it is shown as dispatched.
+    suspend fun submitEmergency(
         type: EmergencyType,
         description: String,
         latitude: Double?,
@@ -473,9 +473,11 @@ class BarangayRepository {
         locationDescription: String
     ): EmergencyReport {
         val user = _currentUser.value
+        require(user.uid.isNotBlank()) { "You must be signed in before sending an SOS." }
+        require(description.isNotBlank()) { "Please describe the emergency." }
         val now = System.currentTimeMillis()
         val report = EmergencyReport(
-            id = "emg_${System.currentTimeMillis()}",
+            id = ID.unique(),
             type = type,
             description = description,
             residentName = user.profile.fullName,
@@ -488,50 +490,22 @@ class BarangayRepository {
             status = EmergencyStatus.RECEIVED,
             assignedResponder = ""
         )
+
+        CivicSyncService.createEmergency(report).getOrThrow()
+        _isOnline.value = true
         _emergencyReports.value = listOf(report) + _emergencyReports.value
-
-        ioScope.launch {
-            database?.emergencyReportDao()?.insertEmergency(EmergencyReportEntity.fromDomain(report))
-        }
-
-        // Persist SOS + lifecycle history + audit trail.
-        ioScope.launch {
-            val sync = CivicSyncService.createEmergency(report)
-            if (sync.isFailure) _isOnline.value = false
-        }
-
-        val notif = BarangayNotification(
-            id = "notif_${System.currentTimeMillis()}",
-            title = "SOS Emergency Logged",
-            message = "Your ${type.displayName} alert was broadcast to Barangay Tanod & San Juan MDRRMO.",
-            timestamp = now,
-            isRead = false,
-            category = "Emergency",
-            priority = "Emergency",
-            referenceId = report.id
-        )
-        _notifications.value = listOf(notif) + _notifications.value
-        ioScope.launch {
-            database?.notificationDao()?.insertNotification(NotificationEntity.fromDomain(notif))
-        }
+        database?.emergencyReportDao()?.insertEmergency(EmergencyReportEntity.fromDomain(report))
+        refreshAuthenticatedNotifications(user.uid)
 
         appContext?.let { ctx ->
             NotificationHelper.showNotification(
                 context = ctx,
                 id = report.id.hashCode(),
-                title = "🚨 Emergency SOS Transmitted: ${type.displayName}",
-                message = "Dispatched to Barangay Tanod & San Juan MDRRMO.",
+                title = "Emergency Report Accepted",
+                message = "Your emergency report was accepted by the barangay backend.",
                 isEmergency = true
             )
         }
-
-        addAuditLog(
-            action = "EMERGENCY_SOS",
-            targetType = "EmergencyReport",
-            targetId = report.id,
-            previousState = null,
-            newState = type.displayName
-        )
         return report
     }
 
