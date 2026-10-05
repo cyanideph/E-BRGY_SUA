@@ -26,6 +26,8 @@ import coil.compose.AsyncImage
 import com.example.ui.theme.DeepOceanBlue
 import kotlinx.coroutines.launch
 
+private val OnboardingImageShape = RoundedCornerShape(28.dp)
+
 private data class OnboardingPage(
     val fallbackIcon: ImageVector
 )
@@ -37,9 +39,6 @@ fun OnboardingScreen(
 ) {
     val context = LocalContext.current
 
-    // The repository-level assets/onboarding directory is packaged by Gradle.
-    // Filenames remain flexible so the generated artwork can be replaced without
-    // changing this screen.
     val onboardingImages = remember {
         context.assets.list("onboarding")
             ?.filter { name ->
@@ -104,21 +103,21 @@ fun OnboardingScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .clip(RoundedCornerShape(24.dp)),
+                        .clip(OnboardingImageShape),
                     contentAlignment = Alignment.Center
                 ) {
                     if (imageName != null) {
                         AsyncImage(
                             model = "file:///android_asset/onboarding/$imageName",
                             contentDescription = "Barangay Sua onboarding illustration",
-                            modifier = Modifier.fillMaxSize(),
-                            // The supplied artwork already contains its own copy.
-                            // Fit the complete portrait so embedded text is never cropped
-                            // by the pager viewport.
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(OnboardingImageShape),
+                            // Preserve the complete portrait artwork so embedded text
+                            // remains visible while the rounded shape clips the corners.
                             contentScale = ContentScale.Fit
                         )
                     } else {
-                        // Graceful fallback while artwork is being added/replaced.
                         Icon(
                             imageVector = page.fallbackIcon,
                             contentDescription = null,
