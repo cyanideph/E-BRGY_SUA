@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 
 enum class AppThemeMode(val displayName: String, val subtitle: String) {
     LIGHT("Light Mode (Default)", "Clean warm coastal daylight theme"),
@@ -38,74 +37,31 @@ class BarangayRepository {
     }
 
     // Current User Session
-    private val _currentUser = MutableStateFlow(
-        UserSession(
-            uid = "admin_demo",
-            email = "admindemo@barangaysua.ph",
-            role = UserRole.ADMIN,
-            profile = ResidentProfile(
-                id = "admin_demo",
-                residentId = "ADMIN-DEMO",
-                fullName = "admindemo",
-                address = "Barangay Sua Municipal Administration",
-                mobileNumber = "",
-                dateOfBirth = "",
-                civilStatus = "",
-                sex = "",
-                occupation = "System Administrator (Demo)",
-                householdId = "",
-                registrationStatus = "System Admin Demo Account"
-            )
-        )
-    )
+    private val _currentUser = MutableStateFlow(UserSession())
     val currentUser: StateFlow<UserSession> = _currentUser.asStateFlow()
 
     fun switchRole(newRole: UserRole) {
         _currentUser.value = _currentUser.value.copy(role = newRole)
     }
 
-    /**
-     * Local QA/admin demo session. This is intentionally credential-free so the
-     * test account can exercise every admin UI flow without embedding a password
-     * or bypassing real Appwrite authentication.
-     */
-    fun loginAsAdminDemo(): UserSession {
-        val session = UserSession(
-            uid = "admin_demo",
-            email = "admindemo@barangaysua.ph",
-            role = UserRole.ADMIN,
-            profile = ResidentProfile(
-                id = "admin_demo",
-                residentId = "ADMIN-DEMO",
-                fullName = "admindemo",
-                address = "Barangay Sua Municipal Administration",
-                occupation = "System Administrator (Demo)",
-                registrationStatus = "System Admin Demo Account"
-            )
-        )
-        _currentUser.value = session
-        return session
-    }
-
-
     // Offline / Online state
     private val _isOnline = MutableStateFlow(true)
     val isOnline: StateFlow<Boolean> = _isOnline.asStateFlow()
 
     // Services
-    private val _services = MutableStateFlow(DefaultBarangayData.services)
+    private val _services = MutableStateFlow<List<BarangayService>>(emptyList())
     val services: StateFlow<List<BarangayService>> = _services.asStateFlow()
 
     // Document Requests
-    private val _requests = MutableStateFlow(DefaultBarangayData.initialRequests)
+    private val _requests = MutableStateFlow<List<DocumentRequest>>(emptyList())
     val requests: StateFlow<List<DocumentRequest>> = _requests.asStateFlow()
 
     // Announcements
-    private val _announcements = MutableStateFlow(DefaultBarangayData.announcements)
+    private val _announcements = MutableStateFlow<List<Announcement>>(emptyList())
     val announcements: StateFlow<List<Announcement>> = _announcements.asStateFlow()
 
     // Events
-    private val _events = MutableStateFlow(DefaultBarangayData.events)
+    private val _events = MutableStateFlow<List<BarangayEvent>>(emptyList())
     val events: StateFlow<List<BarangayEvent>> = _events.asStateFlow()
 
     // Emergency Reports
@@ -113,51 +69,22 @@ class BarangayRepository {
     val emergencyReports: StateFlow<List<EmergencyReport>> = _emergencyReports.asStateFlow()
 
     // Residents (Admin / Staff only)
-    private val _residents = MutableStateFlow(
-        listOf(
-            ResidentProfile(
-                id = "res_sua_002",
-                residentId = "SUA-2026-0028",
-                fullName = "Ramon Balaba",
-                address = "Purok 2 Hillside, Barangay Sua",
-                mobileNumber = "+63 918 222 3344",
-                dateOfBirth = "1980-03-14",
-                civilStatus = "Married",
-                sex = "Male",
-                occupation = "Fisherfolk Leader",
-                householdId = "HH-SUA-0028",
-                registrationStatus = "Verified Resident"
-            ),
-            ResidentProfile(
-                id = "res_sua_003",
-                residentId = "SUA-2026-0045",
-                fullName = "Vicente Oporto",
-                address = "Purok 1 Main Road, Barangay Sua",
-                mobileNumber = "+63 920 333 4455",
-                dateOfBirth = "1975-11-05",
-                civilStatus = "Married",
-                sex = "Male",
-                occupation = "Barangay Volunteer",
-                householdId = "HH-SUA-0045",
-                registrationStatus = "Verified Resident"
-            )
-        )
-    )
+    private val _residents = MutableStateFlow<List<ResidentProfile>>(emptyList())
     val residents: StateFlow<List<ResidentProfile>> = _residents.asStateFlow()
 
     // Households
-    private val _households = MutableStateFlow(DefaultBarangayData.households)
+    private val _households = MutableStateFlow<List<Household>>(emptyList())
     val households: StateFlow<List<Household>> = _households.asStateFlow()
 
     // Officials
-    private val _officials = MutableStateFlow(DefaultBarangayData.officials)
+    private val _officials = MutableStateFlow<List<BarangayOfficial>>(emptyList())
     val officials: StateFlow<List<BarangayOfficial>> = _officials.asStateFlow()
 
     // Hotlines
-    val hotlines: List<OfficialHotline> = DefaultBarangayData.hotlines
+    val hotlines: List<OfficialHotline> = emptyList()
 
     // Notifications
-    private val _notifications = MutableStateFlow(DefaultBarangayData.initialNotifications)
+    private val _notifications = MutableStateFlow<List<BarangayNotification>>(emptyList())
     val notifications: StateFlow<List<BarangayNotification>> = _notifications.asStateFlow()
 
     // Audit Logs
@@ -187,10 +114,7 @@ class BarangayRepository {
             db.documentRequestDao().getAllRequests().collect { entities ->
                 if (entities.isNotEmpty()) {
                     _requests.value = entities.map { it.toDomain() }
-                } else {
-                    db.documentRequestDao().insertRequests(
-                        DefaultBarangayData.initialRequests.map { DocumentRequestEntity.fromDomain(it) }
-                    )
+                }
                 }
             }
         }
@@ -207,10 +131,7 @@ class BarangayRepository {
             db.notificationDao().getAllNotifications().collect { entities ->
                 if (entities.isNotEmpty()) {
                     _notifications.value = entities.map { it.toDomain() }
-                } else {
-                    db.notificationDao().insertNotifications(
-                        DefaultBarangayData.initialNotifications.map { NotificationEntity.fromDomain(it) }
-                    )
+                }
                 }
             }
         }
@@ -223,8 +144,6 @@ class BarangayRepository {
             }
         }
     }
-
-    private var requestCounter = 125
 
     private val ioScope = CoroutineScope(Dispatchers.IO)
 
@@ -302,7 +221,7 @@ class BarangayRepository {
                 residentName = _currentUser.value.profile.fullName, residentAddress = _currentUser.value.profile.address,
                 residentContact = _currentUser.value.profile.mobileNumber, purpose = details.getOrNull(0).orEmpty(),
                 deliveryMethod = details.getOrNull(1).orEmpty(), remarks = details.getOrNull(2).orEmpty(), status = status,
-                officialRemarks = row["officialRemarks"]?.toString() ?: "Application received.", attachmentNames = emptyList(),
+                officialRemarks = row["officialRemarks"]?.toString().orEmpty(), attachmentNames = emptyList(),
                 createdAt = submittedAt, updatedAt = submittedAt,
                 timeline = listOf(RequestTimelineEvent("Application Submitted", "Request synchronized from Barangay Sua backend", submittedAt, _currentUser.value.profile.fullName)),
                 isSyncedToServer = true
@@ -340,7 +259,7 @@ class BarangayRepository {
             id = account.id,
             residentId = data["residentId"]?.toString()?.ifBlank { account.id } ?: account.id,
             fullName = data["name"]?.toString()?.ifBlank { fallbackName } ?: fallbackName,
-            address = data["address"]?.toString()?.ifBlank { ResidentProfile().address } ?: ResidentProfile().address,
+            address = data["address"]?.toString().orEmpty(),
             mobileNumber = data["phone"]?.toString().orEmpty(),
             registrationStatus = data["registrationStatus"]?.toString()?.ifBlank { "Account Registered" } ?: "Account Registered"
         )
@@ -407,11 +326,12 @@ class BarangayRepository {
         attachmentNames: List<String>
     ): DocumentRequest {
         val user = _currentUser.value
-        val refNum = "BRG-SUA-2026-${String.format(Locale.US, "%06d", requestCounter++)}"
+        val requestId = ID.unique()
+        val refNum = "BRG-SUA-${requestId.take(12).uppercase()}"
         val now = System.currentTimeMillis()
 
         val newRequest = DocumentRequest(
-            id = "req_${System.currentTimeMillis()}",
+            id = requestId,
             referenceNumber = refNum,
             serviceId = service.id,
             serviceName = service.name,
@@ -423,19 +343,19 @@ class BarangayRepository {
             deliveryMethod = deliveryMethod,
             remarks = remarks,
             status = RequestStatus.SUBMITTED,
-            officialRemarks = "Application received. Queue position logged.",
+            officialRemarks = "",
             attachmentNames = attachmentNames,
             createdAt = now,
             updatedAt = now,
             timeline = listOf(
                 RequestTimelineEvent(
                     title = "Application Submitted",
-                    description = "Request submitted online via e-Barangay Sua",
+                    description = "Request submitted and awaiting backend acknowledgement",
                     timestamp = now,
                     actorName = user.profile.fullName
                 )
             ),
-            isSyncedToServer = _isOnline.value
+            isSyncedToServer = false
         )
 
         val updatedList = listOf(newRequest) + _requests.value
@@ -579,10 +499,10 @@ class BarangayRepository {
             residentUid = user.uid,
             latitude = latitude,
             longitude = longitude,
-            locationDescription = locationDescription.ifEmpty { "Barangay Sua, San Juan, Southern Leyte" },
+            locationDescription = locationDescription,
             timestamp = now,
             status = EmergencyStatus.RECEIVED,
-            assignedResponder = "Barangay Tanod Immediate Dispatch"
+            assignedResponder = ""
         )
         _emergencyReports.value = listOf(report) + _emergencyReports.value
 
