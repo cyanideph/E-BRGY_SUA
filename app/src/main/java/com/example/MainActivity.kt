@@ -25,6 +25,7 @@ import com.example.ui.theme.*
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        com.example.services.Appwrite.init(applicationContext)
         enableEdgeToEdge()
         setContent {
             val repository = remember { com.example.data.BarangayRepository.instance }
