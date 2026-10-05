@@ -182,6 +182,62 @@ object CivicSyncService {
     }
 
 
+    suspend fun createAnnouncement(
+        title: String,
+        description: String,
+        category: AnnouncementCategory,
+        priority: AnnouncementPriority,
+        isPinned: Boolean,
+        authorName: String,
+        authorRole: String
+    ): Result<Unit> = runCatching {
+        val now = Instant.now().toString()
+        db.createRow(
+            databaseId = Appwrite.DATABASE_ID,
+            tableId = Appwrite.ANNOUNCEMENTS_TABLE,
+            rowId = ID.unique(),
+            data = mapOf(
+                "title" to title,
+                "body" to description,
+                "published" to true,
+                "publishedAt" to now,
+                "createdAt" to now,
+                "category" to category.name,
+                "priority" to priority.name,
+                "authorName" to authorName,
+                "authorRole" to authorRole,
+                "isPinned" to isPinned
+            )
+        )
+    }
+
+    suspend fun createEvent(
+        title: String,
+        description: String,
+        startsAt: String,
+        endsAt: String,
+        location: String,
+        organizer: String,
+        category: String
+    ): Result<Unit> = runCatching {
+        db.createRow(
+            databaseId = Appwrite.DATABASE_ID,
+            tableId = Appwrite.EVENTS_TABLE,
+            rowId = ID.unique(),
+            data = mapOf(
+                "title" to title,
+                "description" to description,
+                "startsAt" to startsAt,
+                "endsAt" to endsAt,
+                "location" to location,
+                "createdAt" to Instant.now().toString(),
+                "organizer" to organizer,
+                "category" to category,
+                "rsvpCount" to 0
+            )
+        )
+    }
+
     suspend fun listNotificationsForUser(userId: String): Result<List<BarangayNotification>> = runCatching {
         db.listRows(
             databaseId = Appwrite.DATABASE_ID,
