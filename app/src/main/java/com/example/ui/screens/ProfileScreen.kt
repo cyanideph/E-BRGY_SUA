@@ -41,7 +41,7 @@ fun ProfileScreen(
             .verticalScroll(rememberScrollState())
     ) {
         SuaWaveHeader(
-            greeting = "Resident Portal",
+            greeting = if (userSession.role == UserRole.RESIDENT) "Resident Portal" else "Administration Portal",
             name = "My Profile",
             location = "Barangay Sua • San Juan, Southern Leyte",
             trailingAction = {
@@ -82,12 +82,21 @@ fun ProfileScreen(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        Text(
-                            text = "Resident ID: ${userSession.profile.residentId}",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = SouthernSeaTealDark
-                        )
+                        if (userSession.role == UserRole.RESIDENT) {
+                            Text(
+                                text = "Resident ID: ${userSession.profile.residentId}",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = SouthernSeaTealDark
+                            )
+                        } else {
+                            Text(
+                                text = "System Administrator",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = DeepOceanBlue
+                            )
+                        }
                         Spacer(modifier = Modifier.height(4.dp))
                         RoleBadge(role = userSession.role)
                     }
@@ -96,37 +105,56 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Official Digital Resident ID Card
-            Text(
-                text = "Official Resident Credential",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            DigitalResidentIdCard(profile = userSession.profile)
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Household & Demographic Details
-            SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth()) {
+            if (userSession.role == UserRole.RESIDENT) {
                 Text(
-                    text = "Household & Resident Details",
+                    text = "Official Resident Credential",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                DigitalResidentIdCard(profile = userSession.profile)
 
-                ProfileFieldItem(icon = Icons.Default.Home, label = "Registered Address", value = userSession.profile.address)
-                ProfileFieldItem(icon = Icons.Default.Phone, label = "Mobile Number", value = userSession.profile.mobileNumber)
-                ProfileFieldItem(icon = Icons.Default.CalendarToday, label = "Date of Birth", value = userSession.profile.dateOfBirth)
-                ProfileFieldItem(icon = Icons.Default.Favorite, label = "Civil Status", value = userSession.profile.civilStatus)
-                ProfileFieldItem(icon = Icons.Default.Work, label = "Occupation", value = userSession.profile.occupation)
-                ProfileFieldItem(icon = Icons.Default.FamilyRestroom, label = "Household ID", value = userSession.profile.householdId)
-                ProfileFieldItem(icon = Icons.Default.Emergency, label = "Emergency Contact", value = "${userSession.profile.emergencyContactName} • ${userSession.profile.emergencyContactPhone}")
+                Spacer(modifier = Modifier.height(16.dp))
+
+                SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Household & Resident Details",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    ProfileFieldItem(icon = Icons.Default.Home, label = "Registered Address", value = userSession.profile.address)
+                    ProfileFieldItem(icon = Icons.Default.Phone, label = "Mobile Number", value = userSession.profile.mobileNumber)
+                    ProfileFieldItem(icon = Icons.Default.CalendarToday, label = "Date of Birth", value = userSession.profile.dateOfBirth)
+                    ProfileFieldItem(icon = Icons.Default.Favorite, label = "Civil Status", value = userSession.profile.civilStatus)
+                    ProfileFieldItem(icon = Icons.Default.Work, label = "Occupation", value = userSession.profile.occupation)
+                    ProfileFieldItem(icon = Icons.Default.FamilyRestroom, label = "Household ID", value = userSession.profile.householdId)
+                    ProfileFieldItem(icon = Icons.Default.Emergency, label = "Emergency Contact", value = "${userSession.profile.emergencyContactName} • ${userSession.profile.emergencyContactPhone}")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+            } else {
+                SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "System Administrator",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Barangay Sua Municipal Administration",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    ProfileFieldItem(icon = Icons.Default.Badge, label = "Account type", value = "System Admin Account")
+                    ProfileFieldItem(icon = Icons.Default.AdminPanelSettings, label = "Role", value = userSession.role.displayName)
+                    ProfileFieldItem(icon = Icons.Default.Security, label = "Access", value = "Administrative console")
+                }
+                Spacer(modifier = Modifier.height(16.dp))
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
 
             // Admin Dashboard button if role allows
             if (userSession.role != UserRole.RESIDENT) {
@@ -141,7 +169,7 @@ fun ProfileScreen(
                 ) {
                     Icon(Icons.Default.AdminPanelSettings, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Open Staff & Admin Management Console", fontWeight = FontWeight.Bold)
+                    Text("Open Admin Console", fontWeight = FontWeight.Bold)
                 }
             }
 
