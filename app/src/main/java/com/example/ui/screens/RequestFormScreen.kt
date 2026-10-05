@@ -424,7 +424,7 @@ fun RequestFormScreen(
                     )
                 } else {
                     Text(
-                        text = "Submit Application",
+                        text = "Submit request",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
