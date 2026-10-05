@@ -45,7 +45,7 @@ fun LoginScreen(
     var isLoading by remember { mutableStateOf(false) }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = Color.Transparent
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -235,7 +235,7 @@ fun RegisterScreen(
     val scope = rememberCoroutineScope()
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = Color.Transparent
     ) { innerPadding ->
         Column(
             modifier = Modifier
