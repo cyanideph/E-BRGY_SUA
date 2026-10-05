@@ -1,6 +1,7 @@
 package com.example.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -27,10 +28,14 @@ fun SoftSkeuomorphicCard(
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val surfaceModifier = if (onClick != null) {
+        modifier.clickable { onClick.invoke() }
+    } else {
+        modifier
+    }
+
     Surface(
-        modifier = modifier,
-        onClick = onClick,
-        enabled = onClick != null,
+        modifier = surfaceModifier,
         shape = shape,
         color = backgroundColor,
         tonalElevation = elevation,
