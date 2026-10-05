@@ -86,9 +86,8 @@ fun AdminDashboardScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            // Metrics Overview Grid
             Text(
-                text = "Key Public Service Metrics",
+                text = "Needs attention",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
@@ -96,73 +95,110 @@ fun AdminDashboardScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
+            SoftSkeuomorphicCard(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = onNavigateToRequests
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "$pendingCount requests",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = DeepOceanBlue
+                        )
+                        Text(
+                            text = if (activeEmergencies == 0) "No active emergencies" else "$activeEmergencies active emergency calls",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    TextButton(onClick = onNavigateToRequests) {
+                        Text("Review requests")
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            Text(
+                text = "Today",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                AdminMetricCard(
-                    title = "Pending Action",
-                    value = "$pendingCount",
-                    subtitle = "Needs Review",
-                    color = DeepOceanBlue,
-                    modifier = Modifier.weight(1f),
-                    onClick = onNavigateToRequests
-                )
                 AdminMetricCard(
                     title = "Processing",
                     value = "$processingCount",
-                    subtitle = "In Secretariat",
+                    subtitle = "In progress",
                     color = SouthernSeaTeal,
                     modifier = Modifier.weight(1f),
                     onClick = onNavigateToRequests
                 )
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
                 AdminMetricCard(
-                    title = "Ready for Pick-up",
+                    title = "Ready",
                     value = "$readyCount",
-                    subtitle = "Signed & Sealed",
+                    subtitle = "For release",
                     color = NaturalGreen,
                     modifier = Modifier.weight(1f),
                     onClick = onNavigateToRequests
                 )
                 AdminMetricCard(
-                    title = "Active SOS Calls",
+                    title = "Emergencies",
                     value = "$activeEmergencies",
-                    subtitle = "Tanod Responding",
+                    subtitle = "Active",
                     color = RestrainedCoralRed,
                     modifier = Modifier.weight(1f),
                     onClick = onNavigateToEmergencies
                 )
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                AdminMetricCard(
-                    title = "Registered Residents",
-                    value = "${residents.size} (Demo)",
-                    subtitle = "Verified Population",
-                    color = DeepNavy,
-                    modifier = Modifier.weight(1f),
+            Text(
+                text = "Management",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                AdminNavTile(
+                    title = "Requests",
+                    desc = "Review and process document requests",
+                    icon = Icons.Default.AssignmentTurnedIn,
+                    onClick = onNavigateToRequests
+                )
+                AdminNavTile(
+                    title = "Residents",
+                    desc = "Manage the resident registry",
+                    icon = Icons.Default.People,
                     onClick = onNavigateToResidents
                 )
-                AdminMetricCard(
-                    title = "Households",
-                    value = "${households.size} (Demo)",
-                    subtitle = "4 Puroks in Sua",
-                    color = WarmSunGoldDark,
-                    modifier = Modifier.weight(1f),
-                    onClick = onNavigateToHouseholds
+                AdminNavTile(
+                    title = "Announcements",
+                    desc = "Publish official notices and advisories",
+                    icon = Icons.Default.Campaign,
+                    onClick = onNavigateToAnnouncements
+                )
+                AdminNavTile(
+                    title = "Reports",
+                    desc = "Open reports and analytics",
+                    icon = Icons.Default.BarChart,
+                    onClick = onNavigateToReports
                 )
             }
 
@@ -307,62 +343,37 @@ fun AdminDashboardScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // ADMINISTRATIVE NAVIGATION MODULES
             Text(
-                text = "Administrative Modules",
+                text = "More administration",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 AdminNavTile(
-                    title = "Request Management",
-                    desc = "Review, process, sign and complete document requests",
-                    icon = Icons.Default.AssignmentTurnedIn,
-                    onClick = onNavigateToRequests
-                )
-                AdminNavTile(
-                    title = "Resident Registry",
-                    desc = "Protected household and resident profiles database",
-                    icon = Icons.Default.People,
-                    onClick = onNavigateToResidents
-                )
-                AdminNavTile(
-                    title = "Household Management",
-                    desc = "Purok groupings, family heads and emergency tags",
+                    title = "Households",
+                    desc = "Purok groups, family heads and emergency tags",
                     icon = Icons.Default.HomeWork,
                     onClick = onNavigateToHouseholds
                 )
                 AdminNavTile(
-                    title = "Announcement Publisher",
-                    desc = "Create advisories, storm warnings & official notices",
-                    icon = Icons.Default.Campaign,
-                    onClick = onNavigateToAnnouncements
-                )
-                AdminNavTile(
-                    title = "Community Events Calendar",
-                    desc = "Schedule assemblies, cleanups, and youth programs",
+                    title = "Events",
+                    desc = "Schedule assemblies and community programs",
                     icon = Icons.Default.Event,
                     onClick = onNavigateToEvents
                 )
                 AdminNavTile(
-                    title = "Emergency SOS Dispatch",
-                    desc = "Manage incoming SOS distress calls and tanod actions",
+                    title = "Emergency Dispatch",
+                    desc = "Manage incoming SOS calls and responder actions",
                     icon = Icons.Default.Emergency,
                     onClick = onNavigateToEmergencies
                 )
                 AdminNavTile(
-                    title = "Reports & Analytics",
-                    desc = "Comprehensive monthly service and demographic summaries",
-                    icon = Icons.Default.BarChart,
-                    onClick = onNavigateToReports
-                )
-                AdminNavTile(
                     title = "System Audit Logs",
-                    desc = "Immutable log of all administrative actions and status updates",
+                    desc = "Review administrative actions and status history",
                     icon = Icons.Default.ReceiptLong,
                     onClick = onNavigateToAuditLogs
                 )

@@ -72,7 +72,7 @@ fun SuaCommunityHubScreen(
     ) {
         // Wave Header
         SuaWaveHeader(
-            greeting = "Welcome to",
+            greeting = "Community",
             name = "Barangay Sua",
             location = "Municipality of San Juan, Southern Leyte"
         )
