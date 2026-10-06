@@ -1,11 +1,14 @@
 import { Client, TablesDB, ID } from "node-appwrite";
 
-const endpoint = process.env.APPWRITE_FUNCTION_ENDPOINT || process.env.APPWRITE_ENDPOINT;
-const project = process.env.APPWRITE_FUNCTION_PROJECT_ID || process.env.APPWRITE_PROJECT_ID;
-const key = process.env.APPWRITE_FUNCTION_API_KEY;
+const endpoint = process.env.APPWRITE_FUNCTION_API_ENDPOINT;
+const project = process.env.APPWRITE_FUNCTION_PROJECT_ID;
 
-const client = new Client().setEndpoint(endpoint).setProject(project).setKey(key);
-const db = new TablesDB(client);
+
+function dbFor(req) {
+  const key = req.headers?.["x-appwrite-key"] || req.headers?.["X-Appwrite-Key"] || process.env.APPWRITE_FUNCTION_API_KEY;
+  const client = new Client().setEndpoint(endpoint).setProject(project).setKey(key);
+  return new TablesDB(client);
+}
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || "ebarangay-sua-db";
 
 const T = {
@@ -35,17 +38,17 @@ function requireUser(req) {
   if (!uid) throw new Error("Authenticated Appwrite user required.");
   return uid;
 }
-async function create(tableId, data, rowId = ID.unique(), permissions) {
+async function create(db, tableId, data, rowId = ID.unique(), permissions) {
   return db.createRow(DATABASE_ID, tableId, rowId, data, permissions);
 }
-async function notify(uid, title, message, type, referenceId = "") {
-  return create(T.notifications, {
+async function notify(db, uid, title, message, type, referenceId = "") {
+  return create(db, T.notifications, {
     userId: uid, title, body: message, type, read: false,
     createdAt: now(), priority: "Normal", referenceId
   }, ID.unique(), [`read("user:${uid}")`]);
 }
-async function audit(uid, action, resourceType, resourceId, details) {
-  return create(T.audit, {
+async function audit(db, uid, action, resourceType, resourceId, details) {
+  return create(db, T.audit, {
     actorUserId: uid, action, resourceType, resourceId, details, createdAt: now()
   });
 }
@@ -56,11 +59,12 @@ async function handle(req) {
 
   const uid = requireUser(req);
   const input = body(req);
+  const db = dbFor(req);
 
   if (route === "/request" && req.method === "POST") {
     const required = ["requestId","serviceId","referenceNumber","details"];
     for (const k of required) if (!input[k]) throw new Error(`Missing ${k}`);
-    const row = await create(T.requests, {
+    const row = await create(db, T.requests, {
       userId: uid,
       serviceId: String(input.serviceId),
       referenceNumber: String(input.referenceNumber),
@@ -72,8 +76,8 @@ async function handle(req) {
     await create(T.requestHistory, {
       requestId: row.$id, status: "Submitted", remarks: "", changedBy: uid, changedAt: now()
     });
-    await notify(uid, "Request Submitted", `Request ${input.referenceNumber} was received by the barangay.`, "Service Request", input.referenceNumber);
-    await audit(uid, "CREATE_REQUEST", "DocumentRequest", row.$id, String(input.referenceNumber));
+    await notify(db, uid, "Request Submitted", `Request ${input.referenceNumber} was received by the barangay.`, "Service Request", input.referenceNumber);
+    await audit(db, uid, "CREATE_REQUEST", "DocumentRequest", row.$id, String(input.referenceNumber));
     return { ok: true, requestId: row.$id };
   }
 
