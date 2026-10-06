@@ -1,7 +1,7 @@
 import { Client, TablesDB, ID } from "node-appwrite";
 
-const endpoint = process.env.APPWRITE_FUNCTION_API_ENDPOINT;
-const project = process.env.APPWRITE_FUNCTION_PROJECT_ID;
+const endpoint = "https://sgp.cloud.appwrite.io/v1";
+const project = "6ac31e4000390af0f850";
 
 
 function dbFor(req) {
