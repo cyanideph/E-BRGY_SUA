@@ -7,6 +7,7 @@ import com.example.services.Appwrite
 import com.example.services.CivicSyncService
 import com.example.services.NotificationHelper
 import io.appwrite.ID
+import io.appwrite.Query
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -45,10 +46,6 @@ class BarangayRepository {
     // Current User Session
     private val _currentUser = MutableStateFlow(UserSession())
     val currentUser: StateFlow<UserSession> = _currentUser.asStateFlow()
-
-    fun switchRole(newRole: UserRole) {
-        _currentUser.value = _currentUser.value.copy(role = newRole)
-    }
 
     // Offline / Online state
     private val _isOnline = MutableStateFlow(false)
@@ -104,7 +101,16 @@ class BarangayRepository {
         val db = AppDatabase.getInstance(context)
         database = db
 
+        // Sensitive Room caches are user-scoped only by application lifecycle, not by
+        // Room row permissions. Clear them before restoring any authenticated session
+        // so a previous resident can never see another resident's cached data.
         ioScope.launch {
+            db.clearAllTables()
+            _requests.value = emptyList()
+            _emergencyReports.value = emptyList()
+            _notifications.value = emptyList()
+            _auditLogs.value = emptyList()
+
             runCatching {
                 val account = Appwrite.account().get()
                 val session = loadAuthenticatedSession()
@@ -112,38 +118,31 @@ class BarangayRepository {
                 _isOnline.value = true
                 refreshAuthenticatedRequests(account.id)
                 refreshAuthenticatedNotifications(account.id)
-            }.onFailure { _isOnline.value = Appwrite.ENDPOINT.isNotBlank() }
-        }
 
-        ioScope.launch {
-            db.documentRequestDao().getAllRequests().collect { entities ->
-                if (entities.isNotEmpty()) {
-                    _requests.value = entities.map { it.toDomain() }
+                // Only start cache observers after the authenticated cache has been
+                // initialized. Logout clears these tables and state again.
+                launch {
+                    db.documentRequestDao().getAllRequests().collect { entities ->
+                        _requests.value = entities.map { it.toDomain() }
+                    }
                 }
-            }
-        }
-
-        ioScope.launch {
-            db.emergencyReportDao().getAllEmergencies().collect { entities ->
-                if (entities.isNotEmpty()) {
-                    _emergencyReports.value = entities.map { it.toDomain() }
+                launch {
+                    db.emergencyReportDao().getAllEmergencies().collect { entities ->
+                        _emergencyReports.value = entities.map { it.toDomain() }
+                    }
                 }
-            }
-        }
-
-        ioScope.launch {
-            db.notificationDao().getAllNotifications().collect { entities ->
-                if (entities.isNotEmpty()) {
-                    _notifications.value = entities.map { it.toDomain() }
+                launch {
+                    db.notificationDao().getAllNotifications().collect { entities ->
+                        _notifications.value = entities.map { it.toDomain() }
+                    }
                 }
-            }
-        }
-
-        ioScope.launch {
-            db.auditLogDao().getAllLogs().collect { entities ->
-                if (entities.isNotEmpty()) {
-                    _auditLogs.value = entities.map { it.toDomain() }
+                launch {
+                    db.auditLogDao().getAllLogs().collect { entities ->
+                        _auditLogs.value = entities.map { it.toDomain() }
+                    }
                 }
+            }.onFailure {
+                _isOnline.value = Appwrite.ENDPOINT.isNotBlank()
             }
         }
     }
@@ -215,19 +214,8 @@ class BarangayRepository {
                     OfficialHotline(str(d,"name"), str(d,"number"), str(d,"agency"), str(d,"description"))
                 }
 
-                val householdsRes = db.listRows(Appwrite.DATABASE_ID, Appwrite.HOUSEHOLDS_TABLE)
-                _households.value = householdsRes.rows.map { row ->
-                    val d = rowData(row)
-                    Household(
-                        id = row.id,
-                        householdNumber = str(d, "householdNumber"),
-                        headName = str(d, "headName"),
-                        address = str(d, "address"),
-                        memberCount = int(d, "memberCount"),
-                        memberNames = parseJsonArray(str(d, "memberNames")),
-                        emergencyNotes = str(d, "emergencyNotes")
-                    )
-                }
+                // Household records are sensitive resident data. They are not public civic data
+                // and must only be loaded by an authorized backend/admin flow.
 
                 val facilitiesRes = db.listRows(Appwrite.DATABASE_ID, Appwrite.FACILITIES_TABLE)
                 _facilities.value = facilitiesRes.rows.map { row ->
@@ -315,14 +303,22 @@ class BarangayRepository {
         val fallbackName = account.name.ifBlank { account.email.substringBefore("@") }
         val userRow = runCatching {
             Appwrite.tablesDB()
-                .listRows(Appwrite.DATABASE_ID, Appwrite.USERS_TABLE)
-                .rows.firstOrNull { it.data["userId"]?.toString() == account.id }
+                .listRows(
+                    databaseId = Appwrite.DATABASE_ID,
+                    tableId = Appwrite.USERS_TABLE,
+                    queries = listOf(Query.equal("userId", account.id), Query.limit(1))
+                )
+                .rows.firstOrNull()
         }.getOrNull()
         val userData = userRow?.data ?: emptyMap()
         val residentRow = runCatching {
             Appwrite.tablesDB()
-                .listRows(Appwrite.DATABASE_ID, Appwrite.RESIDENTS_TABLE)
-                .rows.firstOrNull { it.data["userId"]?.toString() == account.id }
+                .listRows(
+                    databaseId = Appwrite.DATABASE_ID,
+                    tableId = Appwrite.RESIDENTS_TABLE,
+                    queries = listOf(Query.equal("userId", account.id), Query.limit(1))
+                )
+                .rows.firstOrNull()
         }.getOrNull()
         val residentData = residentRow?.data ?: emptyMap()
         val role = roleFromBackend(userData["role"]?.toString())
@@ -382,7 +378,7 @@ class BarangayRepository {
         Appwrite.account().createEmailPasswordSession(email = email, password = password)
         val now = java.time.Instant.now().toString()
         val normalizedBirthDate = dateOfBirth.takeIf { it.isNotBlank() }?.let { java.time.LocalDate.parse(it).atStartOfDay(java.time.ZoneId.of("Asia/Manila")).toInstant().toString() }
-        val userPermissions = listOf("read(\"user:${created.id}\")", "update(\"user:${created.id}\")")
+        val userPermissions = listOf("read(\"user:${created.id}\")")
         Appwrite.tablesDB().createRow(databaseId = Appwrite.DATABASE_ID, tableId = Appwrite.USERS_TABLE, rowId = created.id,
             data = mapOf("userId" to created.id, "name" to fullName, "email" to email, "role" to "resident", "address" to address, "phone" to mobile, "createdAt" to now), permissions = userPermissions)
         Appwrite.tablesDB().createRow(databaseId = Appwrite.DATABASE_ID, tableId = Appwrite.RESIDENTS_TABLE, rowId = created.id,
@@ -406,19 +402,34 @@ class BarangayRepository {
                 Appwrite.account().deleteSession("current")
             }
         }
-        _currentUser.value=UserSession()
+
+        // Never leave resident-specific data in the local database or exposed
+        // StateFlows after the authenticated session ends.
+        database?.let { db ->
+            runCatching { db.clearAllTables() }
+        }
+        _requests.value = emptyList()
+        _emergencyReports.value = emptyList()
+        _notifications.value = emptyList()
+        _auditLogs.value = emptyList()
+        _residents.value = emptyList()
+        _households.value = emptyList()
+        _currentUser.value = UserSession()
+        _isOnline.value = false
     }
 
 
-    fun updateProfile(updated: ResidentProfile) {
-        val current = _currentUser.value
-        _currentUser.value = current.copy(profile = updated)
-        val list = _residents.value.toMutableList()
-        val index = list.indexOfFirst { it.id == updated.id || it.residentId == updated.residentId }
-        if (index >= 0) {
-            list[index] = updated
-            _residents.value = list
-        }
+    /**
+     * Refresh the authenticated profile from Appwrite.
+     *
+     * Resident profile data is backend-authoritative. Do not mutate the local
+     * session as if a profile edit succeeded; protected fields such as role,
+     * verification, and registration status must only come from Appwrite.
+     */
+    suspend fun refreshProfile(): Result<UserSession> = runCatching {
+        val session = loadAuthenticatedSession()
+        _currentUser.value = session
+        session
     }
 
     fun toggleOnline(online: Boolean) {
