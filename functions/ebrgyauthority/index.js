@@ -38,17 +38,47 @@ function requireUser(req) {
   if (!uid) throw new Error("Authenticated Appwrite user required.");
   return uid;
 }
-async function create(db, tableId, data, rowId = ID.unique(), permissions) {
-  return db.createDocument(DATABASE_ID, tableId, rowId, data, permissions);
+async function appwrite(path, method, payload) {
+  const key = process.env.APPWRITE_FUNCTION_API_KEY;
+  const response = await fetch(endpoint + path, {
+    method,
+    headers: {
+      "X-Appwrite-Project": project,
+      "X-Appwrite-Key": key,
+      "Content-Type": "application/json"
+    },
+    body: payload === undefined ? undefined : JSON.stringify(payload)
+  });
+  const text = await response.text();
+  let data = {};
+  try { data = text ? JSON.parse(text) : {}; } catch {}
+  if (!response.ok) {
+    throw new Error(data.message || data.error || text || `Appwrite HTTP ${response.status}`);
+  }
+  return data;
 }
-async function notify(db, uid, title, message, type, referenceId = "") {
-  return create(db, T.notifications, {
+async function create(tableId, data, rowId = ID.unique(), permissions) {
+  return appwrite(`/databases/${DATABASE_ID}/tables/${tableId}/rows`, "POST", {
+    rowId,
+    data,
+    permissions
+  });
+}
+async function get(tableId, rowId) {
+  return appwrite(`/databases/${DATABASE_ID}/tables/${tableId}/rows/${rowId}`, "GET");
+}
+async function update(tableId, rowId, data) {
+  return appwrite(`/databases/${DATABASE_ID}/tables/${tableId}/rows/${rowId}`, "PATCH", { data });
+}
+
+async function notify(uid, title, message, type, referenceId = "") {
+  return create(T.notifications, {
     userId: uid, title, body: message, type, read: false,
     createdAt: now(), priority: "Normal", referenceId
   }, ID.unique(), [`read("user:${uid}")`]);
 }
-async function audit(db, uid, action, resourceType, resourceId, details) {
-  return create(db, T.audit, {
+async function audit(uid, action, resourceType, resourceId, details) {
+  return create(T.audit, {
     actorUserId: uid, action, resourceType, resourceId, details, createdAt: now()
   });
 }
@@ -59,8 +89,7 @@ async function handle(req) {
 
   const uid = requireUser(req);
   const input = body(req);
-  const db = dbFor(req);
-
+  
   if (route === "/request" && req.method === "POST") {
     const required = ["requestId","serviceId","referenceNumber","details"];
     for (const k of required) if (!input[k]) throw new Error(`Missing ${k}`);
@@ -85,11 +114,11 @@ async function handle(req) {
     const requestId = String(input.requestId || "");
     const status = String(input.status || "");
     if (!requestId || !status) throw new Error("requestId and status are required.");
-    const request = await db.getDocument(DATABASE_ID, T.requests, requestId);
-    const actor = await db.getDocument(DATABASE_ID, T.users, uid);
+    const request = await get(T.requests, requestId);
+    const actor = await get(T.users, uid);
     const role = String(actor.role || "");
     if (!["staff","official","admin"].includes(role)) throw new Error("Staff authorization required.");
-    await db.updateDocument(DATABASE_ID, T.requests, requestId, { status, updatedAt: now() });
+    await update(T.requests, requestId, { status, updatedAt: now() });
     await create(T.requestHistory, {
       requestId, status, remarks: String(input.remarks || ""), changedBy: uid, changedAt: now()
     });
@@ -122,8 +151,8 @@ async function handle(req) {
     const actor = await db.getDocument(DATABASE_ID, T.users, uid);
     const role = String(actor.role || "");
     if (!["staff","official","admin"].includes(role)) throw new Error("Responder authorization required.");
-    const report = await db.getDocument(DATABASE_ID, T.emergencies, reportId);
-    await db.updateDocument(DATABASE_ID, T.emergencies, reportId, { status });
+    const report = await get(T.emergencies, reportId);
+    await update(T.emergencies, reportId, { status });
     await create(T.emergencyHistory, {
       reportId, status, responder: String(input.responder || ""), notes: String(input.notes || ""),
       changedBy: uid, changedAt: now()
