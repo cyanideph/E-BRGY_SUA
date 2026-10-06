@@ -23,6 +23,8 @@ object Appwrite {
     val DATABASE_ID: String get() = BuildConfig.APPWRITE_DATABASE_ID
     val RESIDENT_FILES_BUCKET_ID: String get() = BuildConfig.APPWRITE_RESIDENT_FILES_BUCKET_ID
 
+    const val BACKEND_AUTHORITY_FUNCTION_ID = "ebrgyauthorityv1"
+
     const val USERS_TABLE = "users"
     const val RESIDENTS_TABLE = "residents"
     const val SERVICES_TABLE = "services"
