@@ -10,6 +10,8 @@ import io.appwrite.ID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -147,6 +149,7 @@ class BarangayRepository {
     }
 
     private val ioScope = CoroutineScope(Dispatchers.IO)
+    private val authMutex = Mutex()
 
     init { refreshPublicData() }
 
@@ -328,15 +331,28 @@ class BarangayRepository {
         return UserSession(account.id, account.email, role, profile)
     }
 
-    suspend fun login(email: String, password: String): Result<UserSession> = runCatching {
-        require(Appwrite.ENDPOINT.isNotBlank()) { "Appwrite is not configured for this build." }
-        Appwrite.account().createEmailPasswordSession(email = email, password = password)
-        val session = loadAuthenticatedSession()
-        _currentUser.value = session
-        _isOnline.value = true
-        refreshAuthenticatedRequests(session.uid)
-        refreshAuthenticatedNotifications(session.uid)
-        session
+    suspend fun login(email: String, password: String): Result<UserSession> = authMutex.withLock {
+        runCatching {
+            require(Appwrite.ENDPOINT.isNotBlank()) { "Appwrite is not configured for this build." }
+
+            // Appwrite persists the mobile session. Reuse an existing authenticated
+            // session instead of attempting to create a second one.
+            val account = Appwrite.account()
+            val existingSession = runCatching { account.get() }.getOrNull()
+            if (existingSession == null) {
+                account.createEmailPasswordSession(
+                    email = email.trim(),
+                    password = password
+                )
+            }
+
+            val session = loadAuthenticatedSession()
+            _currentUser.value = session
+            _isOnline.value = true
+            refreshAuthenticatedRequests(session.uid)
+            refreshAuthenticatedNotifications(session.uid)
+            session
+        }
     }
 
     suspend fun register(fullName: String, email: String, password: String, mobile: String, address: String): Result<UserSession> = runCatching {
