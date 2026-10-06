@@ -159,7 +159,7 @@ async function handle(req) {
   }
 
   if (route === "/announcement" && req.method === "POST") {
-    const actor = await db.getDocument(DATABASE_ID, T.users, uid);
+    const actor = await get(T.users, uid);
     if (!["official","admin"].includes(String(actor.role || ""))) throw new Error("Official authorization required.");
     const created = await create(T.announcements, {
       title: String(input.title || ""), body: String(input.description || ""),
