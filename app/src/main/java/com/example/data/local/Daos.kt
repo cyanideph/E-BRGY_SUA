@@ -55,6 +55,9 @@ interface NotificationDao {
 
     @Query("UPDATE barangay_notifications SET isRead = 1")
     suspend fun markAllAsRead()
+
+    @Query("DELETE FROM barangay_notifications")
+    suspend fun clear()
 }
 
 @Dao
@@ -64,4 +67,7 @@ interface AuditLogDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertLog(log: AuditLogEntity)
+
+    @Query("DELETE FROM audit_logs")
+    suspend fun clear()
 }
