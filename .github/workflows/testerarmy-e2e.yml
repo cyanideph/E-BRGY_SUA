@@ -1,0 +1,85 @@
+name: TesterArmy Android E2E
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: testerarmy-e2e-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: TesterArmy Android E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools platforms;android-36
+
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses >/dev/null || true
+
+      - name: Install Gradle 9.3.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+
+      - name: Generate Gradle wrapper
+        run: gradle wrapper --gradle-version 9.3.1 --distribution-type bin
+
+      - name: Generate Appwrite CI environment
+        env:
+          APPWRITE_ENDPOINT: ${{ vars.APPWRITE_ENDPOINT }}
+          APPWRITE_PROJECT_ID: ${{ vars.APPWRITE_PROJECT_ID }}
+          APPWRITE_DATABASE_ID: ${{ vars.APPWRITE_DATABASE_ID }}
+          APPWRITE_RESIDENT_FILES_BUCKET_ID: ${{ vars.APPWRITE_RESIDENT_FILES_BUCKET_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          APPWRITE_ENDPOINT="${APPWRITE_ENDPOINT:-https://sgp.cloud.appwrite.io/v1}"
+          APPWRITE_PROJECT_ID="${APPWRITE_PROJECT_ID:-6ac31e4000390af0f850}"
+          APPWRITE_DATABASE_ID="${APPWRITE_DATABASE_ID:-ebarangay-sua-db}"
+          APPWRITE_RESIDENT_FILES_BUCKET_ID="${APPWRITE_RESIDENT_FILES_BUCKET_ID:-resident-files}"
+          printf 'APPWRITE_ENDPOINT=%s\nAPPWRITE_PROJECT_ID=%s\nAPPWRITE_DATABASE_ID=%s\nAPPWRITE_RESIDENT_FILES_BUCKET_ID=%s\n' \
+            "$APPWRITE_ENDPOINT" "$APPWRITE_PROJECT_ID" "$APPWRITE_DATABASE_ID" "$APPWRITE_RESIDENT_FILES_BUCKET_ID" > .env
+
+      - name: Build debug APK
+        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install TesterArmy E2E dependencies
+        working-directory: e2e
+        run: npm install --no-audit --no-fund
+
+      - name: Run Android E2E on API 35 emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: default
+          arch: x86_64
+          profile: Pixel_6
+          emulator-options: -no-window -no-audio -no-boot-anim
+          disable-animations: true
+          script: |
+            cd e2e
+            npm run test:android
