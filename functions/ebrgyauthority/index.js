@@ -34,7 +34,7 @@ function requireUser(req) {
   return uid;
 }
 async function appwrite(path, method, payload) {
-  const key = process.env.APPWRITE_FUNCTION_API_KEY;
+  const key = req?.headers?.["x-appwrite-key"] || req?.headers?.["X-Appwrite-Key"];
   const response = await fetch(endpoint + path, {
     method,
     headers: {
