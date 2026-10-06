@@ -64,6 +64,7 @@ object Appwrite {
     fun tablesDB(): TablesDB = TablesDB(requireClient())
     fun storage(): Storage = Storage(requireClient())
     fun realtime(): Realtime = Realtime(requireClient())
+    fun functions(): io.appwrite.services.Functions = io.appwrite.services.Functions(requireClient())
 
     /**
      * Verifies that the mobile client can reach this Appwrite project.
