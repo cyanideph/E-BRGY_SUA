@@ -161,6 +161,7 @@ fun LoginScreen(
 
                     Button(
                         onClick = {
+                            if (isLoading) return@Button
                             if (email.isBlank() || password.isBlank()) {
                                 errorMessage = "Please enter both your email address and password."
                             } else {
