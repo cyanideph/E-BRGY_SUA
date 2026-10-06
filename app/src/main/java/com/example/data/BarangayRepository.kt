@@ -7,6 +7,7 @@ import com.example.services.Appwrite
 import com.example.services.CivicSyncService
 import com.example.services.NotificationHelper
 import io.appwrite.ID
+import io.appwrite.Query
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -215,19 +216,8 @@ class BarangayRepository {
                     OfficialHotline(str(d,"name"), str(d,"number"), str(d,"agency"), str(d,"description"))
                 }
 
-                val householdsRes = db.listRows(Appwrite.DATABASE_ID, Appwrite.HOUSEHOLDS_TABLE)
-                _households.value = householdsRes.rows.map { row ->
-                    val d = rowData(row)
-                    Household(
-                        id = row.id,
-                        householdNumber = str(d, "householdNumber"),
-                        headName = str(d, "headName"),
-                        address = str(d, "address"),
-                        memberCount = int(d, "memberCount"),
-                        memberNames = parseJsonArray(str(d, "memberNames")),
-                        emergencyNotes = str(d, "emergencyNotes")
-                    )
-                }
+                // Household records are sensitive resident data. They are not public civic data
+                // and must only be loaded by an authorized backend/admin flow.
 
                 val facilitiesRes = db.listRows(Appwrite.DATABASE_ID, Appwrite.FACILITIES_TABLE)
                 _facilities.value = facilitiesRes.rows.map { row ->
@@ -315,14 +305,22 @@ class BarangayRepository {
         val fallbackName = account.name.ifBlank { account.email.substringBefore("@") }
         val userRow = runCatching {
             Appwrite.tablesDB()
-                .listRows(Appwrite.DATABASE_ID, Appwrite.USERS_TABLE)
-                .rows.firstOrNull { it.data["userId"]?.toString() == account.id }
+                .listRows(
+                    databaseId = Appwrite.DATABASE_ID,
+                    tableId = Appwrite.USERS_TABLE,
+                    queries = listOf(Query.equal("userId", account.id), Query.limit(1))
+                )
+                .rows.firstOrNull()
         }.getOrNull()
         val userData = userRow?.data ?: emptyMap()
         val residentRow = runCatching {
             Appwrite.tablesDB()
-                .listRows(Appwrite.DATABASE_ID, Appwrite.RESIDENTS_TABLE)
-                .rows.firstOrNull { it.data["userId"]?.toString() == account.id }
+                .listRows(
+                    databaseId = Appwrite.DATABASE_ID,
+                    tableId = Appwrite.RESIDENTS_TABLE,
+                    queries = listOf(Query.equal("userId", account.id), Query.limit(1))
+                )
+                .rows.firstOrNull()
         }.getOrNull()
         val residentData = residentRow?.data ?: emptyMap()
         val role = roleFromBackend(userData["role"]?.toString())
@@ -382,7 +380,7 @@ class BarangayRepository {
         Appwrite.account().createEmailPasswordSession(email = email, password = password)
         val now = java.time.Instant.now().toString()
         val normalizedBirthDate = dateOfBirth.takeIf { it.isNotBlank() }?.let { java.time.LocalDate.parse(it).atStartOfDay(java.time.ZoneId.of("Asia/Manila")).toInstant().toString() }
-        val userPermissions = listOf("read(\"user:${created.id}\")", "update(\"user:${created.id}\")")
+        val userPermissions = listOf("read(\"user:${created.id}\")")
         Appwrite.tablesDB().createRow(databaseId = Appwrite.DATABASE_ID, tableId = Appwrite.USERS_TABLE, rowId = created.id,
             data = mapOf("userId" to created.id, "name" to fullName, "email" to email, "role" to "resident", "address" to address, "phone" to mobile, "createdAt" to now), permissions = userPermissions)
         Appwrite.tablesDB().createRow(databaseId = Appwrite.DATABASE_ID, tableId = Appwrite.RESIDENTS_TABLE, rowId = created.id,
