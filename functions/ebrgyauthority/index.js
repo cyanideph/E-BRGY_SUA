@@ -1,4 +1,4 @@
-import { Client, TablesDB, ID } from "node-appwrite";
+import { Client, Databases, ID } from "node-appwrite";
 
 const endpoint = "https://sgp.cloud.appwrite.io/v1";
 const project = "6ac31e4000390af0f850";
@@ -7,7 +7,7 @@ const project = "6ac31e4000390af0f850";
 function dbFor(req) {
   const key = req.headers?.["x-appwrite-key"] || req.headers?.["X-Appwrite-Key"] || process.env.APPWRITE_FUNCTION_API_KEY;
   const client = new Client().setEndpoint(endpoint).setProject(project).setKey(key);
-  return new TablesDB(client);
+  return new Databases(client);
 }
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || "ebarangay-sua-db";
 
@@ -39,7 +39,7 @@ function requireUser(req) {
   return uid;
 }
 async function create(db, tableId, data, rowId = ID.unique(), permissions) {
-  return db.createRow(DATABASE_ID, tableId, rowId, data, permissions);
+  return db.createDocument(DATABASE_ID, tableId, rowId, data, permissions);
 }
 async function notify(db, uid, title, message, type, referenceId = "") {
   return create(db, T.notifications, {
@@ -85,11 +85,11 @@ async function handle(req) {
     const requestId = String(input.requestId || "");
     const status = String(input.status || "");
     if (!requestId || !status) throw new Error("requestId and status are required.");
-    const request = await db.getRow(DATABASE_ID, T.requests, requestId);
-    const actor = await db.getRow(DATABASE_ID, T.users, uid);
+    const request = await db.getDocument(DATABASE_ID, T.requests, requestId);
+    const actor = await db.getDocument(DATABASE_ID, T.users, uid);
     const role = String(actor.role || "");
     if (!["staff","official","admin"].includes(role)) throw new Error("Staff authorization required.");
-    await db.updateRow(DATABASE_ID, T.requests, requestId, { status, updatedAt: now() });
+    await db.updateDocument(DATABASE_ID, T.requests, requestId, { status, updatedAt: now() });
     await create(T.requestHistory, {
       requestId, status, remarks: String(input.remarks || ""), changedBy: uid, changedAt: now()
     });
@@ -122,8 +122,8 @@ async function handle(req) {
     const actor = await db.getDocument(DATABASE_ID, T.users, uid);
     const role = String(actor.role || "");
     if (!["staff","official","admin"].includes(role)) throw new Error("Responder authorization required.");
-    const report = await db.getRow(DATABASE_ID, T.emergencies, reportId);
-    await db.updateRow(DATABASE_ID, T.emergencies, reportId, { status });
+    const report = await db.getDocument(DATABASE_ID, T.emergencies, reportId);
+    await db.updateDocument(DATABASE_ID, T.emergencies, reportId, { status });
     await create(T.emergencyHistory, {
       reportId, status, responder: String(input.responder || ""), notes: String(input.notes || ""),
       changedBy: uid, changedAt: now()
