@@ -371,16 +371,28 @@ class BarangayRepository {
         }
     }
 
-    suspend fun register(\n        fullName: String, email: String, password: String, mobile: String, address: String,\n        dateOfBirth: String, civilStatus: String, occupation: String,\n        emergencyContactName: String, emergencyContactRelationship: String, emergencyContactPhone: String,\n        latitude: Double?, longitude: Double?\n    ): Result<UserSession> = authMutex.withLock { runCatching {
+    suspend fun register(
+        fullName: String, email: String, password: String, mobile: String, address: String,
+        dateOfBirth: String, civilStatus: String, occupation: String,
+        emergencyContactName: String, emergencyContactRelationship: String, emergencyContactPhone: String,
+        latitude: Double?, longitude: Double?
+    ): Result<UserSession> = authMutex.withLock { runCatching {
         require(Appwrite.ENDPOINT.isNotBlank()) { "Appwrite is not configured for this build." }
         val created = Appwrite.account().create(userId = ID.unique(), email = email, password = password, name = fullName)
         Appwrite.account().createEmailPasswordSession(email = email, password = password)
         val now = java.time.Instant.now().toString()
+        val normalizedBirthDate = dateOfBirth.takeIf { it.isNotBlank() }?.let { java.time.LocalDate.parse(it).atStartOfDay(java.time.ZoneId.of("Asia/Manila")).toInstant().toString() }
         val userPermissions = listOf("read(\"user:${created.id}\")", "update(\"user:${created.id}\")")
         Appwrite.tablesDB().createRow(databaseId = Appwrite.DATABASE_ID, tableId = Appwrite.USERS_TABLE, rowId = created.id,
             data = mapOf("userId" to created.id, "name" to fullName, "email" to email, "role" to "resident", "address" to address, "phone" to mobile, "createdAt" to now), permissions = userPermissions)
         Appwrite.tablesDB().createRow(databaseId = Appwrite.DATABASE_ID, tableId = Appwrite.RESIDENTS_TABLE, rowId = created.id,
-            data = mapOf(\n                "userId" to created.id, "fullName" to fullName, "address" to address, "mobileNumber" to mobile,\n                "birthDate" to dateOfBirth, "civilStatus" to civilStatus, "occupation" to occupation,\n                "emergencyContactName" to emergencyContactName, "emergencyContactRelationship" to emergencyContactRelationship,\n                "emergencyContactPhone" to emergencyContactPhone, "latitude" to latitude, "longitude" to longitude,\n                "residentId" to created.id, "verified" to false, "registrationStatus" to "Pending Verification", "createdAt" to now\n            ), permissions = userPermissions)
+            data = mapOf(
+                "userId" to created.id, "fullName" to fullName, "address" to address, "mobileNumber" to mobile,
+                "birthDate" to normalizedBirthDate, "civilStatus" to civilStatus, "occupation" to occupation,
+                "emergencyContactName" to emergencyContactName, "emergencyContactRelationship" to emergencyContactRelationship,
+                "emergencyContactPhone" to emergencyContactPhone, "latitude" to latitude, "longitude" to longitude,
+                "residentId" to created.id, "verified" to false, "registrationStatus" to "Pending Verification", "createdAt" to now
+            ), permissions = userPermissions)
         val session = loadAuthenticatedSession()
         _currentUser.value = session
         _isOnline.value = true
