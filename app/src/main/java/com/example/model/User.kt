@@ -20,7 +20,10 @@ data class ResidentProfile(
     val householdId: String = "",
     val registrationStatus: String = "",
     val emergencyContactName: String = "",
-    val emergencyContactPhone: String = ""
+    val emergencyContactRelationship: String = "",
+    val emergencyContactPhone: String = "",
+    val latitude: Double? = null,
+    val longitude: Double? = null
 )
 
 data class Household(
