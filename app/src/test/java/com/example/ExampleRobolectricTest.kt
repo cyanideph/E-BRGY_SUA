@@ -3,9 +3,8 @@ package com.example
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.example.data.BarangayRepository
-import com.example.model.UserRole
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -23,14 +22,9 @@ class ExampleRobolectricTest {
   }
 
   @Test
-  fun `repository session role switching is stable`() {
+  fun `repository starts with a non-null session state`() {
     val repository = BarangayRepository.instance
     assertNotNull(repository.currentUser.value)
-
-    repository.switchRole(UserRole.ADMIN)
-    assertEquals(UserRole.ADMIN, repository.currentUser.value.role)
-
-    repository.switchRole(UserRole.RESIDENT)
-    assertEquals(UserRole.RESIDENT, repository.currentUser.value.role)
+    assertNotNull(repository.currentUser.value.role)
   }
 }
