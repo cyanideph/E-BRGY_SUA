@@ -75,11 +75,12 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
-          target: default
+          target: google_apis
           arch: x86_64
-          profile: Pixel_6
-          emulator-options: -no-window -no-audio -no-boot-anim
+          profile: pixel_7
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -no-audio -no-boot-anim
           disable-animations: true
           script: |
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
             cd e2e
-            npm run test:android
+            npm run test:android -- --reporter list,junit
