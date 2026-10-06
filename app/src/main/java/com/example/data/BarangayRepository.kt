@@ -101,7 +101,16 @@ class BarangayRepository {
         val db = AppDatabase.getInstance(context)
         database = db
 
+        // Sensitive Room caches are user-scoped only by application lifecycle, not by
+        // Room row permissions. Clear them before restoring any authenticated session
+        // so a previous resident can never see another resident's cached data.
         ioScope.launch {
+            db.clearAllTables()
+            _requests.value = emptyList()
+            _emergencyReports.value = emptyList()
+            _notifications.value = emptyList()
+            _auditLogs.value = emptyList()
+
             runCatching {
                 val account = Appwrite.account().get()
                 val session = loadAuthenticatedSession()
@@ -109,38 +118,31 @@ class BarangayRepository {
                 _isOnline.value = true
                 refreshAuthenticatedRequests(account.id)
                 refreshAuthenticatedNotifications(account.id)
-            }.onFailure { _isOnline.value = Appwrite.ENDPOINT.isNotBlank() }
-        }
 
-        ioScope.launch {
-            db.documentRequestDao().getAllRequests().collect { entities ->
-                if (entities.isNotEmpty()) {
-                    _requests.value = entities.map { it.toDomain() }
+                // Only start cache observers after the authenticated cache has been
+                // initialized. Logout clears these tables and state again.
+                launch {
+                    db.documentRequestDao().getAllRequests().collect { entities ->
+                        _requests.value = entities.map { it.toDomain() }
+                    }
                 }
-            }
-        }
-
-        ioScope.launch {
-            db.emergencyReportDao().getAllEmergencies().collect { entities ->
-                if (entities.isNotEmpty()) {
-                    _emergencyReports.value = entities.map { it.toDomain() }
+                launch {
+                    db.emergencyReportDao().getAllEmergencies().collect { entities ->
+                        _emergencyReports.value = entities.map { it.toDomain() }
+                    }
                 }
-            }
-        }
-
-        ioScope.launch {
-            db.notificationDao().getAllNotifications().collect { entities ->
-                if (entities.isNotEmpty()) {
-                    _notifications.value = entities.map { it.toDomain() }
+                launch {
+                    db.notificationDao().getAllNotifications().collect { entities ->
+                        _notifications.value = entities.map { it.toDomain() }
+                    }
                 }
-            }
-        }
-
-        ioScope.launch {
-            db.auditLogDao().getAllLogs().collect { entities ->
-                if (entities.isNotEmpty()) {
-                    _auditLogs.value = entities.map { it.toDomain() }
+                launch {
+                    db.auditLogDao().getAllLogs().collect { entities ->
+                        _auditLogs.value = entities.map { it.toDomain() }
+                    }
                 }
+            }.onFailure {
+                _isOnline.value = Appwrite.ENDPOINT.isNotBlank()
             }
         }
     }
@@ -400,7 +402,20 @@ class BarangayRepository {
                 Appwrite.account().deleteSession("current")
             }
         }
-        _currentUser.value=UserSession()
+
+        // Never leave resident-specific data in the local database or exposed
+        // StateFlows after the authenticated session ends.
+        database?.let { db ->
+            runCatching { db.clearAllTables() }
+        }
+        _requests.value = emptyList()
+        _emergencyReports.value = emptyList()
+        _notifications.value = emptyList()
+        _auditLogs.value = emptyList()
+        _residents.value = emptyList()
+        _households.value = emptyList()
+        _currentUser.value = UserSession()
+        _isOnline.value = false
     }
 
 
