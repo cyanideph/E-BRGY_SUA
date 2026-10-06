@@ -398,6 +398,7 @@ class BarangayRepository {
         _isOnline.value = true
         session
     }
+    }
 
     suspend fun logout() {
         runCatching {
