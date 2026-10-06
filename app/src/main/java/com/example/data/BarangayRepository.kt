@@ -47,10 +47,6 @@ class BarangayRepository {
     private val _currentUser = MutableStateFlow(UserSession())
     val currentUser: StateFlow<UserSession> = _currentUser.asStateFlow()
 
-    fun switchRole(newRole: UserRole) {
-        _currentUser.value = _currentUser.value.copy(role = newRole)
-    }
-
     // Offline / Online state
     private val _isOnline = MutableStateFlow(false)
     val isOnline: StateFlow<Boolean> = _isOnline.asStateFlow()
@@ -408,15 +404,17 @@ class BarangayRepository {
     }
 
 
-    fun updateProfile(updated: ResidentProfile) {
-        val current = _currentUser.value
-        _currentUser.value = current.copy(profile = updated)
-        val list = _residents.value.toMutableList()
-        val index = list.indexOfFirst { it.id == updated.id || it.residentId == updated.residentId }
-        if (index >= 0) {
-            list[index] = updated
-            _residents.value = list
-        }
+    /**
+     * Refresh the authenticated profile from Appwrite.
+     *
+     * Resident profile data is backend-authoritative. Do not mutate the local
+     * session as if a profile edit succeeded; protected fields such as role,
+     * verification, and registration status must only come from Appwrite.
+     */
+    suspend fun refreshProfile(): Result<UserSession> = runCatching {
+        val session = loadAuthenticatedSession()
+        _currentUser.value = session
+        session
     }
 
     fun toggleOnline(online: Boolean) {
