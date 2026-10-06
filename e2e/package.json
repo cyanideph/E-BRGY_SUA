@@ -1,0 +1,10 @@
+{
+  "name": "e-barangay-sua-e2e",
+  "private": true,
+  "scripts": {"test:android": "e2e run --target android"},
+  "devDependencies": {
+    "@e2e-dev/mobile": "0.9.0",
+    "e2e": "0.16.0",
+    "typescript": "6.0.3"
+  }
+}
