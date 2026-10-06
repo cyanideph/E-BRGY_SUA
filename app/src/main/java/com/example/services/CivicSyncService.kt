@@ -68,12 +68,10 @@ object CivicSyncService {
     }
 
     suspend fun createEmergency(report: EmergencyReport): Result<Unit> = runCatching {
-        db.createRow(
-            databaseId = Appwrite.DATABASE_ID,
-            tableId = Appwrite.EMERGENCIES_TABLE,
-            rowId = report.id.take(36),
-            data = mapOf(
-                "userId" to report.residentUid,
+        executeAuthority(
+            path = "/emergency",
+            payload = mapOf(
+                "reportId" to report.id.take(36),
                 "type" to when (report.type) {
                     EmergencyType.BARANGAY_EMERGENCY -> "Barangay Emergency"
                     EmergencyType.MEDICAL -> "Medical"
@@ -83,37 +81,9 @@ object CivicSyncService {
                 },
                 "description" to report.description,
                 "latitude" to report.latitude,
-                "longitude" to report.longitude,
-                "status" to "Reported",
-                "createdAt" to Instant.ofEpochMilli(report.timestamp).toString()
+                "longitude" to report.longitude
             )
         )
-        db.createRow(
-            databaseId = Appwrite.DATABASE_ID,
-            tableId = Appwrite.EMERGENCY_STATUS_HISTORY_TABLE,
-            rowId = ID.unique(),
-            data = mapOf(
-                "reportId" to report.id.take(36),
-                "status" to "Reported",
-                "responder" to report.assignedResponder,
-                "notes" to report.responseNotes,
-                "changedBy" to report.residentUid,
-                "changedAt" to Instant.ofEpochMilli(report.timestamp).toString()
-            )
-        )
-        createNotification(
-            report.residentUid,
-            BarangayNotification(
-                id = ID.unique(),
-                title = "Emergency Report Accepted",
-                message = "Emergency report ${report.id} was accepted by the barangay backend.",
-                timestamp = report.timestamp,
-                priority = "Emergency",
-                category = "Emergency",
-                referenceId = report.id
-            )
-        ).getOrThrow()
-        createAudit(report.residentUid, "EMERGENCY_SOS", "EmergencyReport", report.id.take(36), report.type.displayName).getOrThrow()
     }
 
     suspend fun updateEmergencyStatus(
