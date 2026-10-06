@@ -1,14 +1,9 @@
-import { Client, Databases, ID } from "node-appwrite";
+import { ID } from "node-appwrite";
 
 const endpoint = "https://sgp.cloud.appwrite.io/v1";
 const project = "6ac31e4000390af0f850";
 
 
-function dbFor(req) {
-  const key = req.headers?.["x-appwrite-key"] || req.headers?.["X-Appwrite-Key"] || process.env.APPWRITE_FUNCTION_API_KEY;
-  const client = new Client().setEndpoint(endpoint).setProject(project).setKey(key);
-  return new Databases(client);
-}
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || "ebarangay-sua-db";
 
 const T = {
@@ -93,7 +88,7 @@ async function handle(req) {
   if (route === "/request" && req.method === "POST") {
     const required = ["requestId","serviceId","referenceNumber","details"];
     for (const k of required) if (!input[k]) throw new Error(`Missing ${k}`);
-    const row = await create(db, T.requests, {
+    const row = await create(T.requests, {
       userId: uid,
       serviceId: String(input.serviceId),
       referenceNumber: String(input.referenceNumber),
@@ -105,8 +100,8 @@ async function handle(req) {
     await create(T.requestHistory, {
       requestId: row.$id, status: "Submitted", remarks: "", changedBy: uid, changedAt: now()
     });
-    await notify(db, uid, "Request Submitted", `Request ${input.referenceNumber} was received by the barangay.`, "Service Request", input.referenceNumber);
-    await audit(db, uid, "CREATE_REQUEST", "DocumentRequest", row.$id, String(input.referenceNumber));
+    await notify(uid, "Request Submitted", `Request ${input.referenceNumber} was received by the barangay.`, "Service Request", input.referenceNumber);
+    await audit(uid, "CREATE_REQUEST", "DocumentRequest", row.$id, String(input.referenceNumber));
     return { ok: true, requestId: row.$id };
   }
 
@@ -148,7 +143,7 @@ async function handle(req) {
     const reportId = String(input.reportId || "");
     const status = String(input.status || "");
     if (!reportId || !status) throw new Error("reportId and status are required.");
-    const actor = await db.getDocument(DATABASE_ID, T.users, uid);
+    const actor = await get(T.users, uid);
     const role = String(actor.role || "");
     if (!["staff","official","admin"].includes(role)) throw new Error("Responder authorization required.");
     const report = await get(T.emergencies, reportId);
