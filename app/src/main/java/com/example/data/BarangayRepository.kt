@@ -313,20 +313,36 @@ class BarangayRepository {
     private suspend fun loadAuthenticatedSession(): UserSession {
         val account = Appwrite.account().get()
         val fallbackName = account.name.ifBlank { account.email.substringBefore("@") }
-        val row = runCatching {
+        val userRow = runCatching {
             Appwrite.tablesDB()
                 .listRows(Appwrite.DATABASE_ID, Appwrite.USERS_TABLE)
                 .rows.firstOrNull { it.data["userId"]?.toString() == account.id }
         }.getOrNull()
-        val data = row?.data ?: emptyMap()
-        val role = roleFromBackend(data["role"]?.toString())
+        val userData = userRow?.data ?: emptyMap()
+        val residentRow = runCatching {
+            Appwrite.tablesDB()
+                .listRows(Appwrite.DATABASE_ID, Appwrite.RESIDENTS_TABLE)
+                .rows.firstOrNull { it.data["userId"]?.toString() == account.id }
+        }.getOrNull()
+        val residentData = residentRow?.data ?: emptyMap()
+        val role = roleFromBackend(userData["role"]?.toString())
         val profile = ResidentProfile(
-            id = account.id,
-            residentId = data["residentId"]?.toString()?.ifBlank { account.id } ?: account.id,
-            fullName = data["name"]?.toString()?.ifBlank { fallbackName } ?: fallbackName,
-            address = data["address"]?.toString().orEmpty(),
-            mobileNumber = data["phone"]?.toString().orEmpty(),
-            registrationStatus = data["registrationStatus"]?.toString()?.ifBlank { "Account Registered" } ?: "Account Registered"
+            id = residentRow?.id ?: account.id,
+            residentId = residentData["residentId"]?.toString()?.ifBlank { account.id } ?: account.id,
+            fullName = residentData["fullName"]?.toString()?.ifBlank { userData["name"]?.toString() ?: fallbackName } ?: fallbackName,
+            address = residentData["address"]?.toString() ?: userData["address"]?.toString().orEmpty(),
+            mobileNumber = residentData["mobileNumber"]?.toString() ?: userData["phone"]?.toString().orEmpty(),
+            dateOfBirth = residentData["birthDate"]?.toString().orEmpty(),
+            civilStatus = residentData["civilStatus"]?.toString().orEmpty(),
+            sex = residentData["sex"]?.toString().orEmpty(),
+            occupation = residentData["occupation"]?.toString().orEmpty(),
+            householdId = residentData["householdId"]?.toString().orEmpty(),
+            registrationStatus = residentData["registrationStatus"]?.toString()?.ifBlank { "Account Registered" } ?: "Account Registered",
+            emergencyContactName = residentData["emergencyContactName"]?.toString().orEmpty(),
+            emergencyContactRelationship = residentData["emergencyContactRelationship"]?.toString().orEmpty(),
+            emergencyContactPhone = residentData["emergencyContactPhone"]?.toString().orEmpty(),
+            latitude = residentData["latitude"]?.toString()?.toDoubleOrNull(),
+            longitude = residentData["longitude"]?.toString()?.toDoubleOrNull()
         )
         return UserSession(account.id, account.email, role, profile)
     }
@@ -355,16 +371,16 @@ class BarangayRepository {
         }
     }
 
-    suspend fun register(fullName: String, email: String, password: String, mobile: String, address: String): Result<UserSession> = runCatching {
+    suspend fun register(\n        fullName: String, email: String, password: String, mobile: String, address: String,\n        dateOfBirth: String, civilStatus: String, occupation: String,\n        emergencyContactName: String, emergencyContactRelationship: String, emergencyContactPhone: String,\n        latitude: Double?, longitude: Double?\n    ): Result<UserSession> = authMutex.withLock { runCatching {
         require(Appwrite.ENDPOINT.isNotBlank()) { "Appwrite is not configured for this build." }
         val created = Appwrite.account().create(userId = ID.unique(), email = email, password = password, name = fullName)
         Appwrite.account().createEmailPasswordSession(email = email, password = password)
         val now = java.time.Instant.now().toString()
         val userPermissions = listOf("read(\"user:${created.id}\")", "update(\"user:${created.id}\")")
         Appwrite.tablesDB().createRow(databaseId = Appwrite.DATABASE_ID, tableId = Appwrite.USERS_TABLE, rowId = created.id,
-            data = mapOf("userId" to created.id, "name" to fullName, "email" to email, "role" to "resident", "address" to address, "phone" to mobile, "registrationStatus" to "Pending Verification", "createdAt" to now), permissions = userPermissions)
+            data = mapOf("userId" to created.id, "name" to fullName, "email" to email, "role" to "resident", "address" to address, "phone" to mobile, "createdAt" to now), permissions = userPermissions)
         Appwrite.tablesDB().createRow(databaseId = Appwrite.DATABASE_ID, tableId = Appwrite.RESIDENTS_TABLE, rowId = created.id,
-            data = mapOf("userId" to created.id, "fullName" to fullName, "address" to address, "mobileNumber" to mobile, "residentId" to created.id, "verified" to false, "registrationStatus" to "Pending Verification", "createdAt" to now), permissions = userPermissions)
+            data = mapOf(\n                "userId" to created.id, "fullName" to fullName, "address" to address, "mobileNumber" to mobile,\n                "birthDate" to dateOfBirth, "civilStatus" to civilStatus, "occupation" to occupation,\n                "emergencyContactName" to emergencyContactName, "emergencyContactRelationship" to emergencyContactRelationship,\n                "emergencyContactPhone" to emergencyContactPhone, "latitude" to latitude, "longitude" to longitude,\n                "residentId" to created.id, "verified" to false, "registrationStatus" to "Pending Verification", "createdAt" to now\n            ), permissions = userPermissions)
         val session = loadAuthenticatedSession()
         _currentUser.value = session
         _isOnline.value = true
