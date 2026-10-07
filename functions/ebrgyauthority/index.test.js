@@ -53,7 +53,7 @@ test("resident cannot change request status", async () => {
         referenceNumber: "REF-1"
       }), { status: 200 });
     }
-    if (String(url).endsWith("/users/resident-1")) {
+    if (String(url).endsWith("/databases/test-db/tables/users/rows/resident-1")) {
       return new Response(JSON.stringify({
         $id: "resident-1",
         role: "resident"
