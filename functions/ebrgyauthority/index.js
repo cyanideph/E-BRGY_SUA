@@ -53,27 +53,25 @@ async function appwrite(req, path, method, payload) {
   }
   return data;
 }
-async function create(tableId, data, rowId = ID.unique(), permissions) {
-  return appwrite(req, `/databases/${DATABASE_ID}/tables/${tableId}/rows`, "POST", {
-    rowId,
-    data,
-    permissions
-  });
+async function create(req, tableId, data, rowId = ID.unique(), permissions) {
+  const payload = { rowId, data };
+  if (permissions) payload.permissions = permissions;
+  return appwrite(req, `/databases/${DATABASE_ID}/tables/${tableId}/rows`, "POST", payload);
 }
-async function get(tableId, rowId) {
+async function get(req, tableId, rowId) {
   return appwrite(req, `/databases/${DATABASE_ID}/tables/${tableId}/rows/${rowId}`, "GET");
 }
-async function update(tableId, rowId, data) {
+async function update(req, tableId, rowId, data) {
   return appwrite(req, `/databases/${DATABASE_ID}/tables/${tableId}/rows/${rowId}`, "PATCH", { data });
 }
 
-async function notify(uid, title, message, type, referenceId = "") {
+async function notify(req, uid, title, message, type, referenceId = "") {
   return create(req, T.notifications, {
     userId: uid, title, body: message, type, read: false,
     createdAt: now(), priority: "Normal", referenceId
   }, ID.unique(), [`read("user:${uid}")`]);
 }
-async function audit(uid, action, resourceType, resourceId, details) {
+async function audit(req, uid, action, resourceType, resourceId, details) {
   return create(req, T.audit, {
     actorUserId: uid, action, resourceType, resourceId, details, createdAt: now()
   });
@@ -164,11 +162,11 @@ async function handle(req) {
     const role = String(actor.role || "");
     if (!["staff","official","admin"].includes(role)) throw new Error("Staff authorization required.");
     await update(req, T.requests, requestId, { status, updatedAt: now() });
-    await create(T.requestHistory, {
+    await create(req, T.requestHistory, {
       requestId, status, remarks: String(input.remarks || ""), changedBy: uid, changedAt: now()
     });
     const resident = String(request.userId || "");
-    await notify(resident, "Request Status Updated", `Your request status is now ${status}.`, "Service Request", String(request.referenceNumber || ""));
+    await notify(req, resident, "Request Status Updated", `Your request status is now ${status}.`, "Service Request", String(request.referenceNumber || ""));
     await audit(uid, "UPDATE_REQUEST_STATUS", "DocumentRequest", requestId, status);
     return { ok: true };
   }
@@ -176,12 +174,12 @@ async function handle(req) {
   if (route === "/emergency" && req.method === "POST") {
     const id = String(input.reportId || ID.unique()).slice(0, 36);
     const type = String(input.type || "Barangay Emergency");
-    const row = await create(T.emergencies, {
+    const row = await create(req, T.emergencies, {
       userId: uid, type, description: String(input.description || ""),
       latitude: input.latitude ?? null, longitude: input.longitude ?? null,
       status: "Reported", createdAt: now()
     }, id, [`read("user:${uid}")`]);
-    await create(T.emergencyHistory, {
+    await create(req, T.emergencyHistory, {
       reportId: id, status: "Reported", responder: "", notes: "", changedBy: uid, changedAt: now()
     });
     await notify(uid, "Emergency Report Accepted", `Emergency report ${id} was accepted by the barangay backend.`, "Emergency", id);
@@ -193,23 +191,23 @@ async function handle(req) {
     const reportId = String(input.reportId || "");
     const status = String(input.status || "");
     if (!reportId || !status) throw new Error("reportId and status are required.");
-    const actor = await get(T.users, uid);
+    const actor = await get(req, T.users, uid);
     const role = String(actor.role || "");
     if (!["staff","official","admin"].includes(role)) throw new Error("Responder authorization required.");
     const report = await get(req, T.emergencies, reportId);
     await update(req, T.emergencies, reportId, { status });
-    await create(T.emergencyHistory, {
+    await create(req, T.emergencyHistory, {
       reportId, status, responder: String(input.responder || ""), notes: String(input.notes || ""),
       changedBy: uid, changedAt: now()
     });
     const resident = String(report.userId || "");
-    await notify(resident, "Emergency Status Updated", `Your emergency report status is now ${status}.`, "Emergency", reportId);
+    await notify(req, resident, "Emergency Status Updated", `Your emergency report status is now ${status}.`, "Emergency", reportId);
     await audit(uid, "UPDATE_EMERGENCY_STATUS", "EmergencyReport", reportId, status);
     return { ok: true };
   }
 
   if (route === "/announcement" && req.method === "POST") {
-    const actor = await get(T.users, uid);
+    const actor = await get(req, T.users, uid);
     if (!["official","admin"].includes(String(actor.role || ""))) throw new Error("Official authorization required.");
     const created = await create(req, T.announcements, {
       title: String(input.title || ""), body: String(input.description || ""),
