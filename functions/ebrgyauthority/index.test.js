@@ -46,7 +46,7 @@ test("mutating routes require an authenticated Appwrite user", async () => {
 
 test("resident cannot change request status", async () => {
   globalThis.fetch = async (url) => {
-    if (String(url).endsWith("/databases/test-db/tables/documentRequests/req-1")) {
+    if (String(url).endsWith("/databases/test-db/tables/documentRequests/rows/req-1")) {
       return new Response(JSON.stringify({
         $id: "req-1",
         userId: "resident-1",
