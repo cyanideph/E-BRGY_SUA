@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -12,12 +13,16 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.BarangayRepository
 import com.example.ui.components.SoftSkeuomorphicCard
 import com.example.ui.theme.*
@@ -91,6 +96,26 @@ fun ServiceDetailsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
+            val cardRes = when {
+                service.name.contains("Clearance", ignoreCase = true) -> R.drawable.card_clearance
+                service.name.contains("Residency", ignoreCase = true) -> R.drawable.card_residency
+                service.name.contains("Indigency", ignoreCase = true) -> R.drawable.card_indigency
+                service.name.contains("Business", ignoreCase = true) -> R.drawable.card_facilities
+                else -> R.drawable.card_clearance
+            }
+
+            Image(
+                painter = painterResource(id = cardRes),
+                contentDescription = service.name,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(160.dp)
+                    .clip(RoundedCornerShape(20.dp)),
+                contentScale = ContentScale.Crop
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
             // Header card
             SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth()) {
                 Row(

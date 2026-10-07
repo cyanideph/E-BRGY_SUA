@@ -1,7 +1,9 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -9,13 +11,16 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.ui.components.SoftSkeuomorphicCard
 import com.example.ui.theme.*
 import kotlinx.coroutines.launch
@@ -384,23 +389,50 @@ fun SettingsScreen(
 
             // About e-Barangay Sua
             SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "About e-Barangay Sua",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Surface(
+                        modifier = Modifier.size(54.dp),
+                        shape = CircleShape,
+                        color = CoastalSurface,
+                        shadowElevation = 3.dp
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_sua_logo),
+                                contentDescription = "Barangay Sua Emblem",
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(14.dp))
+
+                    Column {
+                        Text(
+                            text = "About e-Barangay Sua",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Barangay Sua Local Government Unit",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = DeepOceanBlue
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
                 Text(
                     text = "Version: 1.0.0 (Release 2026)",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "Barangay Sua Local Government Unit",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = DeepOceanBlue
                 )
                 Text(
                     text = "San Juan, Southern Leyte, Philippines",

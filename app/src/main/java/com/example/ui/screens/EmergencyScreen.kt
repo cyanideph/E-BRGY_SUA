@@ -6,6 +6,7 @@ import android.location.LocationManager
 import java.util.Locale
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,6 +19,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -25,6 +29,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.BarangayRepository
 import com.example.model.EmergencyReport
 import com.example.model.EmergencyType
@@ -141,6 +146,18 @@ fun EmergencyScreen(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
+
+            Image(
+                painter = painterResource(id = R.drawable.card_emergency),
+                contentDescription = "Barangay Emergency SOS Response",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(140.dp)
+                    .clip(RoundedCornerShape(18.dp)),
+                contentScale = ContentScale.Crop
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
 
             // SOS Alert Trigger Form
             SoftSkeuomorphicCard(
@@ -310,7 +327,19 @@ fun EmergencyScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Image(
+                painter = painterResource(id = R.drawable.card_hotlines),
+                contentDescription = "Official Emergency Hotlines",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(130.dp)
+                    .clip(RoundedCornerShape(18.dp)),
+                contentScale = ContentScale.Crop
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
 
             // OFFICIAL DIRECT HOTLINES
             Text(

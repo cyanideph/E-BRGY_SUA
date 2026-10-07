@@ -1,6 +1,7 @@
 package com.example.ui.components
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -18,9 +19,11 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.ui.theme.*
 
 @Composable
@@ -106,14 +109,19 @@ fun SuaWaveHeader(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Waves,
-                                contentDescription = null,
-                                tint = WarmSunGoldLight,
-                                modifier = Modifier.size(14.dp)
-                            )
+                            Surface(
+                                shape = CircleShape,
+                                color = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.ic_sua_logo),
+                                    contentDescription = "Barangay Sua Emblem",
+                                    modifier = Modifier.fillMaxSize().clip(CircleShape)
+                                )
+                            }
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "e-Barangay Sua Portal",

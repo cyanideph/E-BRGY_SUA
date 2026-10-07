@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.R
 import com.example.ui.theme.DeepOceanBlue
 import kotlinx.coroutines.launch
 
@@ -96,22 +97,36 @@ fun OnboardingScreen(
                 val page = pages[pageIndex]
                 val imageName = page.imageName.takeIf { it in availableAssets }
 
+                val drawableRes = when (pageIndex) {
+                    0 -> R.drawable.onboarding_services
+                    1 -> R.drawable.onboarding_emergency
+                    2 -> R.drawable.onboarding_governance
+                    else -> null
+                }
+
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .clip(OnboardingImageShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (imageName != null) {
+                    if (drawableRes != null) {
+                        AsyncImage(
+                            model = drawableRes,
+                            contentDescription = "Barangay Sua onboarding illustration",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(OnboardingImageShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else if (imageName != null) {
                         AsyncImage(
                             model = "file:///android_asset/onboarding/$imageName",
                             contentDescription = "Barangay Sua onboarding illustration",
                             modifier = Modifier
                                 .fillMaxSize()
                                 .clip(OnboardingImageShape),
-                            // Fit is intentional: the artwork is portrait and contains
-                            // its own text. Never crop the image or its embedded copy.
-                            contentScale = ContentScale.Fit
+                            contentScale = ContentScale.Crop
                         )
                     } else {
                         Icon(

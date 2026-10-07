@@ -299,6 +299,27 @@ fun RegisterScreen(
                 .padding(horizontal = 24.dp, vertical = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Surface(
+                modifier = Modifier.size(72.dp),
+                shape = CircleShape,
+                color = CoastalSurface,
+                shadowElevation = 5.dp
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_sua_logo),
+                        contentDescription = "Barangay Sua Emblem",
+                        modifier = Modifier
+                            .size(60.dp)
+                            .clip(CircleShape)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
             Text(
                 text = "Resident Registration",
                 style = MaterialTheme.typography.headlineSmall,

@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,10 +21,13 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.BarangayRepository
 import com.example.model.*
 import com.example.services.CoastalTelemetry
@@ -254,28 +258,25 @@ fun HomeScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    val icon = when (service.iconKey) {
-                                        "verified" -> Icons.Default.VerifiedUser
-                                        "home" -> Icons.Default.Home
-                                        "handshake" -> Icons.Default.VolunteerActivism
-                                        "description" -> Icons.Default.Description
-                                        "shield" -> Icons.Default.Security
-                                        "store" -> Icons.Default.Storefront
-                                        else -> Icons.Default.Article
+                                    val cardThumb = when {
+                                        service.name.contains("Clearance", ignoreCase = true) -> R.drawable.card_clearance
+                                        service.name.contains("Residency", ignoreCase = true) -> R.drawable.card_residency
+                                        service.name.contains("Indigency", ignoreCase = true) -> R.drawable.card_indigency
+                                        else -> R.drawable.card_facilities
                                     }
                                     Surface(
                                         shape = RoundedCornerShape(10.dp),
-                                        color = DeepOceanContainer.copy(alpha = 0.6f),
-                                        modifier = Modifier.size(36.dp)
+                                        color = DeepOceanContainer,
+                                        modifier = Modifier.size(38.dp)
                                     ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Icon(
-                                                imageVector = icon,
-                                                contentDescription = null,
-                                                tint = DeepOceanBlue,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
+                                        Image(
+                                            painter = painterResource(id = cardThumb),
+                                            contentDescription = service.name,
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .clip(RoundedCornerShape(10.dp)),
+                                            contentScale = ContentScale.Crop
+                                        )
                                     }
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column {

@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,10 +11,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.BarangayRepository
 import com.example.model.BarangayEvent
 import com.example.ui.components.SoftSkeuomorphicCard
@@ -39,6 +44,18 @@ fun EventsScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            item {
+                Image(
+                    painter = painterResource(id = R.drawable.card_events),
+                    contentDescription = "Barangay Events and Assemblies",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(135.dp)
+                        .clip(RoundedCornerShape(18.dp)),
+                    contentScale = ContentScale.Crop
+                )
+            }
+
             items(events) { event ->
                 SoftSkeuomorphicCard(
                     modifier = Modifier.fillMaxWidth(),

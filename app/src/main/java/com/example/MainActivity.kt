@@ -6,6 +6,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -14,7 +15,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -87,6 +90,14 @@ fun EBarangaySuaApp() {
         else -> false
     }
 
+    val themeMode by repository.themeMode.collectAsState()
+    val isDark = when (themeMode) {
+        com.example.data.AppThemeMode.LIGHT -> false
+        com.example.data.AppThemeMode.DARK -> true
+        com.example.data.AppThemeMode.SYSTEM -> androidx.compose.foundation.isSystemInDarkTheme()
+    }
+    val bgRes = if (isDark) R.drawable.background_dark else R.drawable.background_light
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
@@ -140,6 +151,16 @@ fun EBarangaySuaApp() {
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+            if (currentScreen in listOf(Screen.Home, Screen.Services, Screen.Profile, Screen.Sua, Screen.Alerts)) {
+                Image(
+                    painter = painterResource(id = bgRes),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    alpha = if (isDark) 0.12f else 0.07f
+                )
+            }
+
             Crossfade(targetState = currentScreen, label = "ScreenTransition") { screen ->
                 when (screen) {
                     is Screen.Splash -> {

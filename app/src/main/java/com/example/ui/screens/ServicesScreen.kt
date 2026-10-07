@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,10 +11,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.BarangayRepository
 import com.example.model.BarangayService
 import com.example.ui.components.SoftSkeuomorphicCard
@@ -129,28 +134,27 @@ fun ServiceListItem(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val cardThumb = when {
+                service.name.contains("Clearance", ignoreCase = true) -> R.drawable.card_clearance
+                service.name.contains("Residency", ignoreCase = true) -> R.drawable.card_residency
+                service.name.contains("Indigency", ignoreCase = true) -> R.drawable.card_indigency
+                service.name.contains("Business", ignoreCase = true) -> R.drawable.card_facilities
+                else -> R.drawable.card_clearance
+            }
+
             Surface(
                 shape = RoundedCornerShape(14.dp),
-                color = DeepOceanContainer,
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(52.dp),
+                color = DeepOceanContainer
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    val icon = when (service.iconKey) {
-                        "verified" -> Icons.Default.VerifiedUser
-                        "home" -> Icons.Default.Home
-                        "handshake" -> Icons.Default.VolunteerActivism
-                        "description" -> Icons.Default.Description
-                        "shield" -> Icons.Default.Security
-                        "store" -> Icons.Default.Storefront
-                        else -> Icons.Default.Article
-                    }
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = DeepOceanBlue,
-                        modifier = Modifier.size(26.dp)
-                    )
-                }
+                Image(
+                    painter = painterResource(id = cardThumb),
+                    contentDescription = service.name,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(14.dp)),
+                    contentScale = ContentScale.Crop
+                )
             }
 
             Spacer(modifier = Modifier.width(14.dp))
