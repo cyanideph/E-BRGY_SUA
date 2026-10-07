@@ -2,9 +2,9 @@ import { ID } from "node-appwrite";
 
 const endpoint = process.env.APPWRITE_FUNCTION_API_ENDPOINT;
 const project = process.env.APPWRITE_FUNCTION_PROJECT_ID;
-const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || "ebarangay-sua-db";
+const DATABASE_ID = process.env.EBRGY_DATABASE_ID;
 
-if (!endpoint || !project) {
+if (!endpoint || !project || !DATABASE_ID) {
   throw new Error("Appwrite runtime configuration is missing.");
 }
 
