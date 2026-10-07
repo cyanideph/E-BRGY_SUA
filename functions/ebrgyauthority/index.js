@@ -33,8 +33,9 @@ function requireUser(req) {
   if (!uid) throw new Error("Authenticated Appwrite user required.");
   return uid;
 }
-async function appwrite(path, method, payload) {
-  const key = req?.headers?.["x-appwrite-key"] || req?.headers?.["X-Appwrite-Key"];
+async function appwrite(req, path, method, payload) {
+  const key = req.headers?.["x-appwrite-key"] || req.headers?.["X-Appwrite-Key"];
+  if (!key) throw new Error("Appwrite Function runtime key unavailable.");
   const response = await fetch(endpoint + path, {
     method,
     headers: {
@@ -53,27 +54,27 @@ async function appwrite(path, method, payload) {
   return data;
 }
 async function create(tableId, data, rowId = ID.unique(), permissions) {
-  return appwrite(`/databases/${DATABASE_ID}/tables/${tableId}/rows`, "POST", {
+  return appwrite(req, `/databases/${DATABASE_ID}/tables/${tableId}/rows`, "POST", {
     rowId,
     data,
     permissions
   });
 }
 async function get(tableId, rowId) {
-  return appwrite(`/databases/${DATABASE_ID}/tables/${tableId}/rows/${rowId}`, "GET");
+  return appwrite(req, `/databases/${DATABASE_ID}/tables/${tableId}/rows/${rowId}`, "GET");
 }
 async function update(tableId, rowId, data) {
-  return appwrite(`/databases/${DATABASE_ID}/tables/${tableId}/rows/${rowId}`, "PATCH", { data });
+  return appwrite(req, `/databases/${DATABASE_ID}/tables/${tableId}/rows/${rowId}`, "PATCH", { data });
 }
 
 async function notify(uid, title, message, type, referenceId = "") {
-  return create(T.notifications, {
+  return create(req, T.notifications, {
     userId: uid, title, body: message, type, read: false,
     createdAt: now(), priority: "Normal", referenceId
   }, ID.unique(), [`read("user:${uid}")`]);
 }
 async function audit(uid, action, resourceType, resourceId, details) {
-  return create(T.audit, {
+  return create(req, T.audit, {
     actorUserId: uid, action, resourceType, resourceId, details, createdAt: now()
   });
 }
@@ -88,7 +89,7 @@ async function handle(req) {
   if (route === "/request" && req.method === "POST") {
     const required = ["requestId","serviceId","referenceNumber","details"];
     for (const k of required) if (!input[k]) throw new Error(`Missing ${k}`);
-    const row = await create(T.requests, {
+    const row = await create(req, T.requests, {
       userId: uid,
       serviceId: String(input.serviceId),
       referenceNumber: String(input.referenceNumber),
@@ -97,11 +98,11 @@ async function handle(req) {
       submittedAt: now(),
       updatedAt: now()
     }, String(input.requestId).slice(0, 36), [`read("user:${uid}")`]);
-    await create(T.requestHistory, {
+    await create(req, T.requestHistory, {
       requestId: row.$id, status: "Submitted", remarks: "", changedBy: uid, changedAt: now()
     });
-    await notify(uid, "Request Submitted", `Request ${input.referenceNumber} was received by the barangay.`, "Service Request", input.referenceNumber);
-    await audit(uid, "CREATE_REQUEST", "DocumentRequest", row.$id, String(input.referenceNumber));
+    await notify(req, uid, "Request Submitted", `Request ${input.referenceNumber} was received by the barangay.`, "Service Request", input.referenceNumber);
+    await audit(req, uid, "CREATE_REQUEST", "DocumentRequest", row.$id, String(input.referenceNumber));
     return { ok: true, requestId: row.$id };
   }
 
@@ -109,11 +110,11 @@ async function handle(req) {
     const requestId = String(input.requestId || "");
     const status = String(input.status || "");
     if (!requestId || !status) throw new Error("requestId and status are required.");
-    const request = await get(T.requests, requestId);
-    const actor = await get(T.users, uid);
+    const request = await get(req, T.requests, requestId);
+    const actor = await get(req, T.users, uid);
     const role = String(actor.role || "");
     if (!["staff","official","admin"].includes(role)) throw new Error("Staff authorization required.");
-    await update(T.requests, requestId, { status, updatedAt: now() });
+    await update(req, T.requests, requestId, { status, updatedAt: now() });
     await create(T.requestHistory, {
       requestId, status, remarks: String(input.remarks || ""), changedBy: uid, changedAt: now()
     });
@@ -146,8 +147,8 @@ async function handle(req) {
     const actor = await get(T.users, uid);
     const role = String(actor.role || "");
     if (!["staff","official","admin"].includes(role)) throw new Error("Responder authorization required.");
-    const report = await get(T.emergencies, reportId);
-    await update(T.emergencies, reportId, { status });
+    const report = await get(req, T.emergencies, reportId);
+    await update(req, T.emergencies, reportId, { status });
     await create(T.emergencyHistory, {
       reportId, status, responder: String(input.responder || ""), notes: String(input.notes || ""),
       changedBy: uid, changedAt: now()
@@ -161,7 +162,7 @@ async function handle(req) {
   if (route === "/announcement" && req.method === "POST") {
     const actor = await get(T.users, uid);
     if (!["official","admin"].includes(String(actor.role || ""))) throw new Error("Official authorization required.");
-    const created = await create(T.announcements, {
+    const created = await create(req, T.announcements, {
       title: String(input.title || ""), body: String(input.description || ""),
       published: true, publishedAt: now(), createdAt: now(),
       category: String(input.category || "General"), priority: String(input.priority || "Normal"),
@@ -172,9 +173,9 @@ async function handle(req) {
   }
 
   if (route === "/event" && req.method === "POST") {
-    const actor = await db.getDocument(DATABASE_ID, T.users, uid);
+    const actor = await get(req, T.users, uid);
     if (!["official","admin"].includes(String(actor.role || ""))) throw new Error("Official authorization required.");
-    const created = await create(T.events, {
+    const created = await create(req, T.events, {
       title: String(input.title || ""), description: String(input.description || ""),
       startsAt: String(input.startsAt || ""), endsAt: String(input.endsAt || ""),
       location: String(input.location || ""), createdAt: now(),
