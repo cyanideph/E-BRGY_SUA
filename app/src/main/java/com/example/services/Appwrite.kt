@@ -23,6 +23,8 @@ object Appwrite {
     val DATABASE_ID: String get() = BuildConfig.APPWRITE_DATABASE_ID.takeIf { it.isNotBlank() && it != "none" }.orEmpty()
     val RESIDENT_FILES_BUCKET_ID: String get() = BuildConfig.APPWRITE_RESIDENT_FILES_BUCKET_ID.takeIf { it.isNotBlank() && it != "none" }.orEmpty()
 
+    const val BACKEND_AUTHORITY_FUNCTION_ID = "ebrgyauthorityv1"
+
     const val USERS_TABLE = "users"
     const val RESIDENTS_TABLE = "residents"
     const val SERVICES_TABLE = "services"
@@ -64,6 +66,7 @@ object Appwrite {
     fun tablesDB(): TablesDB = TablesDB(requireClient())
     fun storage(): Storage = Storage(requireClient())
     fun realtime(): Realtime = Realtime(requireClient())
+    fun functions(): io.appwrite.services.Functions = io.appwrite.services.Functions(requireClient())
 
     /**
      * Verifies that the mobile client can reach this Appwrite project.

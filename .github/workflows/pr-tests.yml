@@ -81,6 +81,12 @@ jobs:
             printf 'APPWRITE_RESIDENT_FILES_BUCKET_ID=%s\n' "$APPWRITE_RESIDENT_FILES_BUCKET_ID"
           } > .env
 
+      - name: Test Appwrite backend authority
+        working-directory: functions/ebrgyauthority
+        run: |
+          npm install --omit=dev
+          node --test index.test.js
+
       - name: Install Gradle ${{ env.GRADLE_VERSION }}
         uses: gradle/actions/setup-gradle@v4
         with:

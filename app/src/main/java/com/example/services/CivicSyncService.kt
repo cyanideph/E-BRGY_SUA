@@ -1,55 +1,76 @@
 package com.example.services
 
 import com.example.model.*
-import io.appwrite.ID
 import io.appwrite.Query
 import java.time.Instant
 
 object CivicSyncService {
     private val db get() = Appwrite.tablesDB()
 
+    private suspend fun executeAuthority(path: String, payload: Map<String, Any?> = emptyMap()) {
+        val response = Appwrite.functions().createExecution(
+            functionId = Appwrite.BACKEND_AUTHORITY_FUNCTION_ID,
+            body = org.json.JSONObject(payload).toString(),
+            async = false,
+            path = path,
+            method = io.appwrite.enums.ExecutionMethod.POST
+        )
+        if (response.responseStatusCode !in 200..299) {
+            error("Appwrite backend authority failed: HTTP ${response.responseStatusCode}: ${response.responseBody}")
+        }
+        val body = response.responseBody.orEmpty()
+        if (body.isNotBlank() && !runCatching { org.json.JSONObject(body).optBoolean("ok", true) }.getOrDefault(true)) {
+            error("Appwrite backend authority rejected operation: $body")
+        }
+    }
+
+    suspend fun registerResidentProfile(
+        fullName: String,
+        email: String,
+        mobileNumber: String,
+        address: String,
+        dateOfBirth: String,
+        civilStatus: String,
+        occupation: String,
+        emergencyContactName: String,
+        emergencyContactRelationship: String,
+        emergencyContactPhone: String,
+        latitude: Double?,
+        longitude: Double?
+    ): Result<Unit> = runCatching {
+        executeAuthority(
+            path = "/register-resident",
+            payload = mapOf(
+                "fullName" to fullName,
+                "email" to email,
+                "mobileNumber" to mobileNumber,
+                "address" to address,
+                "dateOfBirth" to dateOfBirth,
+                "civilStatus" to civilStatus,
+                "occupation" to occupation,
+                "emergencyContactName" to emergencyContactName,
+                "emergencyContactRelationship" to emergencyContactRelationship,
+                "emergencyContactPhone" to emergencyContactPhone,
+                "latitude" to latitude,
+                "longitude" to longitude
+            )
+        )
+    }
+
     suspend fun createRequest(request: DocumentRequest): Result<Unit> = runCatching {
-        db.createRow(
-            databaseId = Appwrite.DATABASE_ID,
-            tableId = Appwrite.REQUESTS_TABLE,
-            rowId = request.id.take(36),
-            data = mapOf(
-                "userId" to request.residentUid,
+        executeAuthority(
+            path = "/request",
+            payload = mapOf(
+                "requestId" to request.id.take(36),
                 "serviceId" to request.serviceId,
                 "referenceNumber" to request.referenceNumber,
+                "details" to (request.purpose + "|" + request.deliveryMethod + "|" + request.remarks),
                 "status" to request.status.label,
-                "details" to request.purpose + "|" + request.deliveryMethod + "|" + request.remarks,
                 "submittedAt" to Instant.ofEpochMilli(request.createdAt).toString(),
                 "updatedAt" to Instant.ofEpochMilli(request.updatedAt).toString()
             )
         )
-        db.createRow(
-            databaseId = Appwrite.DATABASE_ID,
-            tableId = Appwrite.REQUEST_STATUS_HISTORY_TABLE,
-            rowId = ID.unique(),
-            data = mapOf(
-                "requestId" to request.id.take(36),
-                "status" to request.status.label,
-                "remarks" to request.officialRemarks,
-                "changedBy" to request.residentUid,
-                "changedAt" to Instant.ofEpochMilli(request.createdAt).toString()
-            )
-        )
-        createNotification(
-            request.residentUid,
-            BarangayNotification(
-                id = ID.unique(),
-                title = "Request Submitted",
-                message = "Request ${request.referenceNumber} was received by the barangay.",
-                timestamp = request.createdAt,
-                category = "Service Request",
-                priority = "Normal",
-                referenceId = request.referenceNumber
-            )
-        ).getOrThrow()
-        createAudit(request.residentUid, "CREATE_REQUEST", "DocumentRequest", request.id.take(36), request.referenceNumber).getOrThrow()
     }
-
 
     /** Fetch only the authenticated resident's requests. Appwrite permissions remain
      * the primary security boundary; the query also prevents loading unrelated rows. */
@@ -76,60 +97,19 @@ object CivicSyncService {
         remarks: String,
         actorUid: String
     ): Result<Unit> = runCatching {
-        db.updateRow(
-            databaseId = Appwrite.DATABASE_ID,
-            tableId = Appwrite.REQUESTS_TABLE,
-            rowId = requestId,
-            data = mapOf(
-                "status" to status,
-                "updatedAt" to Instant.now().toString()
-            )
+        require(actorUid.isNotBlank()) { "Authenticated staff user required." }
+        executeAuthority(
+            path = "/request-status",
+            payload = mapOf("requestId" to requestId, "status" to status, "remarks" to remarks)
         )
-        db.createRow(
-            databaseId = Appwrite.DATABASE_ID,
-            tableId = Appwrite.REQUEST_STATUS_HISTORY_TABLE,
-            rowId = ID.unique(),
-            data = mapOf(
-                "requestId" to requestId,
-                "status" to status,
-                "remarks" to remarks,
-                "changedBy" to actorUid,
-                "changedAt" to Instant.now().toString()
-            )
-        )
-        val request = db.getRow(databaseId = Appwrite.DATABASE_ID, tableId = Appwrite.REQUESTS_TABLE, rowId = requestId)
-        val residentUid = request.data["userId"]?.toString().orEmpty()
-        if (residentUid.isNotBlank()) {
-            createNotification(
-                residentUid,
-                BarangayNotification(
-                    id = ID.unique(),
-                    title = "Request Status Updated",
-                    message = "Your request status is now ${status}." + if (remarks.isBlank()) "" else " ${remarks}",
-                    timestamp = System.currentTimeMillis(),
-                    category = "Service Request",
-                    priority = if (status == RequestStatus.READY.label) "Important" else "Normal",
-                    referenceId = request.data["referenceNumber"]?.toString().orEmpty()
-                )
-            ).getOrThrow()
-        }
-        createAudit(actorUid, "UPDATE_REQUEST_STATUS", "DocumentRequest", requestId, status).getOrThrow()
     }
 
     suspend fun createEmergency(report: EmergencyReport): Result<Unit> = runCatching {
-        db.createRow(
-            databaseId = Appwrite.DATABASE_ID,
-            tableId = Appwrite.EMERGENCIES_TABLE,
-            rowId = report.id.take(36),
-            data = mapOf(
-                "userId" to report.residentUid,
-                "type" to when (report.type) {
-                    EmergencyType.BARANGAY_EMERGENCY -> "Barangay Emergency"
-                    EmergencyType.MEDICAL -> "Medical"
-                    EmergencyType.FIRE -> "Fire"
-                    EmergencyType.POLICE -> "Police"
-                    EmergencyType.RESCUE_DISASTER -> "Rescue/Disaster"
-                },
+        executeAuthority(
+            path = "/emergency",
+            payload = mapOf(
+                "reportId" to report.id.take(36),
+                "type" to report.type.displayName,
                 "description" to report.description,
                 "latitude" to report.latitude,
                 "longitude" to report.longitude,
@@ -137,32 +117,6 @@ object CivicSyncService {
                 "createdAt" to Instant.ofEpochMilli(report.timestamp).toString()
             )
         )
-        db.createRow(
-            databaseId = Appwrite.DATABASE_ID,
-            tableId = Appwrite.EMERGENCY_STATUS_HISTORY_TABLE,
-            rowId = ID.unique(),
-            data = mapOf(
-                "reportId" to report.id.take(36),
-                "status" to "Reported",
-                "responder" to report.assignedResponder,
-                "notes" to report.responseNotes,
-                "changedBy" to report.residentUid,
-                "changedAt" to Instant.ofEpochMilli(report.timestamp).toString()
-            )
-        )
-        createNotification(
-            report.residentUid,
-            BarangayNotification(
-                id = ID.unique(),
-                title = "Emergency Report Accepted",
-                message = "Emergency report ${report.id} was accepted by the barangay backend.",
-                timestamp = report.timestamp,
-                priority = "Emergency",
-                category = "Emergency",
-                referenceId = report.id
-            )
-        ).getOrThrow()
-        createAudit(report.residentUid, "EMERGENCY_SOS", "EmergencyReport", report.id.take(36), report.type.displayName).getOrThrow()
     }
 
     suspend fun updateEmergencyStatus(
@@ -172,58 +126,16 @@ object CivicSyncService {
         notes: String,
         actorUid: String
     ): Result<Unit> = runCatching {
-        db.updateRow(
-            databaseId = Appwrite.DATABASE_ID,
-            tableId = Appwrite.EMERGENCIES_TABLE,
-            rowId = reportId,
-            data = mapOf("status" to status)
+        require(actorUid.isNotBlank()) { "Authenticated responder user required." }
+        executeAuthority(
+            path = "/emergency-status",
+            payload = mapOf("reportId" to reportId, "status" to status, "responder" to responder, "notes" to notes)
         )
-        db.createRow(
-            databaseId = Appwrite.DATABASE_ID,
-            tableId = Appwrite.EMERGENCY_STATUS_HISTORY_TABLE,
-            rowId = ID.unique(),
-            data = mapOf(
-                "reportId" to reportId,
-                "status" to status,
-                "responder" to responder,
-                "notes" to notes,
-                "changedBy" to actorUid,
-                "changedAt" to Instant.now().toString()
-            )
-        )
-        val report = db.getRow(databaseId = Appwrite.DATABASE_ID, tableId = Appwrite.EMERGENCIES_TABLE, rowId = reportId)
-        val residentUid = report.data["userId"]?.toString().orEmpty()
-        if (residentUid.isNotBlank()) {
-            createNotification(
-                residentUid,
-                BarangayNotification(
-                    id = ID.unique(),
-                    title = "Emergency Status Updated",
-                    message = "Your emergency report status is now $status.",
-                    timestamp = System.currentTimeMillis(),
-                    category = "Emergency",
-                    priority = "Emergency",
-                    referenceId = reportId
-                )
-            ).getOrThrow()
-        }
-        createAudit(actorUid, "UPDATE_EMERGENCY_STATUS", "EmergencyReport", reportId, status).getOrThrow()
     }
 
     suspend fun createNotification(userId: String, notification: BarangayNotification): Result<Unit> = runCatching {
-        db.createRow(
-            databaseId = Appwrite.DATABASE_ID,
-            tableId = Appwrite.NOTIFICATIONS_TABLE,
-            rowId = notification.id.take(36),
-            data = mapOf(
-                "userId" to userId,
-                "title" to notification.title,
-                "body" to notification.message,
-                "type" to notification.category,
-                "read" to notification.isRead,
-                "createdAt" to Instant.ofEpochMilli(notification.timestamp).toString()
-            )
-        )
+        require(userId.isNotBlank()) { "Authenticated resident required." }
+        Unit
     }
 
 
@@ -236,22 +148,16 @@ object CivicSyncService {
         authorName: String,
         authorRole: String
     ): Result<Unit> = runCatching {
-        val now = Instant.now().toString()
-        db.createRow(
-            databaseId = Appwrite.DATABASE_ID,
-            tableId = Appwrite.ANNOUNCEMENTS_TABLE,
-            rowId = ID.unique(),
-            data = mapOf(
+        executeAuthority(
+            path = "/announcement",
+            payload = mapOf(
                 "title" to title,
-                "body" to description,
-                "published" to true,
-                "publishedAt" to now,
-                "createdAt" to now,
+                "description" to description,
                 "category" to category.name,
                 "priority" to priority.name,
+                "isPinned" to isPinned,
                 "authorName" to authorName,
-                "authorRole" to authorRole,
-                "isPinned" to isPinned
+                "authorRole" to authorRole
             )
         )
     }
@@ -265,20 +171,16 @@ object CivicSyncService {
         organizer: String,
         category: String
     ): Result<Unit> = runCatching {
-        db.createRow(
-            databaseId = Appwrite.DATABASE_ID,
-            tableId = Appwrite.EVENTS_TABLE,
-            rowId = ID.unique(),
-            data = mapOf(
+        executeAuthority(
+            path = "/event",
+            payload = mapOf(
                 "title" to title,
                 "description" to description,
                 "startsAt" to startsAt,
                 "endsAt" to endsAt,
                 "location" to location,
-                "createdAt" to Instant.now().toString(),
                 "organizer" to organizer,
-                "category" to category,
-                "rsvpCount" to 0
+                "category" to category
             )
         )
     }
@@ -318,25 +220,5 @@ object CivicSyncService {
         }
     }
 
-    suspend fun createAudit(
-        actorUid: String,
-        action: String,
-        resourceType: String,
-        resourceId: String?,
-        details: String
-    ): Result<Unit> = runCatching {
-        db.createRow(
-            databaseId = Appwrite.DATABASE_ID,
-            tableId = Appwrite.AUDIT_LOGS_TABLE,
-            rowId = ID.unique(),
-            data = mapOf(
-                "actorUserId" to actorUid,
-                "action" to action,
-                "resourceType" to resourceType,
-                "resourceId" to resourceId,
-                "details" to details,
-                "createdAt" to Instant.now().toString()
-            )
-        )
-    }
+
 }

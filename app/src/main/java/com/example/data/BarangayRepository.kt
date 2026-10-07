@@ -378,17 +378,20 @@ class BarangayRepository {
         Appwrite.account().createEmailPasswordSession(email = email, password = password)
         val now = java.time.Instant.now().toString()
         val normalizedBirthDate = dateOfBirth.takeIf { it.isNotBlank() }?.let { java.time.LocalDate.parse(it).atStartOfDay(java.time.ZoneId.of("Asia/Manila")).toInstant().toString() }
-        val userPermissions = listOf("read(\"user:${created.id}\")")
-        Appwrite.tablesDB().createRow(databaseId = Appwrite.DATABASE_ID, tableId = Appwrite.USERS_TABLE, rowId = created.id,
-            data = mapOf("userId" to created.id, "name" to fullName, "email" to email, "role" to "resident", "address" to address, "phone" to mobile, "createdAt" to now), permissions = userPermissions)
-        Appwrite.tablesDB().createRow(databaseId = Appwrite.DATABASE_ID, tableId = Appwrite.RESIDENTS_TABLE, rowId = created.id,
-            data = mapOf(
-                "userId" to created.id, "fullName" to fullName, "address" to address, "mobileNumber" to mobile,
-                "birthDate" to normalizedBirthDate, "civilStatus" to civilStatus, "occupation" to occupation,
-                "emergencyContactName" to emergencyContactName, "emergencyContactRelationship" to emergencyContactRelationship,
-                "emergencyContactPhone" to emergencyContactPhone, "latitude" to latitude, "longitude" to longitude,
-                "residentId" to created.id, "verified" to false, "registrationStatus" to "Pending Verification", "createdAt" to now
-            ), permissions = userPermissions)
+        CivicSyncService.registerResidentProfile(
+            fullName = fullName,
+            email = email,
+            mobileNumber = mobile,
+            address = address,
+            dateOfBirth = normalizedBirthDate.orEmpty(),
+            civilStatus = civilStatus,
+            occupation = occupation,
+            emergencyContactName = emergencyContactName,
+            emergencyContactRelationship = emergencyContactRelationship,
+            emergencyContactPhone = emergencyContactPhone,
+            latitude = latitude,
+            longitude = longitude
+        ).getOrThrow()
         val session = loadAuthenticatedSession()
         _currentUser.value = session
         _isOnline.value = true
