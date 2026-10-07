@@ -167,7 +167,7 @@ async function handle(req) {
     });
     const resident = String(request.userId || "");
     await notify(req, resident, "Request Status Updated", `Your request status is now ${status}.`, "Service Request", String(request.referenceNumber || ""));
-    await audit(uid, "UPDATE_REQUEST_STATUS", "DocumentRequest", requestId, status);
+    await audit(req, uid, "UPDATE_REQUEST_STATUS", "DocumentRequest", requestId, status);
     return { ok: true };
   }
 
@@ -182,8 +182,8 @@ async function handle(req) {
     await create(req, T.emergencyHistory, {
       reportId: id, status: "Reported", responder: "", notes: "", changedBy: uid, changedAt: now()
     });
-    await notify(uid, "Emergency Report Accepted", `Emergency report ${id} was accepted by the barangay backend.`, "Emergency", id);
-    await audit(uid, "EMERGENCY_SOS", "EmergencyReport", id, type);
+    await notify(req, uid, "Emergency Report Accepted", `Emergency report ${id} was accepted by the barangay backend.`, "Emergency", id);
+    await audit(req, uid, "EMERGENCY_SOS", "EmergencyReport", id, type);
     return { ok: true, reportId: id };
   }
 
@@ -202,7 +202,7 @@ async function handle(req) {
     });
     const resident = String(report.userId || "");
     await notify(req, resident, "Emergency Status Updated", `Your emergency report status is now ${status}.`, "Emergency", reportId);
-    await audit(uid, "UPDATE_EMERGENCY_STATUS", "EmergencyReport", reportId, status);
+    await audit(req, uid, "UPDATE_EMERGENCY_STATUS", "EmergencyReport", reportId, status);
     return { ok: true };
   }
 
@@ -215,7 +215,7 @@ async function handle(req) {
       category: String(input.category || "General"), priority: String(input.priority || "Normal"),
       authorName: String(input.authorName || ""), authorRole: String(actor.role || ""), isPinned: Boolean(input.isPinned)
     });
-    await audit(uid, "CREATE_ANNOUNCEMENT", "Announcement", created.$id, String(input.title || ""));
+    await audit(req, uid, "CREATE_ANNOUNCEMENT", "Announcement", created.$id, String(input.title || ""));
     return { ok: true, announcementId: created.$id };
   }
 
@@ -228,7 +228,7 @@ async function handle(req) {
       location: String(input.location || ""), createdAt: now(),
       organizer: String(input.organizer || ""), category: String(input.category || ""), rsvpCount: 0
     });
-    await audit(uid, "CREATE_EVENT", "Event", created.$id, String(input.title || ""));
+    await audit(req, uid, "CREATE_EVENT", "Event", created.$id, String(input.title || ""));
     return { ok: true, eventId: created.$id };
   }
 
