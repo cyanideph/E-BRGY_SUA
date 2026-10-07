@@ -20,7 +20,7 @@ object CivicSyncService {
             error("Appwrite backend authority failed: HTTP ${response.responseStatusCode}: ${response.responseBody}")
         }
         val body = response.responseBody.orEmpty()
-        if (body.isNotBlank() && runCatching { org.json.JSONObject(body).optBoolean("ok", true) }.getOrDefault(true).not()) {
+        if (body.isNotBlank() && !runCatching { org.json.JSONObject(body).optBoolean("ok", true) }.getOrDefault(true)) {
             error("Appwrite backend authority rejected operation: $body")
         }
     }
@@ -32,7 +32,10 @@ object CivicSyncService {
                 "requestId" to request.id.take(36),
                 "serviceId" to request.serviceId,
                 "referenceNumber" to request.referenceNumber,
-                "details" to (request.purpose + "|" + request.deliveryMethod + "|" + request.remarks)
+                "details" to (request.purpose + "|" + request.deliveryMethod + "|" + request.remarks),
+                "status" to request.status.label,
+                "submittedAt" to Instant.ofEpochMilli(request.createdAt).toString(),
+                "updatedAt" to Instant.ofEpochMilli(request.updatedAt).toString()
             )
         )
     }
@@ -54,6 +57,8 @@ object CivicSyncService {
         }
     }
 
+    /** Server-side lifecycle update. The caller should also write the matching
+     * status-history row so the audit timeline is durable. */
     suspend fun updateRequestStatus(
         requestId: String,
         status: String,
@@ -72,16 +77,12 @@ object CivicSyncService {
             path = "/emergency",
             payload = mapOf(
                 "reportId" to report.id.take(36),
-                "type" to when (report.type) {
-                    EmergencyType.BARANGAY_EMERGENCY -> "Barangay Emergency"
-                    EmergencyType.MEDICAL -> "Medical"
-                    EmergencyType.FIRE -> "Fire"
-                    EmergencyType.POLICE -> "Police"
-                    EmergencyType.RESCUE_DISASTER -> "Rescue/Disaster"
-                },
+                "type" to report.type.displayName,
                 "description" to report.description,
                 "latitude" to report.latitude,
-                "longitude" to report.longitude
+                "longitude" to report.longitude,
+                "status" to "Reported",
+                "createdAt" to Instant.ofEpochMilli(report.timestamp).toString()
             )
         )
     }
@@ -96,20 +97,15 @@ object CivicSyncService {
         require(actorUid.isNotBlank()) { "Authenticated responder user required." }
         executeAuthority(
             path = "/emergency-status",
-            payload = mapOf(
-                "reportId" to reportId,
-                "status" to status,
-                "responder" to responder,
-                "notes" to notes
-            )
+            payload = mapOf("reportId" to reportId, "status" to status, "responder" to responder, "notes" to notes)
         )
     }
 
     suspend fun createNotification(userId: String, notification: BarangayNotification): Result<Unit> = runCatching {
-        // Notifications are created by the authoritative backend workflow.
         require(userId.isNotBlank()) { "Authenticated resident required." }
         Unit
     }
+
 
     suspend fun createAnnouncement(
         title: String,
@@ -122,25 +118,20 @@ object CivicSyncService {
     ): Result<Unit> = runCatching {
         val now = Instant.now().toString()
         db.createRow(
-            data    suspend fun createAnnouncement(
-        title: String,
-        description: String,
-        category: AnnouncementCategory,
-        priority: AnnouncementPriority,
-        isPinned: Boolean,
-        authorName: String,
-        authorRole: String
-    ): Result<Unit> = runCatching {
-        executeAuthority(
-            path = "/announcement",
-            payload = mapOf(
+            databaseId = Appwrite.DATABASE_ID,
+            tableId = Appwrite.ANNOUNCEMENTS_TABLE,
+            rowId = ID.unique(),
+            data = mapOf(
                 "title" to title,
-                "description" to description,
+                "body" to description,
+                "published" to true,
+                "publishedAt" to now,
+                "createdAt" to now,
                 "category" to category.name,
                 "priority" to priority.name,
-                "isPinned" to isPinned,
                 "authorName" to authorName,
-                "authorRole" to authorRole
+                "authorRole" to authorRole,
+                "isPinned" to isPinned
             )
         )
     }
@@ -154,16 +145,20 @@ object CivicSyncService {
         organizer: String,
         category: String
     ): Result<Unit> = runCatching {
-        executeAuthority(
-            path = "/event",
-            payload = mapOf(
+        db.createRow(
+            databaseId = Appwrite.DATABASE_ID,
+            tableId = Appwrite.EVENTS_TABLE,
+            rowId = ID.unique(),
+            data = mapOf(
                 "title" to title,
                 "description" to description,
                 "startsAt" to startsAt,
                 "endsAt" to endsAt,
                 "location" to location,
+                "createdAt" to Instant.now().toString(),
                 "organizer" to organizer,
-                "category" to category
+                "category" to category,
+                "rsvpCount" to 0
             )
         )
     }
@@ -210,8 +205,18 @@ object CivicSyncService {
         resourceId: String?,
         details: String
     ): Result<Unit> = runCatching {
-        // Audit records are generated inside authoritative workflows.
-        require(actorUid.isNotBlank()) { "Authenticated user required." }
-        Unit
+        db.createRow(
+            databaseId = Appwrite.DATABASE_ID,
+            tableId = Appwrite.AUDIT_LOGS_TABLE,
+            rowId = ID.unique(),
+            data = mapOf(
+                "actorUserId" to actorUid,
+                "action" to action,
+                "resourceType" to resourceType,
+                "resourceId" to resourceId,
+                "details" to details,
+                "createdAt" to Instant.now().toString()
+            )
+        )
     }
 }
