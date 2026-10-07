@@ -1,10 +1,12 @@
 import { ID } from "node-appwrite";
 
-const endpoint = "https://sgp.cloud.appwrite.io/v1";
-const project = "6ac31e4000390af0f850";
-
-
+const endpoint = process.env.APPWRITE_FUNCTION_API_ENDPOINT;
+const project = process.env.APPWRITE_FUNCTION_PROJECT_ID;
 const DATABASE_ID = process.env.APPWRITE_DATABASE_ID || "ebarangay-sua-db";
+
+if (!endpoint || !project) {
+  throw new Error("Appwrite runtime configuration is missing.");
+}
 
 const T = {
   users: "users",
@@ -61,6 +63,9 @@ async function create(req, tableId, data, rowId = ID.unique(), permissions) {
 async function get(req, tableId, rowId) {
   return appwrite(req, `/databases/${DATABASE_ID}/tables/${tableId}/rows/${rowId}`, "GET");
 }
+async function getUser(req, uid) {
+  return appwrite(req, `/users/${uid}`, "GET");
+}
 async function update(req, tableId, rowId, data) {
   return appwrite(req, `/databases/${DATABASE_ID}/tables/${tableId}/rows/${rowId}`, "PATCH", { data });
 }
@@ -92,13 +97,19 @@ async function handle(req) {
     try { existing = await get(req, T.residents, uid); } catch {}
     if (existing) throw new Error("Resident profile already exists.");
 
+    const accountUser = await getUser(req, uid);
+    const accountEmail = String(accountUser.email || "").trim();
+    if (!accountEmail || accountEmail.toLowerCase() !== String(input.email).trim().toLowerCase()) {
+      throw new Error("Registration email does not match the authenticated Appwrite account.");
+    }
+
     const createdAt = now();
     const ownerPermission = [`read("user:${uid}")`];
 
     await create(req, T.users, {
       userId: uid,
       name: String(input.fullName),
-      email: String(input.email),
+      email: accountEmail,
       role: "resident",
       address: String(input.address),
       phone: String(input.mobileNumber),
@@ -213,7 +224,7 @@ async function handle(req) {
       title: String(input.title || ""), body: String(input.description || ""),
       published: true, publishedAt: now(), createdAt: now(),
       category: String(input.category || "General"), priority: String(input.priority || "Normal"),
-      authorName: String(input.authorName || ""), authorRole: String(actor.role || ""), isPinned: Boolean(input.isPinned)
+      authorName: String(actor.name || input.authorName || ""), authorRole: String(actor.role || ""), isPinned: Boolean(input.isPinned)
     });
     await audit(req, uid, "CREATE_ANNOUNCEMENT", "Announcement", created.$id, String(input.title || ""));
     return { ok: true, announcementId: created.$id };
