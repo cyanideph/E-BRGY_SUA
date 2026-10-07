@@ -24,6 +24,39 @@ object CivicSyncService {
         }
     }
 
+    suspend fun registerResidentProfile(
+        fullName: String,
+        email: String,
+        mobileNumber: String,
+        address: String,
+        dateOfBirth: String,
+        civilStatus: String,
+        occupation: String,
+        emergencyContactName: String,
+        emergencyContactRelationship: String,
+        emergencyContactPhone: String,
+        latitude: Double?,
+        longitude: Double?
+    ): Result<Unit> = runCatching {
+        executeAuthority(
+            path = "/register-resident",
+            payload = mapOf(
+                "fullName" to fullName,
+                "email" to email,
+                "mobileNumber" to mobileNumber,
+                "address" to address,
+                "dateOfBirth" to dateOfBirth,
+                "civilStatus" to civilStatus,
+                "occupation" to occupation,
+                "emergencyContactName" to emergencyContactName,
+                "emergencyContactRelationship" to emergencyContactRelationship,
+                "emergencyContactPhone" to emergencyContactPhone,
+                "latitude" to latitude,
+                "longitude" to longitude
+            )
+        )
+    }
+
     suspend fun createRequest(request: DocumentRequest): Result<Unit> = runCatching {
         executeAuthority(
             path = "/request",
