@@ -86,6 +86,55 @@ async function handle(req) {
   const uid = requireUser(req);
   const input = body(req);
   
+  if (route === "/register-resident" && req.method === "POST") {
+    const required = ["fullName", "email", "address", "mobileNumber"];
+    for (const k of required) if (!input[k]) throw new Error(`Missing ${k}`);
+
+    let existing = null;
+    try { existing = await get(req, T.residents, uid); } catch {}
+    if (existing) throw new Error("Resident profile already exists.");
+
+    const createdAt = now();
+    const ownerPermission = [`read("user:${uid}")`];
+
+    await create(req, T.users, {
+      userId: uid,
+      name: String(input.fullName),
+      email: String(input.email),
+      role: "resident",
+      address: String(input.address),
+      phone: String(input.mobileNumber),
+      createdAt
+    }, uid, ownerPermission);
+
+    try {
+      await create(req, T.residents, {
+        userId: uid,
+        fullName: String(input.fullName),
+        address: String(input.address),
+        mobileNumber: String(input.mobileNumber),
+        birthDate: input.dateOfBirth || null,
+        civilStatus: String(input.civilStatus || ""),
+        occupation: String(input.occupation || ""),
+        emergencyContactName: String(input.emergencyContactName || ""),
+        emergencyContactRelationship: String(input.emergencyContactRelationship || ""),
+        emergencyContactPhone: String(input.emergencyContactPhone || ""),
+        latitude: input.latitude ?? null,
+        longitude: input.longitude ?? null,
+        residentId: uid,
+        verified: false,
+        registrationStatus: "Pending Verification",
+        createdAt
+      }, uid, ownerPermission);
+    } catch (e) {
+      try { await appwrite(req, `/databases/${DATABASE_ID}/tables/${T.users}/rows/${uid}`, "DELETE"); } catch {}
+      throw e;
+    }
+
+    await audit(req, uid, "REGISTER_RESIDENT", "Resident", uid, "Resident profile created");
+    return { ok: true, residentId: uid, registrationStatus: "Pending Verification" };
+  }
+
   if (route === "/request" && req.method === "POST") {
     const required = ["requestId","serviceId","referenceNumber","details"];
     for (const k of required) if (!input[k]) throw new Error(`Missing ${k}`);
