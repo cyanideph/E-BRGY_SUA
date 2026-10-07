@@ -187,25 +187,5 @@ object CivicSyncService {
         }
     }
 
-    suspend fun createAudit(
-        actorUid: String,
-        action: String,
-        resourceType: String,
-        resourceId: String?,
-        details: String
-    ): Result<Unit> = runCatching {
-        db.createRow(
-            databaseId = Appwrite.DATABASE_ID,
-            tableId = Appwrite.AUDIT_LOGS_TABLE,
-            rowId = ID.unique(),
-            data = mapOf(
-                "actorUserId" to actorUid,
-                "action" to action,
-                "resourceType" to resourceType,
-                "resourceId" to resourceId,
-                "details" to details,
-                "createdAt" to Instant.now().toString()
-            )
-        )
-    }
+
 }
