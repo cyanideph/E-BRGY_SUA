@@ -38,7 +38,7 @@ fun CivicSearchFilterBar(
             onValueChange = onSearchQueryChange,
             placeholder = { Text(placeholderText, fontSize = 13.sp) },
             leadingIcon = {
-                Icon(Icons.Default.Search, contentDescription = "Search", tint = DeepOceanBlue)
+                Icon(Icons.Default.Search, contentDescription = "Search", tint = MaterialTheme.colorScheme.primary)
             },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
@@ -51,7 +51,7 @@ fun CivicSearchFilterBar(
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = DeepOceanBlue,
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
                 unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
             )
         )
@@ -71,8 +71,8 @@ fun CivicSearchFilterBar(
                     label = { Text(chip, fontSize = 12.sp) },
                     shape = RoundedCornerShape(10.dp),
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = DeepOceanBlue,
-                        selectedLabelColor = Color.White
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                     )
                 )
             }

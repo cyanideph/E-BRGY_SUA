@@ -124,7 +124,6 @@ fun EBarangaySuaApp() {
                                 Icon(
                                     imageVector = icon,
                                     contentDescription = label,
-                                    tint = if (isSelected) DeepOceanBlue else DeepNavyMuted,
                                     modifier = Modifier.size(24.dp)
                                 )
                             },
@@ -133,12 +132,15 @@ fun EBarangaySuaApp() {
                                     text = label,
                                     style = MaterialTheme.typography.labelMedium.copy(
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                                    ),
-                                    color = if (isSelected) DeepOceanBlue else DeepNavyMuted
+                                    )
                                 )
                             },
                             colors = NavigationBarItemDefaults.colors(
-                                indicatorColor = if (tabScreen == Screen.Sua) SouthernSeaTealContainer else DeepOceanContainer
+                                selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                indicatorColor = if (tabScreen == Screen.Sua) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer
                             )
                         )
                     }

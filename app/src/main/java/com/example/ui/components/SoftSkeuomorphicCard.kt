@@ -10,29 +10,31 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * Shared content surface. Kept under the existing API name so screens do not need
- * a broad rewrite, but the treatment is now restrained and Material-native.
+ * Shared content surface — Design System V2.
+ * M3-native: surfaceContainerLow fill, outlineVariant border, 1dp tonal lift.
+ * Keeps the existing API so all screens keep working.
  */
 @Composable
 fun SoftSkeuomorphicCard(
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(16.dp),
-    backgroundColor: Color = MaterialTheme.colorScheme.surface,
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
     elevation: Dp = 1.dp,
     highlightColor: Color = Color.Transparent,
     borderColor: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f),
+    testTag: String? = null,
+    contentPadding: Dp = 16.dp,
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val surfaceModifier = if (onClick != null) {
-        modifier.clickable { onClick.invoke() }
-    } else {
-        modifier
-    }
+    var surfaceModifier = modifier
+    if (testTag != null) surfaceModifier = surfaceModifier.testTag(testTag)
+    if (onClick != null) surfaceModifier = surfaceModifier.clickable { onClick.invoke() }
 
     Surface(
         modifier = surfaceModifier,
@@ -42,6 +44,6 @@ fun SoftSkeuomorphicCard(
         shadowElevation = 0.dp,
         border = BorderStroke(1.dp, borderColor),
     ) {
-        Column(modifier = Modifier.padding(16.dp), content = content)
+        Column(modifier = Modifier.padding(contentPadding), content = content)
     }
 }

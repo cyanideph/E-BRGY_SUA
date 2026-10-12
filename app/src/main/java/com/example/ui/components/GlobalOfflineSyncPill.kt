@@ -28,14 +28,23 @@ fun GlobalOfflineSyncPill(modifier: Modifier = Modifier) {
     val repository = remember { BarangayRepository.instance }
     val isOnline by repository.isOnline.collectAsState()
 
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val container = if (isOnline) {
+        if (isDark) NaturalGreenContainerDark else NaturalGreenContainer.copy(alpha = 0.85f)
+    } else {
+        if (isDark) WarmAmberContainerDark else WarmAmberContainer.copy(alpha = 0.95f)
+    }
+    val content = if (isOnline) {
+        if (isDark) OnNaturalGreenContainerDark else OnNaturalGreenContainer
+    } else {
+        if (isDark) OnWarmAmberContainerDark else OnWarmAmberContainer
+    }
+
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(20.dp),
-        color = if (isOnline) NaturalGreenContainer.copy(alpha = 0.85f) else WarmAmberContainer.copy(alpha = 0.95f),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            if (isOnline) NaturalGreen.copy(alpha = 0.5f) else WarmAmber
-        )
+        color = container,
+        border = androidx.compose.foundation.BorderStroke(1.dp, content.copy(alpha = 0.4f))
     ) {
         Row(
             modifier = Modifier.defaultMinSize(minHeight = 40.dp).padding(horizontal = 10.dp, vertical = 5.dp),
@@ -43,21 +52,20 @@ fun GlobalOfflineSyncPill(modifier: Modifier = Modifier) {
         ) {
             Box(
                 modifier = Modifier.size(8.dp).clip(CircleShape)
-                    .background(if (isOnline) NaturalGreen else WarmAmber)
+                    .background(content)
             )
             Spacer(modifier = Modifier.width(6.dp))
             Icon(
                 imageVector = if (isOnline) Icons.Default.CloudDone else Icons.Default.CloudOff,
                 contentDescription = if (isOnline) "Connected to server" else "Offline; showing cached data",
-                tint = if (isOnline) NaturalGreen else Color(0xFF7A5900),
+                tint = content,
                 modifier = Modifier.size(16.dp)
             )
             Spacer(modifier = Modifier.width(4.dp))
             Text(
                 text = if (isOnline) "Server live" else "Offline",
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (isOnline) NaturalGreen else Color(0xFF7A5900)
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = content
             )
         }
     }

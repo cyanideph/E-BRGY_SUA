@@ -62,7 +62,7 @@ fun ServicesScreen(
                 onValueChange = { searchQuery = it },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Search barangay clearances & certificates...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = DeepOceanBlue) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { searchQuery = "" }) {
@@ -96,8 +96,8 @@ fun ServicesScreen(
                             )
                         },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = DeepOceanBlue,
-                            selectedLabelColor = Color.White
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary
                         ),
                         modifier = Modifier.padding(end = 6.dp)
                     )
@@ -145,7 +145,7 @@ fun ServiceListItem(
             Surface(
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier.size(52.dp),
-                color = DeepOceanContainer
+                color = MaterialTheme.colorScheme.primaryContainer
             ) {
                 Image(
                     painter = painterResource(id = cardThumb),
@@ -170,7 +170,7 @@ fun ServiceListItem(
                 Text(
                     text = service.category,
                     style = MaterialTheme.typography.bodySmall,
-                    color = SouthernSeaTealDark,
+                    color = MaterialTheme.colorScheme.secondary,
                     fontWeight = FontWeight.SemiBold
                 )
                 Spacer(modifier = Modifier.height(4.dp))
@@ -193,7 +193,7 @@ fun ServiceListItem(
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = "Details",
-                tint = SouthernSeaTealDark
+                tint = MaterialTheme.colorScheme.secondary
             )
         }
     }

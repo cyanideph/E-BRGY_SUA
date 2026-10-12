@@ -36,14 +36,14 @@ fun EmptyStateCard(
     ) {
         Surface(
             shape = CircleShape,
-            color = SouthernSeaTealContainer.copy(alpha = 0.5f),
+            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
             modifier = Modifier.size(64.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = SouthernSeaTealDark,
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
                     modifier = Modifier.size(32.dp)
                 )
             }
@@ -74,8 +74,8 @@ fun EmptyStateCard(
                 onClick = onButtonClick,
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = DeepOceanBlue,
-                    contentColor = androidx.compose.ui.graphics.Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
                 Text(text = buttonText, fontWeight = FontWeight.SemiBold)

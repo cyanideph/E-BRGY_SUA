@@ -34,10 +34,18 @@ fun SuaWaveHeader(
     modifier: Modifier = Modifier,
     trailingAction: (@Composable () -> Unit)? = null
 ) {
+    // Brand header is intentionally always deep-ocean gradient (both modes)
+    // so white text stays AA. Shadow must wrap the clipped shape — clip first
+    // via Surface shape rather than shadow-then-clip.
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp),
+        color = Color.Transparent,
+        shadowElevation = 6.dp
+    ) {
     Box(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
@@ -47,7 +55,6 @@ fun SuaWaveHeader(
                     )
                 )
             )
-            .shadow(elevation = 6.dp, shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp))
     ) {
         // Decorative Coastal Wave lines in background
         Canvas(
@@ -94,6 +101,7 @@ fun SuaWaveHeader(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .statusBarsPadding()
                 .padding(horizontal = 20.dp, vertical = 20.dp)
         ) {
             Row(
@@ -126,8 +134,7 @@ fun SuaWaveHeader(
                             Text(
                                 text = "e-Barangay Sua Portal",
                                 color = Color.White.copy(alpha = 0.95f),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold
+                                style = MaterialTheme.typography.labelMedium
                             )
                         }
                     }
@@ -137,8 +144,8 @@ fun SuaWaveHeader(
                     Text(
                         text = "$greeting, $name",
                         color = Color.White,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold
+                        style = MaterialTheme.typography.headlineSmall,
+                        maxLines = 2
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
@@ -156,18 +163,24 @@ fun SuaWaveHeader(
                         Text(
                             text = location,
                             color = Color.White.copy(alpha = 0.88f),
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 2
                         )
                     }
                 }
 
                 if (trailingAction != null) {
-                    Box(modifier = Modifier.padding(start = 12.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .padding(start = 12.dp)
+                            .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         trailingAction()
                     }
                 }
             }
+        }
         }
     }
 }

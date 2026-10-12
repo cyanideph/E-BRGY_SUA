@@ -44,12 +44,16 @@ val DeepNavySecondary = Color(0xFF475E74)
 // Keep muted text above WCAG normal-text contrast on light surfaces.
 val DeepNavyMuted = Color(0xFF5F7180)
 
-// Status & Emergency Colors
+// Status & Emergency Colors — light containers + dark-accessible on-colors.
+// On-colors are darkened for WCAG AA on light containers (11-12sp bold).
 val NaturalGreen = Color(0xFF2E7D32)
+val OnNaturalGreenContainer = Color(0xFF1B5E20)
 val NaturalGreenContainer = Color(0xFFD5F0D6)
 val WarmAmber = Color(0xFFD97706)
+val OnWarmAmberContainer = Color(0xFF7A3E00)
 val WarmAmberContainer = Color(0xFFFEEBC8)
 val RestrainedCoralRed = Color(0xFFD9383A)
+val OnRestrainedCoralContainer = Color(0xFF7A1F1F)
 val RestrainedCoralRedContainer = Color(0xFFFFDAD6)
 
 // Dark Mode Variations
@@ -59,3 +63,25 @@ val DarkSurfaceVariant = Color(0xFF1D3147)
 val DarkBorderSoft = Color(0xFF2C4560)
 val DarkTextPrimary = Color(0xFFF4F7FB)
 val DarkTextSecondary = Color(0xFFA6BACD)
+
+// Dark-mode status containers (lower luminance, light on-colors)
+val NaturalGreenContainerDark = Color(0xFF1E3A24)
+val OnNaturalGreenContainerDark = Color(0xFFA8DAB5)
+val WarmAmberContainerDark = Color(0xFF3D2A0A)
+val OnWarmAmberContainerDark = Color(0xFFF5C86E)
+val CoralContainerDark = Color(0xFF431312)
+val OnCoralContainerDark = Color(0xFFFFB4AB)
+
+// M3 expressive surface-container ladder (light)
+val LightSurfaceContainerLowest = Color(0xFFFFFFFF)
+val LightSurfaceContainerLow = Color(0xFFF4F6F9)
+val LightSurfaceContainer = Color(0xFFEEF2F6)
+val LightSurfaceContainerHigh = Color(0xFFE6ECF2)
+val LightSurfaceContainerHighest = Color(0xFFDFE7EF)
+
+// M3 expressive surface-container ladder (dark)
+val DarkSurfaceContainerLowest = Color(0xFF0A141F)
+val DarkSurfaceContainerLow = Color(0xFF142334)
+val DarkSurfaceContainer = Color(0xFF1D3147)
+val DarkSurfaceContainerHigh = Color(0xFF27405B)
+val DarkSurfaceContainerHighest = Color(0xFF324E6E)

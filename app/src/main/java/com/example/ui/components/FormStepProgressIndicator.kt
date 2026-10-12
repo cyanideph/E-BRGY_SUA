@@ -41,7 +41,7 @@ fun FormStepProgressIndicator(
             val circleColor by animateColorAsState(
                 targetValue = when {
                     isCompleted -> NaturalGreen
-                    isCurrent -> DeepOceanBlue
+                    isCurrent -> MaterialTheme.colorScheme.primary
                     else -> MaterialTheme.colorScheme.outlineVariant
                 },
                 label = "stepColor"
@@ -82,7 +82,7 @@ fun FormStepProgressIndicator(
                     text = stepName,
                     fontSize = 11.sp,
                     fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
-                    color = if (isCurrent) DeepOceanBlue else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1
                 )
 
