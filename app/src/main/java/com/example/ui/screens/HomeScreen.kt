@@ -239,63 +239,26 @@ fun HomeScreen(
 
             // Keep the home screen focused; the full service catalog remains in Services.
             val primaryServices = services.take(4)
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 for (chunk in primaryServices.chunked(2)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         for (service in chunk) {
-                            Surface(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clickable { onNavigateToServiceDetails(service.id) },
-                                color = MaterialTheme.colorScheme.surface,
-                                tonalElevation = 1.dp,
-                                shape = RoundedCornerShape(14.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    val cardThumb = when {
-                                        service.name.contains("Clearance", ignoreCase = true) -> R.drawable.card_clearance
-                                        service.name.contains("Residency", ignoreCase = true) -> R.drawable.card_residency
-                                        service.name.contains("Indigency", ignoreCase = true) -> R.drawable.card_indigency
-                                        else -> R.drawable.card_facilities
-                                    }
-                                    Surface(
-                                        shape = RoundedCornerShape(10.dp),
-                                        color = DeepOceanContainer,
-                                        modifier = Modifier.size(38.dp)
-                                    ) {
-                                        Image(
-                                            painter = painterResource(id = cardThumb),
-                                            contentDescription = service.name,
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .clip(RoundedCornerShape(10.dp)),
-                                            contentScale = ContentScale.Crop
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.width(10.dp))
-                                    Column {
-                                        Text(
-                                            text = service.name,
-                                            fontSize = 13.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                        Text(
-                                            text = service.processingDays,
-                                            fontSize = 11.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
+                            val cardThumb = when {
+                                service.name.contains("Clearance", ignoreCase = true) -> R.drawable.card_clearance
+                                service.name.contains("Residency", ignoreCase = true) -> R.drawable.card_residency
+                                service.name.contains("Indigency", ignoreCase = true) -> R.drawable.card_indigency
+                                else -> R.drawable.card_facilities
                             }
+                            SuaQuickServiceTile(
+                                name = service.name,
+                                meta = service.processingDays,
+                                thumbnailRes = cardThumb,
+                                onClick = { onNavigateToServiceDetails(service.id) },
+                                modifier = Modifier.weight(1f)
+                            )
                         }
                     }
                 }
@@ -330,57 +293,25 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(4.dp))
 
             if (myActiveRequests.isEmpty()) {
-                SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth()) {
-                    EmptyStateCard(
-                        icon = Icons.Default.AssignmentLate,
-                        title = "No Active Requests",
-                        message = "You don't have any ongoing requests. Apply for clearances and certifications anytime.",
-                        buttonText = "Apply for a Service",
-                        onButtonClick = onNavigateToServices
-                    )
-                }
+                EmptyStateCard(
+                    icon = Icons.Default.AssignmentLate,
+                    title = "No Active Requests",
+                    message = "You don't have any ongoing requests. Apply for clearances and certifications anytime.",
+                    buttonText = "Apply for a Service",
+                    onButtonClick = onNavigateToServices
+                )
             } else {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    myActiveRequests.take(2).forEach { request ->
-                        SoftSkeuomorphicCard(
-                            modifier = Modifier.fillMaxWidth(),
-                            onClick = { onNavigateToRequestDetails(request.id) }
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = request.serviceName,
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = request.referenceNumber,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = SouthernSeaTealDark
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = request.officialRemarks.ifEmpty { "Application in progress" },
-                                        fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Column(horizontalAlignment = Alignment.End) {
-                                    RequestStatusBadge(status = request.status)
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    SyncStatusBadge(isSynced = request.isSyncedToServer)
-                                }
-                            }
-                        }
+                Column {
+                    myActiveRequests.take(2).forEachIndexed { index, request ->
+                        SuaPlainRow(
+                            title = request.serviceName,
+                            subtitle = request.officialRemarks.ifEmpty { "Application in progress" },
+                            meta = request.referenceNumber,
+                            onClick = { onNavigateToRequestDetails(request.id) },
+                            testTag = "homeRequestRow_${request.id}",
+                            badge = { RequestStatusBadge(status = request.status) }
+                        )
+                        if (index < 1 && myActiveRequests.size > 1) SuaRowDivider()
                     }
                 }
             }

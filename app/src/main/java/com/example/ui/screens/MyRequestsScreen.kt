@@ -117,73 +117,27 @@ fun MyRequestsScreen(
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             ) {
-                items(filteredRequests) { request ->
-                    SoftSkeuomorphicCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = { onNavigateToRequestDetails(request.id) }
-                    ) {
-                        Column {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = request.referenceNumber,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = SouthernSeaTealDark
-                                )
-                                RequestStatusBadge(status = request.status)
-                            }
-
-                            Spacer(modifier = Modifier.height(6.dp))
-
-                            Text(
-                                text = request.serviceName,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
+                items(filteredRequests.size) { index ->
+                    val request = filteredRequests[index]
+                    SuaPlainRow(
+                        title = request.serviceName,
+                        subtitle = "Purpose: ${request.purpose}",
+                        meta = request.referenceNumber,
+                        onClick = { onNavigateToRequestDetails(request.id) },
+                        testTag = "requestRow_${request.id}",
+                        badge = { RequestStatusBadge(status = request.status) },
+                        trailing = {
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = "View timeline",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp)
                             )
-
-                            Spacer(modifier = Modifier.height(2.dp))
-
-                            Text(
-                                text = "Purpose: ${request.purpose}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-
-                            Spacer(modifier = Modifier.height(6.dp))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                SyncStatusBadge(isSynced = request.isSyncedToServer)
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = "View Timeline",
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = DeepOceanBlue
-                                    )
-                                    Icon(
-                                        imageVector = Icons.Default.ChevronRight,
-                                        contentDescription = null,
-                                        tint = DeepOceanBlue,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            }
                         }
-                    }
+                    )
+                    if (index < filteredRequests.lastIndex) SuaRowDivider()
                 }
             }
         }

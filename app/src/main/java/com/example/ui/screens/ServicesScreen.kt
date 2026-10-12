@@ -21,7 +21,8 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.BarangayRepository
 import com.example.model.BarangayService
-import com.example.ui.components.SoftSkeuomorphicCard
+import com.example.ui.components.SuaPlainRow
+import com.example.ui.components.SuaRowDivider
 import com.example.ui.components.SuaWaveHeader
 import com.example.ui.theme.*
 
@@ -105,17 +106,18 @@ fun ServicesScreen(
             }
         }
 
-        // List of Services
+        // List of Services — plain rows with dividers, no per-row cards.
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(filteredServices) { service ->
+            items(filteredServices.size) { index ->
+                val service = filteredServices[index]
                 ServiceListItem(
                     service = service,
                     onClick = { onNavigateToServiceDetails(service.id) }
                 )
+                if (index < filteredServices.lastIndex) SuaRowDivider()
             }
         }
     }
@@ -126,22 +128,22 @@ fun ServiceListItem(
     service: BarangayService,
     onClick: () -> Unit
 ) {
-    SoftSkeuomorphicCard(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = onClick
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            val cardThumb = when {
-                service.name.contains("Clearance", ignoreCase = true) -> R.drawable.card_clearance
-                service.name.contains("Residency", ignoreCase = true) -> R.drawable.card_residency
-                service.name.contains("Indigency", ignoreCase = true) -> R.drawable.card_indigency
-                service.name.contains("Business", ignoreCase = true) -> R.drawable.card_facilities
-                else -> R.drawable.card_clearance
-            }
+    // Non-card row: thumbnail tile + text. Parent draws dividers.
+    val cardThumb = when {
+        service.name.contains("Clearance", ignoreCase = true) -> R.drawable.card_clearance
+        service.name.contains("Residency", ignoreCase = true) -> R.drawable.card_residency
+        service.name.contains("Indigency", ignoreCase = true) -> R.drawable.card_indigency
+        service.name.contains("Business", ignoreCase = true) -> R.drawable.card_facilities
+        else -> R.drawable.card_clearance
+    }
 
+    SuaPlainRow(
+        title = service.name,
+        subtitle = service.category,
+        meta = "${service.processingDays} • ${service.feeDescription}",
+        onClick = onClick,
+        testTag = "serviceRow_${service.id}",
+        leading = {
             Surface(
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier.size(52.dp),
@@ -149,52 +151,13 @@ fun ServiceListItem(
             ) {
                 Image(
                     painter = painterResource(id = cardThumb),
-                    contentDescription = service.name,
+                    contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()
                         .clip(RoundedCornerShape(14.dp)),
                     contentScale = ContentScale.Crop
                 )
             }
-
-            Spacer(modifier = Modifier.width(14.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = service.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = service.category,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.secondary,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Schedule,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(13.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "${service.processingDays} • ${service.feeDescription}",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = "Details",
-                tint = MaterialTheme.colorScheme.secondary
-            )
         }
-    }
+    )
 }

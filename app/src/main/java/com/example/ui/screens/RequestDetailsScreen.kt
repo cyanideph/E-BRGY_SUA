@@ -81,8 +81,8 @@ fun RequestDetailsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            // Header Overview Card
-            SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth()) {
+            // Header overview — plain, no card. Status badge carries hierarchy.
+            SuaPlainSection {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -90,9 +90,10 @@ fun RequestDetailsScreen(
                 ) {
                     Text(
                         text = request.serviceName,
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f)
                     )
                     RequestStatusBadge(status = request.status)
                 }
@@ -109,17 +110,13 @@ fun RequestDetailsScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
                     text = "Official Remarks:",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = SouthernSeaTealDark
+                    color = MaterialTheme.colorScheme.secondary
                 )
                 Text(
                     text = request.officialRemarks.ifEmpty { "No official remarks yet." },
@@ -140,38 +137,27 @@ fun RequestDetailsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Application Details
-            SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "Request Information",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-
-                DetailRow(label = "Applicant", value = request.residentName)
-                DetailRow(label = "Address", value = request.residentAddress)
-                DetailRow(label = "Contact", value = request.residentContact)
-                DetailRow(label = "Purpose", value = request.purpose)
-                DetailRow(label = "Delivery / Pick-up", value = request.deliveryMethod)
+            // Application Details — ONE grouped surface instead of a card stack.
+            SuaGroupedSection(title = "Request Information") {
+                SuaKeyValueRow(label = "Applicant", value = request.residentName)
+                SuaKeyValueRow(label = "Address", value = request.residentAddress)
+                SuaKeyValueRow(label = "Contact", value = request.residentContact)
+                SuaKeyValueRow(label = "Purpose", value = request.purpose)
+                SuaKeyValueRow(label = "Delivery / Pick-up", value = request.deliveryMethod)
                 if (request.remarks.isNotEmpty()) {
-                    DetailRow(label = "Applicant Notes", value = request.remarks)
+                    SuaKeyValueRow(label = "Applicant Notes", value = request.remarks)
                 }
-                DetailRow(label = "Attachments", value = request.attachmentNames.joinToString(", ").ifEmpty { "None" })
+                SuaKeyValueRow(
+                    label = "Attachments",
+                    value = request.attachmentNames.joinToString(", ").ifEmpty { "None" },
+                    showDivider = false
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Complete Timeline
-            SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "Application Timeline",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(14.dp))
+            // Complete Timeline — plain section, no card; rail carries structure.
+            SuaPlainSection(title = "Application Timeline") {
 
                 request.timeline.forEachIndexed { index, event ->
                     Row(modifier = Modifier.fillMaxWidth()) {
@@ -365,22 +351,5 @@ fun RequestDetailsScreen(
                 }
             )
         }
-    }
-}
-
-@Composable
-private fun DetailRow(label: String, value: String) {
-    Column(modifier = Modifier.padding(vertical = 4.dp)) {
-        Text(
-            text = label,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = DeepNavySecondary
-        )
-        Text(
-            text = value,
-            fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.onSurface
-        )
     }
 }
