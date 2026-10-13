@@ -16,3 +16,7 @@
 local.properties
 .env
 debug.keystore
+my-upload-key.jks
+
+# Appwrite function local install (lockfile stays tracked for reproducible deploy/CI)
+functions/ebrgyauthority/node_modules/
