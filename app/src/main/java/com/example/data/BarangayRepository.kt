@@ -105,7 +105,19 @@ class BarangayRepository {
         // Room row permissions. Clear them before restoring any authenticated session
         // so a previous resident can never see another resident's cached data.
         ioScope.launch {
-            db.clearAllTables()
+            // Room/cache cleanup can fail on a damaged or unavailable local database.
+            // Do not let an uncaught IO coroutine exception terminate the whole app.
+            val clearCache = runCatching { db.clearAllTables() }
+            if (clearCache.isFailure) {
+                android.util.Log.e(
+                    "EBargSuaRepository",
+                    "Could not clear the local cache during startup; continuing without cached data",
+                    clearCache.exceptionOrNull()
+                )
+                _isOnline.value = false
+                return@launch
+            }
+
             _requests.value = emptyList()
             _emergencyReports.value = emptyList()
             _notifications.value = emptyList()
