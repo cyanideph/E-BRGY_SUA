@@ -95,14 +95,14 @@ fun DigitalResidentIdCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "REPUBLIC OF THE PHILIPPINES",
-                    fontSize = 8.sp,
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White.copy(alpha = 0.8f),
                     letterSpacing = 1.sp
                 )
                 Text(
                     text = "MUNICIPALITY OF SAN JUAN • SOUTHERN LEYTE",
-                    fontSize = 8.sp,
+                    fontSize = 10.sp,
                     color = WarmSunGoldLight,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -134,7 +134,7 @@ fun DigitalResidentIdCard(
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = "VERIFIED",
-                        fontSize = 9.sp,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
 color = NaturalGreen
                     )
@@ -213,19 +213,19 @@ color = NaturalGreen
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
-                Text("SEX", fontSize = 8.sp, color = Color.White.copy(alpha = 0.6f))
+                Text("SEX", fontSize = 10.sp, color = Color.White.copy(alpha = 0.6f))
                 Text(profile.sex.ifEmpty { "Female" }, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
             Column {
-                Text("CIVIL STATUS", fontSize = 8.sp, color = Color.White.copy(alpha = 0.6f))
+                Text("CIVIL STATUS", fontSize = 10.sp, color = Color.White.copy(alpha = 0.6f))
                 Text(profile.civilStatus.ifEmpty { "Single" }, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
             Column {
-                Text("OCCUPATION", fontSize = 8.sp, color = Color.White.copy(alpha = 0.6f))
+                Text("OCCUPATION", fontSize = 10.sp, color = Color.White.copy(alpha = 0.6f))
                 Text(profile.occupation.ifEmpty { "Fisherfolk" }.take(12), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
             Column {
-                Text("REGISTRATION", fontSize = 8.sp, color = Color.White.copy(alpha = 0.6f))
+                Text("REGISTRATION", fontSize = 10.sp, color = Color.White.copy(alpha = 0.6f))
                 Text("Active Resident", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NaturalGreen)
             }
         }
@@ -252,7 +252,7 @@ color = NaturalGreen
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "SCAN AT BARANGAY HALL FOR RAPID CHECK-IN",
-                            fontSize = 9.sp,
+                            fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             color = DeepNavy,
                             textAlign = TextAlign.Center

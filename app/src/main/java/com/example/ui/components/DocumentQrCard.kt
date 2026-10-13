@@ -154,7 +154,7 @@ fun DocumentQrCard(
                     Column {
                         Text(
                             text = "REFERENCE CODE",
-                            fontSize = 9.sp,
+                            fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             color = DeepOceanBlue
                         )
