@@ -37,7 +37,9 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
         with:
-          packages: platform-tools,android-${{ env.ANDROID_API }}
+          packages: |
+            platform-tools
+            platforms;android-${{ env.ANDROID_API }}
 
       - name: Accept Android SDK licenses
         run: yes | sdkmanager --licenses >/dev/null || true
