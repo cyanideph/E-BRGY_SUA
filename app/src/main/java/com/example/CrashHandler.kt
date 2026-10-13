@@ -32,7 +32,13 @@ class CrashHandler(
             appendLine("Time: " + SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS Z", Locale.US).format(Date()))
             appendLine("App version: " + runCatching {
                 val info = app.packageManager.getPackageInfo(app.packageName, 0)
-                "${info.versionName} (${info.longVersionCode})"
+                val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    info.longVersionCode
+                } else {
+                    @Suppress("DEPRECATION")
+                    info.versionCode.toLong()
+                }
+                "${info.versionName} ($versionCode)"
             }.getOrDefault("unknown"))
             appendLine("Package: ${app.packageName}")
             appendLine("Android: ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
