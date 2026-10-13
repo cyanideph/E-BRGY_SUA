@@ -32,7 +32,7 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
         with:
-          packages: platform-tools platforms;android-${{ env.ANDROID_API }}
+          packages: platform-tools,android-${{ env.ANDROID_API }}
       - name: Generate CI Appwrite environment
         env:
           APPWRITE_ENDPOINT: ${{ vars.APPWRITE_ENDPOINT }}
@@ -46,7 +46,7 @@ jobs:
           APPWRITE_PROJECT_ID="${APPWRITE_PROJECT_ID:-6ac31e4000390af0f850}"
           APPWRITE_DATABASE_ID="${APPWRITE_DATABASE_ID:-ebarangay-sua-db}"
           APPWRITE_RESIDENT_FILES_BUCKET_ID="${APPWRITE_RESIDENT_FILES_BUCKET_ID:-resident-files}"
-          printf 'APPWRITE_ENDPOINT=%s\nAPPWRITE_PROJECT_ID=%s\nAPPWRITE_DATABASE_ID=%s\nAPPWRITE_RESIDENT_FILES_BUCKET_ID=%s\n'             "$APPWRITE_ENDPOINT" "$APPWRITE_PROJECT_ID" "$APPWRITE_DATABASE_ID" "$APPWRITE_RESIDENT_FILES_BUCKET_ID" > .env
+          printf 'APPWRITE_ENDPOINT=%s\nAPPWRITE_PROJECT_ID=%s\nAPPWRITE_DATABASE_ID=%s\nAPPWRITE_RESIDENT_FILES_BUCKET_ID=%s\n' "$APPWRITE_ENDPOINT" "$APPWRITE_PROJECT_ID" "$APPWRITE_DATABASE_ID" "$APPWRITE_RESIDENT_FILES_BUCKET_ID" > .env
       - name: Install Gradle
         uses: gradle/actions/setup-gradle@v4
         with:

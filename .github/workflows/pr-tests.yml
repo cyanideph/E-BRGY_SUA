@@ -39,7 +39,7 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
         with:
-          packages: platform-tools platforms;android-${{ env.ANDROID_API }}
+          packages: platform-tools,android-${{ env.ANDROID_API }}
 
       - name: Accept Android SDK licenses
         run: yes | sdkmanager --licenses >/dev/null || true
@@ -53,12 +53,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for name in APPWRITE_ENDPOINT APPWRITE_PROJECT_ID APPWRITE_DATABASE_ID APPWRITE_RESIDENT_FILES_BUCKET_ID; do
-            if [[ -z "${!name:-}" ]]; then
-              echo "::error::$name is not configured as a GitHub Actions repository variable."
-              exit 1
-            fi
-          done
           case "$APPWRITE_ENDPOINT" in
             https://*) ;;
             *) echo "::error::APPWRITE_ENDPOINT must use HTTPS."; exit 1 ;;
@@ -74,6 +68,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          APPWRITE_ENDPOINT="${APPWRITE_ENDPOINT:-https://sgp.cloud.appwrite.io/v1}"
+          APPWRITE_PROJECT_ID="${APPWRITE_PROJECT_ID:-6ac31e4000390af0f850}"
+          APPWRITE_DATABASE_ID="${APPWRITE_DATABASE_ID:-ebarangay-sua-db}"
+          APPWRITE_RESIDENT_FILES_BUCKET_ID="${APPWRITE_RESIDENT_FILES_BUCKET_ID:-resident-files}"
           {
             printf 'APPWRITE_ENDPOINT=%s\n' "$APPWRITE_ENDPOINT"
             printf 'APPWRITE_PROJECT_ID=%s\n' "$APPWRITE_PROJECT_ID"
