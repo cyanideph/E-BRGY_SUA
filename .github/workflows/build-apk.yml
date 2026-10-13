@@ -148,9 +148,17 @@ jobs:
             exit "$SESSION_START_STATUS"
           fi
           echo "$SESSION_JSON"
-          SESSION="$(jq -r '.session // empty' <<<"$SESSION_JSON")"
-          WATCH_URL="$(jq -r '.watchUrl // empty' <<<"$SESSION_JSON")"
+          # The CLI emits progress JSON events as well as the final session object.
+          # Slurp all JSON values and select only the final session object so SESSION
+          # contains one ID, not several concatenated IDs that exceed Ramus's 64-char limit.
+          SESSION="$(jq -sr 'map(select(.session? and (.session | type == "string"))) | last | .session // empty' <<<"$SESSION_JSON")"
+          WATCH_URL="$(jq -sr 'map(select(.watchUrl? and (.watchUrl | type == "string"))) | last | .watchUrl // empty' <<<"$SESSION_JSON")"
           test -n "$SESSION" || { echo "::error::Ramus did not return a session id."; exit 1; }
+          if [[ "${#SESSION}" -gt 64 ]]; then
+            echo "::error::Parsed Ramus session ID exceeds 64 characters (${#SESSION}); refusing to continue."
+            exit 1
+          fi
+          echo "Ramus session ID parsed successfully (${#SESSION} characters)."
 
           if [[ -n "$WATCH_URL" ]]; then
             {
