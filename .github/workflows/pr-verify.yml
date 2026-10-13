@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GRADLE_VERSION: '9.3.1'
+  GRADLE_VERSION: '8.13'
   JAVA_VERSION: '21'
   ANDROID_API: '36'
 
@@ -31,8 +31,10 @@ jobs:
           cache: gradle
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
-        with:
-          packages: platform-tools,android-${{ env.ANDROID_API }}
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses >/dev/null || true
+      - name: Install Android SDK packages
+        run: sdkmanager "platform-tools" "platforms;android-${ANDROID_API}"
       - name: Generate CI Appwrite environment
         env:
           APPWRITE_ENDPOINT: ${{ vars.APPWRITE_ENDPOINT }}
