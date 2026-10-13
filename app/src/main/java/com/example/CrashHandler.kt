@@ -35,7 +35,6 @@ class CrashHandler(
                 val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     info.longVersionCode
                 } else {
-                    @Suppress("DEPRECATION")
                     info.versionCode.toLong()
                 }
                 "${info.versionName} ($versionCode)"
