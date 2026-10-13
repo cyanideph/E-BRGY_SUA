@@ -110,7 +110,7 @@ fun EBarangaySuaApp() {
     }
 
     val isBottomBarVisible = when (currentScreen) {
-        Screen.Home, Screen.Services, Screen.Sua, Screen.Profile -> true
+        Screen.Home, Screen.Services, Screen.Sua, Screen.Alerts, Screen.Profile -> true
         else -> false
     }
 
@@ -192,14 +192,26 @@ fun EBarangaySuaApp() {
                     is Screen.Splash -> {
                         SplashScreen(
                             onSplashFinished = {
-                                replaceTop(Screen.Onboarding)
+                                val currentUser = repository.currentUser.value
+                                val isLoggedIn = currentUser.uid.isNotBlank()
+                                val hasOnboarded = repository.hasCompletedOnboarding()
+                                when {
+                                    isLoggedIn -> selectBottomTab(Screen.Home)
+                                    hasOnboarded -> replaceTop(Screen.Login)
+                                    else -> replaceTop(Screen.Onboarding)
+                                }
                             }
                         )
                     }
                     is Screen.Onboarding -> {
                         OnboardingScreen(
                             onFinishOnboarding = {
-                                replaceTop(Screen.Login)
+                                repository.setCompletedOnboarding(true)
+                                if (repository.currentUser.value.uid.isNotBlank()) {
+                                    selectBottomTab(Screen.Home)
+                                } else {
+                                    replaceTop(Screen.Login)
+                                }
                             }
                         )
                     }
@@ -335,7 +347,7 @@ fun EBarangaySuaApp() {
                     is Screen.Settings -> {
                         SettingsScreen(
                             onNavigateBack = { navigateBack() },
-                            onLogout = { selectBottomTab(Screen.Login) }
+                            onLogout = { scope.launch { repository.logout(); selectBottomTab(Screen.Login) } }
                         )
                     }
                     is Screen.Assistant -> {

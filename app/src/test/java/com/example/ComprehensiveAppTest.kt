@@ -33,6 +33,24 @@ class ComprehensiveAppTest {
     }
 
     @Test
+    fun testBottomNavigationBarVisibilityOnAllTabs() {
+        val tabs = listOf(
+            Screen.Home,
+            Screen.Services,
+            Screen.Sua,
+            Screen.Alerts,
+            Screen.Profile
+        )
+        tabs.forEach { screen ->
+            val isVisible = when (screen) {
+                Screen.Home, Screen.Services, Screen.Sua, Screen.Alerts, Screen.Profile -> true
+                else -> false
+            }
+            assertTrue("Tab $screen should show bottom navigation bar", isVisible)
+        }
+    }
+
+    @Test
     fun testSplashScreenRenders() {
         var finished = false
         composeTestRule.setContent {

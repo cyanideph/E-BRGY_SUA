@@ -96,67 +96,154 @@ class BarangayRepository {
     private var appContext: Context? = null
 
     fun initLocalDb(context: Context) {
+        val appCtx = context.applicationContext
+        appContext = appCtx
+
+        // 1. Immediately restore local session from SharedPreferences so the app knows
+        // the user is already signed in without waiting for an asynchronous network call.
+        loadSessionFromPrefs()?.let { savedSession ->
+            if (savedSession.uid.isNotBlank()) {
+                _currentUser.value = savedSession
+            }
+        }
+
         if (database != null) return
-        appContext = context.applicationContext
         val db = AppDatabase.getInstance(context)
         database = db
 
-        // Sensitive Room caches are user-scoped only by application lifecycle, not by
-        // Room row permissions. Clear them before restoring any authenticated session
-        // so a previous resident can never see another resident's cached data.
         ioScope.launch {
-            // Room/cache cleanup can fail on a damaged or unavailable local database.
-            // Do not let an uncaught IO coroutine exception terminate the whole app.
-            val clearCache = runCatching { db.clearAllTables() }
-            if (clearCache.isFailure) {
-                android.util.Log.e(
-                    "EBargSuaRepository",
-                    "Could not clear the local cache during startup; continuing without cached data",
-                    clearCache.exceptionOrNull()
-                )
-                _isOnline.value = false
-                return@launch
+            // Observe local database caches immediately so cached data is visible
+            launch {
+                db.documentRequestDao().getAllRequests().collect { entities ->
+                    _requests.value = entities.map { it.toDomain() }
+                }
+            }
+            launch {
+                db.emergencyReportDao().getAllEmergencies().collect { entities ->
+                    _emergencyReports.value = entities.map { it.toDomain() }
+                }
+            }
+            launch {
+                db.notificationDao().getAllNotifications().collect { entities ->
+                    _notifications.value = entities.map { it.toDomain() }
+                }
+            }
+            launch {
+                db.auditLogDao().getAllLogs().collect { entities ->
+                    _auditLogs.value = entities.map { it.toDomain() }
+                }
             }
 
-            _requests.value = emptyList()
-            _emergencyReports.value = emptyList()
-            _notifications.value = emptyList()
-            _auditLogs.value = emptyList()
-
+            // Sync with backend if Appwrite is available
             runCatching {
                 val account = Appwrite.account().get()
                 val session = loadAuthenticatedSession()
                 _currentUser.value = session
+                saveSessionToPrefs(session)
                 _isOnline.value = true
                 refreshAuthenticatedRequests(account.id)
                 refreshAuthenticatedNotifications(account.id)
-
-                // Only start cache observers after the authenticated cache has been
-                // initialized. Logout clears these tables and state again.
-                launch {
-                    db.documentRequestDao().getAllRequests().collect { entities ->
-                        _requests.value = entities.map { it.toDomain() }
-                    }
-                }
-                launch {
-                    db.emergencyReportDao().getAllEmergencies().collect { entities ->
-                        _emergencyReports.value = entities.map { it.toDomain() }
-                    }
-                }
-                launch {
-                    db.notificationDao().getAllNotifications().collect { entities ->
-                        _notifications.value = entities.map { it.toDomain() }
-                    }
-                }
-                launch {
-                    db.auditLogDao().getAllLogs().collect { entities ->
-                        _auditLogs.value = entities.map { it.toDomain() }
-                    }
-                }
             }.onFailure {
                 _isOnline.value = Appwrite.ENDPOINT.isNotBlank()
             }
         }
+    }
+
+    private fun saveSessionToPrefs(session: UserSession) {
+        val ctx = appContext ?: return
+        val prefs = ctx.getSharedPreferences("barangay_sua_prefs", Context.MODE_PRIVATE)
+        prefs.edit().apply {
+            putString("session_uid", session.uid)
+            putString("session_email", session.email)
+            putString("session_role", session.role.name)
+            putString("profile_id", session.profile.id)
+            putString("profile_resident_id", session.profile.residentId)
+            putString("profile_full_name", session.profile.fullName)
+            putString("profile_address", session.profile.address)
+            putString("profile_mobile", session.profile.mobileNumber)
+            putString("profile_birth_date", session.profile.dateOfBirth)
+            putString("profile_civil_status", session.profile.civilStatus)
+            putString("profile_sex", session.profile.sex)
+            putString("profile_occupation", session.profile.occupation)
+            putString("profile_household_id", session.profile.householdId)
+            putString("profile_registration_status", session.profile.registrationStatus)
+            putString("profile_emergency_name", session.profile.emergencyContactName)
+            putString("profile_emergency_rel", session.profile.emergencyContactRelationship)
+            putString("profile_emergency_phone", session.profile.emergencyContactPhone)
+            session.profile.latitude?.let { putFloat("profile_lat", it.toFloat()) } ?: remove("profile_lat")
+            session.profile.longitude?.let { putFloat("profile_lng", it.toFloat()) } ?: remove("profile_lng")
+            apply()
+        }
+    }
+
+    private fun loadSessionFromPrefs(): UserSession? {
+        val ctx = appContext ?: return null
+        val prefs = ctx.getSharedPreferences("barangay_sua_prefs", Context.MODE_PRIVATE)
+        val uid = prefs.getString("session_uid", null) ?: return null
+        if (uid.isBlank()) return null
+        val email = prefs.getString("session_email", "").orEmpty()
+        val roleStr = prefs.getString("session_role", "RESIDENT")
+        val role = runCatching { UserRole.valueOf(roleStr ?: "RESIDENT") }.getOrDefault(UserRole.RESIDENT)
+        val lat = if (prefs.contains("profile_lat")) prefs.getFloat("profile_lat", 0f).toDouble() else null
+        val lng = if (prefs.contains("profile_lng")) prefs.getFloat("profile_lng", 0f).toDouble() else null
+        val profile = ResidentProfile(
+            id = prefs.getString("profile_id", uid).orEmpty(),
+            residentId = prefs.getString("profile_resident_id", uid).orEmpty(),
+            fullName = prefs.getString("profile_full_name", email.substringBefore("@")).orEmpty(),
+            address = prefs.getString("profile_address", "").orEmpty(),
+            mobileNumber = prefs.getString("profile_mobile", "").orEmpty(),
+            dateOfBirth = prefs.getString("profile_birth_date", "").orEmpty(),
+            civilStatus = prefs.getString("profile_civil_status", "").orEmpty(),
+            sex = prefs.getString("profile_sex", "").orEmpty(),
+            occupation = prefs.getString("profile_occupation", "").orEmpty(),
+            householdId = prefs.getString("profile_household_id", "").orEmpty(),
+            registrationStatus = prefs.getString("profile_registration_status", "Account Registered").orEmpty(),
+            emergencyContactName = prefs.getString("profile_emergency_name", "").orEmpty(),
+            emergencyContactRelationship = prefs.getString("profile_emergency_rel", "").orEmpty(),
+            emergencyContactPhone = prefs.getString("profile_emergency_phone", "").orEmpty(),
+            latitude = lat,
+            longitude = lng
+        )
+        return UserSession(uid = uid, email = email, role = role, profile = profile)
+    }
+
+    private fun clearSessionFromPrefs() {
+        val ctx = appContext ?: return
+        val prefs = ctx.getSharedPreferences("barangay_sua_prefs", Context.MODE_PRIVATE)
+        prefs.edit().apply {
+            remove("session_uid")
+            remove("session_email")
+            remove("session_role")
+            remove("profile_id")
+            remove("profile_resident_id")
+            remove("profile_full_name")
+            remove("profile_address")
+            remove("profile_mobile")
+            remove("profile_birth_date")
+            remove("profile_civil_status")
+            remove("profile_sex")
+            remove("profile_occupation")
+            remove("profile_household_id")
+            remove("profile_registration_status")
+            remove("profile_emergency_name")
+            remove("profile_emergency_rel")
+            remove("profile_emergency_phone")
+            remove("profile_lat")
+            remove("profile_lng")
+            apply()
+        }
+    }
+
+    fun hasCompletedOnboarding(): Boolean {
+        val ctx = appContext ?: return false
+        val prefs = ctx.getSharedPreferences("barangay_sua_prefs", Context.MODE_PRIVATE)
+        return prefs.getBoolean("has_completed_onboarding", false)
+    }
+
+    fun setCompletedOnboarding(completed: Boolean) {
+        val ctx = appContext ?: return
+        val prefs = ctx.getSharedPreferences("barangay_sua_prefs", Context.MODE_PRIVATE)
+        prefs.edit().putBoolean("has_completed_onboarding", completed).apply()
     }
 
     private val ioScope = CoroutineScope(Dispatchers.IO)
@@ -372,6 +459,8 @@ class BarangayRepository {
 
             val session = loadAuthenticatedSession()
             _currentUser.value = session
+            saveSessionToPrefs(session)
+            setCompletedOnboarding(true)
             _isOnline.value = true
             refreshAuthenticatedRequests(session.uid)
             refreshAuthenticatedNotifications(session.uid)
@@ -406,6 +495,8 @@ class BarangayRepository {
         ).getOrThrow()
         val session = loadAuthenticatedSession()
         _currentUser.value = session
+        saveSessionToPrefs(session)
+        setCompletedOnboarding(true)
         _isOnline.value = true
         session
     }
@@ -417,6 +508,8 @@ class BarangayRepository {
                 Appwrite.account().deleteSession("current")
             }
         }
+
+        clearSessionFromPrefs()
 
         // Never leave resident-specific data in the local database or exposed
         // StateFlows after the authenticated session ends.
@@ -444,6 +537,7 @@ class BarangayRepository {
     suspend fun refreshProfile(): Result<UserSession> = runCatching {
         val session = loadAuthenticatedSession()
         _currentUser.value = session
+        saveSessionToPrefs(session)
         session
     }
 
