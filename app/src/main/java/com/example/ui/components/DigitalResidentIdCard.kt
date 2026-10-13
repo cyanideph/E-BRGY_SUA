@@ -50,7 +50,7 @@ fun DigitalResidentIdCard(
                 brush = Brush.linearGradient(
                     colors = listOf(
                         DeepOceanBlue,
-                        Color(0xFF0A406F),
+                        DeepOceanBlueDark,
                         SouthernSeaTealDark
                     )
                 )
@@ -129,14 +129,14 @@ fun DigitalResidentIdCard(
                         modifier = Modifier
                             .size(6.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFF69F0AE))
+                            .background(NaturalGreen)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = "VERIFIED",
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF69F0AE)
+color = NaturalGreen
                     )
                 }
             }
@@ -226,7 +226,7 @@ fun DigitalResidentIdCard(
             }
             Column {
                 Text("REGISTRATION", fontSize = 8.sp, color = Color.White.copy(alpha = 0.6f))
-                Text("Active Resident", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF69F0AE))
+                Text("Active Resident", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NaturalGreen)
             }
         }
 

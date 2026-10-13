@@ -76,7 +76,7 @@ fun DocumentQrPattern(
 
                     if (shouldDraw) {
                         drawRect(
-                            color = Color(0xFF102030),
+                            color = DeepNavy,
                             topLeft = Offset(col * cellWidth, row * cellHeight),
                             size = Size(cellWidth * 0.92f, cellHeight * 0.92f)
                         )

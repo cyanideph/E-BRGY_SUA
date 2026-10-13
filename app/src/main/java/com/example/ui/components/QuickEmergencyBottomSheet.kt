@@ -133,7 +133,7 @@ fun QuickEmergencyBottomSheet(
                 EmergencyTile(
                     title = "Fire",
                     icon = Icons.Default.LocalFireDepartment,
-                    color = Color(0xFFE65100),
+                    color = WarmSunGoldDark, // fire orange - accessible alternative
                     isSelected = selectedType == EmergencyType.FIRE,
                     modifier = Modifier.weight(1f),
                     onClick = { selectedType = EmergencyType.FIRE }
