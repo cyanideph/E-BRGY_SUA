@@ -91,8 +91,10 @@ fun HomeScreen(
                 // keeps the trailing controls AA. On narrow screens the sync pill is
                 // dropped so the greeting column is not squeezed.
                 BoxWithConstraints {
+                    // Capture before inner lambdas introduce their own receivers.
+                    val headerMaxAvailableWidth = maxWidth
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (maxWidth >= 340.dp) {
+                        if (headerMaxAvailableWidth >= 340.dp) {
                             GlobalOfflineSyncPill()
                             Spacer(modifier = Modifier.width(8.dp))
                         }
