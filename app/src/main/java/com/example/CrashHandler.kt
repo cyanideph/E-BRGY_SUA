@@ -61,14 +61,26 @@ class CrashHandler(
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                 putExtra(CrashActivity.EXTRA_REPORT, report)
             }
+            Log.e(TAG, "Requesting crash report activity launch")
             app.startActivity(intent)
+            // Activity launch is asynchronous. Give Android time to start the
+            // dedicated :crash process before terminating the broken process.
+            // Without this handoff window, startup crashes can kill the task
+            // before the report screen becomes visible on some devices.
+            try {
+                Thread.sleep(1_000)
+            } catch (_: InterruptedException) {
+                Thread.currentThread().interrupt()
+            }
         }.onFailure {
             Log.e(TAG, "Could not open crash report screen", it)
             previousHandler?.uncaughtException(thread, throwable)
             return
         }
 
-        // The crash screen runs in :crash, so terminate the broken app process.
+        // The crash screen runs in :crash, so terminate the broken app process
+        // only after giving the separate process a chance to become visible.
+        Log.e(TAG, "Crash report activity launch requested; terminating crashed process")
         Process.killProcess(Process.myPid())
         kotlin.system.exitProcess(10)
     }
