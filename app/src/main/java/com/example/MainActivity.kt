@@ -29,9 +29,28 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        com.example.services.Appwrite.init(applicationContext)
-        com.example.services.NotificationHelper.initChannels(applicationContext)
-        com.example.data.BarangayRepository.instance.initLocalDb(applicationContext)
+
+        // Backend, notification, and local-cache initialization must not prevent
+        // the Compose UI from opening. Keep each failure visible in logcat so
+        // startup problems can be diagnosed instead of silently swallowing them.
+        runCatching {
+            com.example.services.Appwrite.init(applicationContext)
+        }.onFailure { error ->
+            android.util.Log.e("EBargSuaStartup", "Appwrite client initialization failed", error)
+        }
+
+        runCatching {
+            com.example.services.NotificationHelper.initChannels(applicationContext)
+        }.onFailure { error ->
+            android.util.Log.e("EBargSuaStartup", "Notification channel initialization failed", error)
+        }
+
+        runCatching {
+            com.example.data.BarangayRepository.instance.initLocalDb(applicationContext)
+        }.onFailure { error ->
+            android.util.Log.e("EBargSuaStartup", "Local database initialization failed", error)
+        }
+
         enableEdgeToEdge()
         setContent {
             val repository = remember { com.example.data.BarangayRepository.instance }
