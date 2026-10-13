@@ -201,6 +201,13 @@ jobs:
             echo "::warning::Ramus logcat collection exited with status $LOGCAT_STATUS."
           fi
 
+          # Report the underlying Android crash before the UI-title assertion can exit.
+          if grep -Eiq 'FATAL EXCEPTION|AndroidRuntime.*FATAL' <<<"$LOGCAT"; then
+            echo "::error::Fatal Android exception detected; stack trace follows."
+            printf '%s\n' "$LOGCAT"
+            exit 1
+          fi
+
           # Search text fields recursively because snapshot schemas may nest UI elements
           # differently between devices/CLI versions. Match title casing and spacing flexibly.
           if jq -e '[.. | objects | .text? | strings | select(test("e-?Barangay\\s+Sua"; "i"))] | length > 0' <<<"$SNAPSHOT" >/dev/null; then
@@ -215,11 +222,6 @@ jobs:
               if [[ -n "$WATCH_URL" ]]; then echo "- Watch: $WATCH_URL"; fi
               echo "- Diagnostic artifacts: `ramus-snapshot.json`, `ramus-logcat.txt`."
             } >> "$GITHUB_STEP_SUMMARY"
-            exit 1
-          fi
-
-          if grep -Eiq 'FATAL EXCEPTION|AndroidRuntime.*FATAL' <<<"$LOGCAT"; then
-            echo "::error::Fatal Android exception detected."
             exit 1
           fi
 
