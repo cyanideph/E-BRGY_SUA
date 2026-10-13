@@ -126,10 +126,11 @@ fun EventsScreen(
 
                         Column(horizontalAlignment = Alignment.End) {
                             Text(
-                                text = "${event.rsvpCount} Attending",
+                                text = "RSVP",
                                 fontSize = 10.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = FontWeight.Medium
+                                fontWeight = FontWeight.Medium,
+                                style = MaterialTheme.typography.bodySmall
                             )
                         }
                     }

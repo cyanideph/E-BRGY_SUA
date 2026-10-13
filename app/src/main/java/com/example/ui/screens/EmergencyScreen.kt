@@ -3,7 +3,16 @@ package com.example.ui.screens
 import android.content.Intent
 import android.net.Uri
 import android.location.LocationManager
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
+import androidx.activity.compose.dialog
+import androidx.activity.compose.memoryDialogState
+import androidx.activity.compose rememberDialogState
+import androidx.activity.compose dialogAndroidX
+import android.app.AlertDialog
+import java.io.IOException
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -27,12 +36,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.BarangayRepository
 import com.example.model.EmergencyReport
 import com.example.model.EmergencyType
+import com.example.services.EarthquakeAlert
+import com.example.services.UsgsEarthquakeService
 import com.example.ui.components.SoftSkeuomorphicCard
 import com.example.ui.theme.*
 import kotlinx.coroutines.launch
@@ -56,7 +68,14 @@ fun EmergencyScreen(
     var isSubmitting by remember { mutableStateOf(false) }
     var submittedReport by remember { mutableStateOf<EmergencyReport?>(null) }
     var showPermissionRationale by remember { mutableStateOf(false) }
+    var confirmSosDispatch by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Recent earthquakes advisory (USGS feed for the Sua coastal corridor)
+    var earthquakes by remember { mutableStateOf<List<EarthquakeAlert>?>(null) }
+    var isQuakeLoading by remember { mutableStateOf(true) }
+    var quakeFailed by remember { mutableStateOf(false) }
+    var quakeReloadKey by remember { mutableStateOf(0) }
 
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
@@ -87,6 +106,20 @@ fun EmergencyScreen(
         } else {
             showPermissionRationale = true
         }
+    }
+
+    // Fetch recent earthquakes on screen entry; Retry re-triggers via quakeReloadKey.
+    LaunchedEffect(quakeReloadKey) {
+        isQuakeLoading = true
+        quakeFailed = false
+        val result = UsgsEarthquakeService.fetchRecentEarthquakes()
+        if (result.isNotEmpty()) {
+            earthquakes = result
+        } else {
+            // The service degrades to an empty list on any failure.
+            quakeFailed = true
+        }
+        isQuakeLoading = false
     }
 
     Scaffold(
@@ -294,30 +327,9 @@ fun EmergencyScreen(
 
                 Button(
                     onClick = {
-                        isSubmitting = true
-                        scope.launch {
-                            runCatching {
-                                repository.submitEmergency(
-                                    type = selectedType,
-                                    description = description,
-                                    latitude = locationCoordinates?.first,
-                                    longitude = locationCoordinates?.second,
-                                    locationDescription = locationNote
-                                )
-                            }.onSuccess {
-                                submittedReport = it
-                                description = ""
-                                isSubmitting = false
-                            }.onFailure {
-                                isSubmitting = false
-                                showPermissionRationale = false
-                                // P0-6: never fail silently — keep the draft and explain what to do.
-                                scope.launch {
-                                    snackbarHostState.showSnackbar(
-                                        "SOS could not be sent. Your draft was kept — retry or call a hotline."
-                                    )
-                                }
-                            }
+                        if (!confirmSosDispatch) {
+                            confirmSosDispatch = true
+                            rememberDialogState { showConfirmSosDialog() }
                         }
                     },
                     modifier = Modifier
@@ -432,7 +444,176 @@ fun EmergencyScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Recent Earthquakes Advisory (live USGS seismic feed for the Sua coastal corridor)
+            Text(
+                text = "Recent earthquakes near Sua",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Text(
+                text = "Live USGS seismic monitoring for the Southern Leyte coastline",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            SoftSkeuomorphicCard(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                when {
+                    isQuakeLoading -> {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(22.dp),
+                                strokeWidth = 2.dp,
+                                color = SouthernSeaTeal
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "Checking recent seismic activity…",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    quakeFailed -> {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Couldn't load earthquake data.",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            TextButton(
+                                onClick = { quakeReloadKey += 1 },
+                                modifier = Modifier.heightIn(min = 48.dp)
+                            ) {
+                                Text(
+                                    text = "Retry",
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                    earthquakes.isNullOrEmpty() -> {
+                        Text(
+                            text = "No recent earthquakes.",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    else -> {
+                        val quakeTimeFormat = SimpleDateFormat("MMM d, h:mm a", Locale.US).apply {
+                            timeZone = TimeZone.getTimeZone("Asia/Manila")
+                        }
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            earthquakes.orEmpty().forEach { quake ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "M%.1f".format(Locale.US, quake.magnitude),
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = RestrainedCoralRed
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = quake.place,
+                                        fontSize = 12.sp,
+                                        color = DeepNavy,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = quakeTimeFormat.format(Date(quake.timeUtcMs)),
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(30.dp))
+        }
+    }
+)
+
+// SOS confirmation dialog
+private fun showConfirmSosDialog() {
+    val coroutineScope = rememberCoroutineScope()
+    AlertDialog(
+        onDismissRequest = { confirmSosDispatch = false },
+        confirmButton = {
+            TextButton(onClick = {
+                confirmSosDispatch = false
+                isSubmitting = true
+                scope.launch {
+                    runCatching {
+                        repository.submitEmergency(
+                            type = selectedType,
+                            description = description,
+                            latitude = locationCoordinates?.first,
+                            longitude = locationCoordinates?.second,
+                            locationDescription = locationNote
+                        )
+                    }.onSuccess {
+                        submittedReport = it
+                        description = ""
+                        isSubmitting = false
+                        confirmSosDispatch = false
+                    }.onFailure { throwable ->
+                        isSubmitting = false
+                        confirmSosDispatch = false
+                        scope.launch {
+                            when (throwable) {
+                                is IOException -> if (throwable.message?.contains("RATE_LIMITED") == true) {
+                                    snackbarHostState.showSnackbar(
+                                        "Too many requests. Please try again in a minute."
+                                    )
+                                } else {
+                                    snackbarHostState.showSnackbar(
+                                        "SOS could not be sent. Your draft was kept — retry or call a hotline."
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }) {
+                Text("Dispatch Emergency", fontWeight = FontWeight.Bold)
+            }
+        },
+        cancelButton = {
+            TextButton(onClick = { confirmSosDispatch = false }) {
+                Text("Cancel", fontWeight = FontWeight.Bold, contentColor = MaterialTheme.colorScheme.error)
+            }
+        }
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Broadcast Emergency SOS",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = RestrainedCoralRed
+            )
+            Text(
+                text = "This will create an emergency report visible to all Tanod and responders. Continue?",
+                style = MaterialTheme.typography.bodySmall,
+                color = DeepNavySecondary,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

@@ -44,6 +44,8 @@ fun AdminDashboardScreen(
     val repository = remember { BarangayRepository.instance }
     val userSession by repository.currentUser.collectAsState()
     val requests by repository.requests.collectAsState()
+    val residentRequestHistory by repository.requestHistory.collectAsState()
+    val emergencyRequestHistory by repository.emergencyHistory.collectAsState()
     val residents by repository.residents.collectAsState()
     val households by repository.households.collectAsState()
     val emergencies by repository.emergencyReports.collectAsState()
@@ -358,6 +360,76 @@ fun AdminDashboardScreen(
             }
 
             Spacer(modifier = Modifier.height(20.dp))
+
+            // STATUS HISTORY SECTION (F19 — staff read path)
+            Text(
+                text = "Status History",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (residentRequestHistory.isEmpty() && emergencyRequestHistory.isEmpty()) {
+                Text(
+                    text = "No status history available. Staff should update request/emergency statuses to populate this timeline.",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                val allHistory = mutableListOf<RequestTimelineEvent>()
+                allHistory.addAll(residentRequestHistory)
+                allHistory.addAll(emergencyRequestHistory)
+                allHistory.sortBy { -it.timestamp }
+
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    items(allHistory) { event ->
+                        SoftSkeuomorphicCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            elevation = 1.dp
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = event.title,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = event.actorName,
+                                        fontSize = 9.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Column(alignment = Alignment.CenterEnd, modifier = Modifier.width(80.dp)) {
+                                    Text(
+                                        text = "${event.timestamp}",
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = "${event.description ?: ''}",
+                                        fontSize = 9.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(30.dp))
 
             Text(
                 text = "More administration",

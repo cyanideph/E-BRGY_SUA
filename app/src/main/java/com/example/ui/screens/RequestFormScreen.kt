@@ -470,7 +470,14 @@ fun RequestFormScreen(
                                 onRequestSubmitted(it.referenceNumber)
                             }.onFailure {
                                 isSubmitting = false
-                                errorMessage = it.message ?: "Unable to submit the request. Please try again."
+                                when (it) {
+                                    is IOException -> if (it.message?.contains("RATE_LIMITED") == true) {
+                                        errorMessage = "Too many requests. Please try again in a minute."
+                                    } else {
+                                        errorMessage = it.message ?: "Unable to submit the request. Please try again."
+                                    }
+                                    else -> errorMessage = it.message ?: "Unable to submit the request. Please try again."
+                                }
                             }
                         }
                     }
