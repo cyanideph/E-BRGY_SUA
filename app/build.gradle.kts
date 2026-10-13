@@ -21,7 +21,7 @@ android {
   }
 
   defaultConfig {
-    applicationId = "com.aistudio.ebarangaysua.sjl"
+    applicationId = "com.aistudio.ebarangaysua.suaxyz"
     minSdk = 24
     targetSdk = 36
     versionCode = 2

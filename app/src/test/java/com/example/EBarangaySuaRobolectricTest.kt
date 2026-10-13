@@ -23,7 +23,7 @@ class EBarangaySuaRobolectricTest {
     fun android16ContextBoots() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         assertEquals(36, Build.VERSION.SDK_INT)
-        assertEquals("com.aistudio.ebarangaysua.sjl", context.packageName)
+        assertEquals("com.aistudio.ebarangaysua.suaxyz", context.packageName)
     }
 
     @Test
