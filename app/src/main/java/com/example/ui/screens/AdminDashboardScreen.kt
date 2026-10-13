@@ -60,7 +60,11 @@ fun AdminDashboardScreen(
                 title = {
                     Column {
                         Text("Barangay Admin Console", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Text("${userSession.role.displayName} • San Juan, Southern Leyte", fontSize = 11.sp, color = Color.White.copy(alpha = 0.85f))
+                        Text(
+                            "${userSession.role.displayName} • San Juan, Southern Leyte",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                        )
                     }
                 },
                 navigationIcon = {
@@ -72,9 +76,9 @@ fun AdminDashboardScreen(
                     RoleBadge(role = userSession.role, modifier = Modifier.padding(end = 12.dp))
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DeepOceanBlue,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         }
@@ -246,7 +250,12 @@ fun AdminDashboardScreen(
                                 modifier = Modifier.width(90.dp),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
-                            val fraction = if (requests.isNotEmpty()) (count.toFloat() / requests.size).coerceIn(0.08f, 1f) else 0.08f
+                            // P0-9: a zero count renders as a track-only bar — no fake 8% fill.
+                            val fraction = if (requests.isEmpty() || count == 0) {
+                                0f
+                            } else {
+                                (count.toFloat() / requests.size).coerceIn(0.02f, 1f)
+                            }
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
@@ -254,13 +263,15 @@ fun AdminDashboardScreen(
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(MaterialTheme.colorScheme.surfaceVariant)
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxHeight()
-                                        .fillMaxWidth(fraction)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(color)
-                                )
+                                if (fraction > 0f) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxHeight()
+                                            .fillMaxWidth(fraction)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(color)
+                                    )
+                                }
                             }
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
@@ -279,10 +290,15 @@ fun AdminDashboardScreen(
             // Chart: Weekly Requests Volume Trend
             SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "Weekly Public Request Volume Trend",
+                    text = "Weekly request volume (sample)",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Sample visualization — live counts coming soon.",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -447,7 +463,7 @@ private fun AdminNavTile(
                 Text(text = title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 Text(text = desc, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = SouthernSeaTealDark)
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

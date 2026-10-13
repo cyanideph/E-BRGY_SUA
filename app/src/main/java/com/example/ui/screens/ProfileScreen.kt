@@ -222,7 +222,7 @@ fun ProfileScreen(
                     .fillMaxWidth()
                     .height(48.dp),
                 shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = RestrainedCoralRed)
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
             ) {
                 Icon(Icons.Default.Logout, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))

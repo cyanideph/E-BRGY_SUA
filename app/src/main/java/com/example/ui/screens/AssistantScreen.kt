@@ -7,6 +7,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -17,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.BarangayRepository
@@ -111,13 +114,26 @@ fun AssistantScreen(
         }
     }
 
+    // Shared by the send button and the IME "Send" action (P0-7).
+    val sendMessage: () -> Unit = {
+        if (inputText.isNotBlank()) {
+            val q = inputText.trim()
+            inputText = ""
+            answerQuery(q)
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Column {
                         Text("Barangay Assistant", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Text("Grounded in official Barangay Sua data", fontSize = 11.sp, color = Color.White.copy(alpha = 0.8f))
+                        Text(
+                            "Grounded in official Barangay Sua data",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+                        )
                     }
                 },
                 navigationIcon = {
@@ -126,14 +142,15 @@ fun AssistantScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DeepOceanBlue,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         },
         bottomBar = {
             Surface(
+                modifier = Modifier.imePadding().navigationBarsPadding(),
                 shadowElevation = 8.dp,
                 color = MaterialTheme.colorScheme.surface
             ) {
@@ -148,18 +165,15 @@ fun AssistantScreen(
                         onValueChange = { inputText = it },
                         modifier = Modifier.weight(1f),
                         placeholder = { Text("Ask about services, requirements, events...") },
-                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                        keyboardActions = KeyboardActions(onSend = { sendMessage() }),
+                        maxLines = 4,
+                        singleLine = false,
                         shape = RoundedCornerShape(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     IconButton(
-                        onClick = {
-                            if (inputText.isNotBlank()) {
-                                val q = inputText.trim()
-                                inputText = ""
-                                answerQuery(q)
-                            }
-                        },
+                        onClick = sendMessage,
                         colors = IconButtonDefaults.filledIconButtonColors(containerColor = DeepOceanBlue)
                     ) {
                         Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send", tint = Color.White)
@@ -203,7 +217,7 @@ fun AssistantScreen(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
-                contentPadding = PaddingValues(16.dp),
+                contentPadding = PaddingValues(16.dp, 16.dp, 16.dp, 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(messages) { msg ->

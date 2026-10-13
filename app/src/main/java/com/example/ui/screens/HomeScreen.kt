@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -47,6 +48,7 @@ fun HomeScreen(
     onNavigateToAnnouncementDetails: (String) -> Unit,
     onNavigateToEvents: () -> Unit,
     onNavigateToEventDetails: (String) -> Unit,
+    onNavigateToNotifications: () -> Unit,
     onNavigateToAssistant: () -> Unit,
     onNavigateToAdminDashboard: () -> Unit
 ) {
@@ -57,6 +59,7 @@ fun HomeScreen(
     val announcements by repository.announcements.collectAsState()
     val events by repository.events.collectAsState()
     val services by repository.services.collectAsState()
+    val notifications by repository.notifications.collectAsState()
 
     val greeting = remember {
         val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
@@ -84,23 +87,58 @@ fun HomeScreen(
             name = userSession.profile.fullName.ifEmpty { "Resident" },
             location = "Barangay Sua • San Juan, Southern Leyte",
             trailingAction = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    GlobalOfflineSyncPill()
-                    Spacer(modifier = Modifier.width(8.dp))
-                    // Quick AI Barangay Assistant trigger
-                    Surface(
-                        onClick = onNavigateToAssistant,
-                        shape = CircleShape,
-                        color = Color.White.copy(alpha = 0.2f),
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Default.SmartToy,
-                                contentDescription = "Barangay Assistant",
-                                tint = WarmSunGoldLight,
-                                modifier = Modifier.size(22.dp)
-                            )
+                // Header gradient is fixed deep-ocean in both modes; white-on-gradient
+                // keeps the trailing controls AA. On narrow screens the sync pill is
+                // dropped so the greeting column is not squeezed.
+                BoxWithConstraints {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (maxWidth >= 340.dp) {
+                            GlobalOfflineSyncPill()
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+
+                        // Unread notifications entry point (P0-2 wiring).
+                        val unread = notifications.count { !it.isRead }
+                        BadgedBox(
+                            badge = { if (unread > 0) Badge { Text("$unread") } }
+                        ) {
+                            Surface(
+                                onClick = onNavigateToNotifications,
+                                shape = CircleShape,
+                                color = Color.White.copy(alpha = 0.2f),
+                                modifier = Modifier.size(48.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Notifications,
+                                        contentDescription = "Notifications" + if (unread > 0) " ($unread unread)" else "",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+                        // Quick AI Barangay Assistant trigger
+                        Surface(
+                            onClick = onNavigateToAssistant,
+                            shape = CircleShape,
+                            color = Color.White.copy(alpha = 0.2f),
+                            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.4f)),
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.SmartToy,
+                                    contentDescription = "Barangay Assistant",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -186,7 +224,7 @@ fun HomeScreen(
                                 text = "Emergency Assistance",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = RestrainedCoralRed
+                                color = MaterialTheme.colorScheme.onErrorContainer
                             )
                             Text(
                                 text = "Get help from Tanod or medical responders",
@@ -205,7 +243,8 @@ fun HomeScreen(
                             contentColor = Color.White
                         ),
                         shape = RoundedCornerShape(14.dp),
-                        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp)
+                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
+                        modifier = Modifier.heightIn(min = 48.dp)
                     ) {
                         Text(
                             text = "SOS",
@@ -280,11 +319,14 @@ fun HomeScreen(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                TextButton(onClick = onNavigateToMyRequests) {
+                TextButton(
+                    onClick = onNavigateToMyRequests,
+                    modifier = Modifier.heightIn(min = 48.dp)
+                ) {
                     Text(
                         text = "View all (${requests.size})",
                         fontWeight = FontWeight.SemiBold,
-                        color = SouthernSeaTealDark,
+                        color = MaterialTheme.colorScheme.secondary,
                         fontSize = 13.sp
                     )
                 }
@@ -403,6 +445,17 @@ fun HomeScreen(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
+                TextButton(
+                    onClick = onNavigateToEvents,
+                    modifier = Modifier.heightIn(min = 48.dp)
+                ) {
+                    Text(
+                        text = "View all",
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.secondary,
+                        fontSize = 13.sp
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -548,7 +601,10 @@ private fun BarangaySafetySnapshot(onOpenEmergency: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f)
             )
-            TextButton(onClick = onOpenEmergency) {
+            TextButton(
+                onClick = onOpenEmergency,
+                modifier = Modifier.heightIn(min = 48.dp)
+            ) {
                 Text("Safety", fontWeight = FontWeight.SemiBold)
             }
         }

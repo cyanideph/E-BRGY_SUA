@@ -71,9 +71,9 @@ fun AdminRequestsScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DeepOceanBlue,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         }
@@ -177,9 +177,9 @@ fun AdminResidentsScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DeepOceanBlue,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         }
@@ -288,9 +288,9 @@ fun AdminHouseholdsScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DeepOceanBlue,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         }
@@ -351,6 +351,7 @@ fun AdminAnnouncementsScreen(
     var desc by remember { mutableStateOf("") }
     var category by remember { mutableStateOf(AnnouncementCategory.GENERAL) }
     var priority by remember { mutableStateOf(AnnouncementPriority.NORMAL) }
+    var formError by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -362,9 +363,9 @@ fun AdminAnnouncementsScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DeepOceanBlue,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         },
@@ -437,6 +438,17 @@ fun AdminAnnouncementsScreen(
                                 }
                             }
                         }
+
+                        // P0-6: visible validation instead of a silent no-op Publish.
+                        val error = formError
+                        if (error != null) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = error,
+                                color = MaterialTheme.colorScheme.error,
+                                fontSize = 13.sp
+                            )
+                        }
                     }
                 },
                 confirmButton = {
@@ -456,8 +468,11 @@ fun AdminAnnouncementsScreen(
                                         showCreateDialog = false
                                         title = ""
                                         desc = ""
+                                        formError = null
                                     }
                                 }
+                            } else {
+                                formError = "Enter a title and details before publishing."
                             }
                         }
                     ) {
@@ -490,6 +505,7 @@ fun AdminEventsScreen(
     var date by remember { mutableStateOf("") }
     var time by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
+    var formError by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -501,9 +517,9 @@ fun AdminEventsScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DeepOceanBlue,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         },
@@ -555,6 +571,17 @@ fun AdminEventsScreen(
                         OutlinedTextField(value = time, onValueChange = { time = it }, label = { Text("Time") }, modifier = Modifier.fillMaxWidth())
                         Spacer(modifier = Modifier.height(6.dp))
                         OutlinedTextField(value = location, onValueChange = { location = it }, label = { Text("Location") }, modifier = Modifier.fillMaxWidth())
+
+                        // P0-6: visible validation instead of a silent no-op Save.
+                        val error = formError
+                        if (error != null) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = error,
+                                color = MaterialTheme.colorScheme.error,
+                                fontSize = 13.sp
+                            )
+                        }
                     }
                 },
                 confirmButton = {
@@ -579,8 +606,11 @@ fun AdminEventsScreen(
                                         date = ""
                                         time = ""
                                         location = ""
+                                        formError = null
                                     }
                                 }
+                            } else {
+                                formError = "Enter title, date, time and location."
                             }
                         }
                     ) {
@@ -605,6 +635,7 @@ fun AdminEmergenciesScreen(
 ) {
     val repository = remember { BarangayRepository.instance }
     val scope = rememberCoroutineScope()
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
     val emergencies by repository.emergencyReports.collectAsState()
 
     var selectedReport by remember { mutableStateOf<EmergencyReport?>(null) }
@@ -620,9 +651,9 @@ fun AdminEmergenciesScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = RestrainedCoralRed,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.error,
+                    titleContentColor = MaterialTheme.colorScheme.onError,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onError
                 )
             )
         }
@@ -682,9 +713,14 @@ fun AdminEmergenciesScreen(
                                         }
                                     }
                                 },
-                                colors = ButtonDefaults.buttonColors(containerColor = WarmAmber)
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (isDark) WarmAmberContainerDark else WarmAmberContainer,
+                                    contentColor = if (isDark) OnWarmAmberContainerDark else OnWarmAmberContainer
+                                ),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                                modifier = Modifier.heightIn(min = 48.dp)
                             ) {
-                                Text("Dispatch Response", fontSize = 12.sp)
+                                Text("Dispatch Response", fontSize = 14.sp, fontWeight = FontWeight.Bold)
                             }
                         } else if (emg.status == EmergencyStatus.RESPONDING) {
                             Button(
@@ -695,9 +731,14 @@ fun AdminEmergenciesScreen(
                                         }
                                     }
                                 },
-                                colors = ButtonDefaults.buttonColors(containerColor = NaturalGreen)
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (isDark) NaturalGreenContainerDark else NaturalGreenContainer,
+                                    contentColor = if (isDark) OnNaturalGreenContainerDark else OnNaturalGreenContainer
+                                ),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                                modifier = Modifier.heightIn(min = 48.dp)
                             ) {
-                                Text("Mark Resolved", fontSize = 12.sp)
+                                Text("Mark Resolved", fontSize = 14.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -727,9 +768,9 @@ fun AdminReportsScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DeepOceanBlue,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         }
@@ -743,30 +784,48 @@ fun AdminReportsScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth()) {
-                Text("Quarterly Public Service Summary", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DeepOceanBlue)
+                Text("Sample — Quarterly Public Service Summary", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DeepOceanBlue)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("Total Document Applications: ${requests.size}", fontSize = 13.sp)
                 Text("Completed & Released: ${requests.count { it.status == RequestStatus.COMPLETED }}", fontSize = 13.sp)
                 Text("Pending Action: ${requests.count { it.status != RequestStatus.COMPLETED && it.status != RequestStatus.REJECTED }}", fontSize = 13.sp)
                 Text("Average Processing Duration: 1.4 Working Days", fontSize = 13.sp)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "Figures are placeholders for release 1.1.",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth()) {
-                Text("Purok Demographic Distribution", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DeepOceanBlue)
+                Text("Sample — Purok Demographic Distribution", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DeepOceanBlue)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("• Purok 1 (Beachfront / Fishery Zone): 32% of households", fontSize = 12.sp)
                 Text("• Purok 2 (Coastal Commercial): 28% of households", fontSize = 12.sp)
                 Text("• Purok 3 (Hillside & Agriculture): 24% of households", fontSize = 12.sp)
                 Text("• Purok 4 (Mangrove Sanctuary Boundary): 16% of households", fontSize = 12.sp)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "Figures are placeholders for release 1.1.",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth()) {
-                Text("Top Requested Certifications", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DeepOceanBlue)
+                Text("Sample — Top Requested Certifications", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DeepOceanBlue)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("1. Barangay Clearance (44% of total volume)", fontSize = 12.sp)
                 Text("2. Certificate of Residency (28% of total volume)", fontSize = 12.sp)
                 Text("3. Certificate of Indigency (18% of total volume)", fontSize = 12.sp)
                 Text("4. Business Clearance & Good Moral (10% of total volume)", fontSize = 12.sp)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "Figures are placeholders for release 1.1.",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
@@ -792,9 +851,9 @@ fun AdminAuditLogsScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DeepOceanBlue,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         }

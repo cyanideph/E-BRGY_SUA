@@ -42,7 +42,10 @@ fun NotificationsScreen(
             location = "Barangay Sua Dispatch",
             trailingAction = {
                 if (notifications.any { !it.isRead }) {
-                    TextButton(onClick = { repository.markAllNotificationsAsRead() }) {
+                    TextButton(
+                        onClick = { repository.markAllNotificationsAsRead() },
+                        modifier = Modifier.heightIn(min = 48.dp)
+                    ) {
                         Text(
                             text = "Mark all read",
                             color = Color.White,
@@ -82,7 +85,7 @@ fun NotificationsScreen(
 
                     SoftSkeuomorphicCard(
                         modifier = Modifier.fillMaxWidth(),
-                        backgroundColor = if (notif.isRead) MaterialTheme.colorScheme.surface else DeepOceanContainer.copy(alpha = 0.35f),
+                        backgroundColor = if (notif.isRead) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
                         onClick = { repository.markNotificationAsRead(notif.id) }
                     ) {
                         Row(
@@ -149,7 +152,7 @@ fun NotificationsScreen(
                                     Text(
                                         text = dateFormat.format(Date(notif.timestamp)),
                                         fontSize = 10.sp,
-                                        color = DeepNavySecondary
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }

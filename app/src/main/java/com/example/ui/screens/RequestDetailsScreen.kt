@@ -38,7 +38,43 @@ fun RequestDetailsScreen(
 
     val request = remember(requestId, requests) {
         requests.firstOrNull { it.id == requestId || it.referenceNumber == requestId }
-            ?: requests.first()
+    }
+
+    if (request == null) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Request Details", fontWeight = FontWeight.Bold, fontSize = 17.sp) },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                        actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                )
+            }
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                EmptyStateCard(
+                    icon = Icons.Default.ManageSearch,
+                    title = "Request unavailable",
+                    message = "It may still be syncing. Pull to retry or go back.",
+                    buttonText = "Back",
+                    onButtonClick = onNavigateBack
+                )
+            }
+        }
+        return
     }
 
     val dateFormat = remember { SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.US) }
@@ -66,10 +102,10 @@ fun RequestDetailsScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DeepOceanBlue,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White,
-                    actionIconContentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         }

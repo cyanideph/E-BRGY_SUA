@@ -3,9 +3,12 @@ package com.example.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AssignmentLate
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,12 +33,13 @@ fun MyRequestsScreen(
     var selectedTab by remember { mutableStateOf(0) }
     var searchQuery by remember { mutableStateOf("") }
 
-    val tabs = listOf("Active", "Ready / Completed", "All (${requests.size})")
+    val tabs = listOf("Active", "Ready", "Rejected", "All (${requests.size})")
 
     val filteredRequests = remember(requests, selectedTab, searchQuery) {
         val tabFiltered = when (selectedTab) {
             0 -> requests.filter { it.status == RequestStatus.SUBMITTED || it.status == RequestStatus.UNDER_REVIEW || it.status == RequestStatus.PROCESSING }
             1 -> requests.filter { it.status == RequestStatus.READY || it.status == RequestStatus.COMPLETED }
+            2 -> requests.filter { it.status == RequestStatus.REJECTED }
             else -> requests
         }
 
@@ -70,33 +74,38 @@ fun MyRequestsScreen(
                     text = {
                         Text(
                             text = title,
-                            fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = 13.sp
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal
                         )
                     }
                 )
             }
         }
 
-        // Search Filter Bar
-        CivicSearchFilterBar(
-            searchQuery = searchQuery,
-            onSearchQueryChange = { searchQuery = it },
-            filterChips = listOf("All", "Active", "Ready", "Completed"),
-            selectedFilter = when (selectedTab) {
-                0 -> "Active"
-                1 -> "Ready"
-                else -> "All"
+        // Inline search (single filter — chips removed; Rejected is surfaced as its own tab)
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            placeholder = { Text("Search by tracking number, clearance, purpose...", fontSize = 13.sp) },
+            leadingIcon = {
+                Icon(Icons.Default.Search, contentDescription = "Search", tint = MaterialTheme.colorScheme.primary)
             },
-            onFilterSelected = { chip ->
-                selectedTab = when (chip) {
-                    "Active" -> 0
-                    "Ready", "Completed" -> 1
-                    else -> 2
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { searchQuery = "" }) {
+                        Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                    }
                 }
             },
-            placeholderText = "Search by tracking number, clearance, purpose...",
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+            shape = RoundedCornerShape(14.dp),
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+            )
         )
 
         if (filteredRequests.isEmpty()) {

@@ -180,7 +180,7 @@ fun AnnouncementsScreen(
                             Text(
                                 text = "Published by: ${item.authorName} (${item.authorRole})",
                                 fontSize = 11.sp,
-                                color = SouthernSeaTealDark,
+                                color = MaterialTheme.colorScheme.secondary,
                                 fontWeight = FontWeight.Medium
                             )
                         }

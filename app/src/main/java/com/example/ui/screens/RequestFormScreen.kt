@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,9 +37,45 @@ fun RequestFormScreen(
     val repository = remember { BarangayRepository.instance }
     val scope = rememberCoroutineScope()
     val userSession by repository.currentUser.collectAsState()
-    val service = remember(serviceId) {
-        repository.services.value.firstOrNull { it.id == serviceId }
-            ?: repository.services.value.first()
+    val services by repository.services.collectAsState()
+    val service = remember(serviceId, services) {
+        services.firstOrNull { it.id == serviceId }
+    }
+
+    if (service == null) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Application Form", fontWeight = FontWeight.Bold) },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                )
+            }
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                EmptyStateCard(
+                    icon = Icons.Default.Description,
+                    title = "Service unavailable",
+                    message = "This service isn't cached yet. Connect and retry.",
+                    buttonText = "Back",
+                    onButtonClick = onNavigateBack
+                )
+            }
+        }
+        return
     }
 
     val baseFee: Double = remember(service.feeDescription) {
@@ -47,14 +84,15 @@ fun RequestFormScreen(
         match?.value?.toDoubleOrNull() ?: 0.0
     }
 
-    var purpose by remember { mutableStateOf(service.purposeExamples.firstOrNull() ?: "") }
-    var customPurpose by remember { mutableStateOf("") }
-    var deliveryMethod by remember { mutableStateOf("") }
-    var remarks by remember { mutableStateOf("") }
-    var attachments by remember { mutableStateOf(emptyList<String>()) }
-    var selectedWaiver by remember { mutableStateOf(StatutoryWaiverType.NONE) }
+    // No pre-selection: the blank check on submit is now reachable.
+    var purpose by rememberSaveable { mutableStateOf("") }
+    var customPurpose by rememberSaveable { mutableStateOf("") }
+    var deliveryMethod by rememberSaveable { mutableStateOf("") }
+    var remarks by rememberSaveable { mutableStateOf("") }
+    var attachments by rememberSaveable { mutableStateOf(emptyList<String>()) }
+    var selectedWaiver by rememberSaveable { mutableStateOf(StatutoryWaiverType.NONE) }
     var calculatedFee by remember { mutableStateOf(baseFee) }
-    var agreedToTerms by remember { mutableStateOf(false) }
+    var agreedToTerms by rememberSaveable { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isSubmitting by remember { mutableStateOf(false) }
 
@@ -79,9 +117,9 @@ fun RequestFormScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DeepOceanBlue,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         }
@@ -92,6 +130,8 @@ fun RequestFormScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
+                .imePadding()
+                .navigationBarsPadding()
         ) {
             // Form Step Progress Wizard
             FormStepProgressIndicator(
@@ -200,7 +240,7 @@ fun RequestFormScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { purpose = example }
+                            .clickable(role = Role.RadioButton) { purpose = example }
                             .padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -248,7 +288,7 @@ fun RequestFormScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { deliveryMethod = option }
+                            .clickable(role = Role.RadioButton) { deliveryMethod = option }
                             .padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -291,11 +331,20 @@ fun RequestFormScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "Attached Documents:",
+                    text = "Attached Documents (${attachments.size})",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
+
+                if (attachments.isEmpty()) {
+                    Text(
+                        text = "No files yet — ID or proof photo speeds verification.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(6.dp))
 
@@ -317,7 +366,12 @@ fun RequestFormScreen(
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(text = file, fontSize = 12.sp, color = DeepNavy)
                             }
-                            Icon(Icons.Default.Check, contentDescription = null, tint = NaturalGreen, modifier = Modifier.size(16.dp))
+                            IconButton(onClick = { attachments = attachments - file }) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Remove $file"
+                                )
+                            }
                         }
                     }
                 }
@@ -358,7 +412,7 @@ fun RequestFormScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { agreedToTerms = !agreedToTerms }
+                    .clickable(role = Role.Checkbox) { agreedToTerms = !agreedToTerms }
             ) {
                 Checkbox(
                     checked = agreedToTerms,
@@ -392,6 +446,8 @@ fun RequestFormScreen(
                         errorMessage = "Please select or enter the purpose for this document request."
                     } else if (!agreedToTerms) {
                         errorMessage = "You must agree to the truthfulness certification."
+                    } else if (deliveryMethod.isBlank()) {
+                        errorMessage = "Choose how you want to receive the document."
                     } else {
                         isSubmitting = true
                         val finalRemarks = if (selectedWaiver != StatutoryWaiverType.NONE) {

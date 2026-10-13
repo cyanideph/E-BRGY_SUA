@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.sp
 import com.example.data.BarangayRepository
 import com.example.ui.components.SoftSkeuomorphicCard
 import com.example.ui.theme.*
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,6 +27,8 @@ fun EventDetailsScreen(
     onNavigateBack: () -> Unit
 ) {
     val repository = remember { BarangayRepository.instance }
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
     val events by repository.events.collectAsState()
     val event = events.firstOrNull { it.id == eventId } ?: run {
         onNavigateBack()
@@ -33,6 +36,7 @@ fun EventDetailsScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Event Details", fontWeight = FontWeight.Bold) },
@@ -42,9 +46,9 @@ fun EventDetailsScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DeepOceanBlue,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         }
@@ -128,7 +132,15 @@ fun EventDetailsScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 Button(
-                    onClick = { repository.toggleEventRsvp(event.id) },
+                    onClick = {
+                        // P0-6: surface RSVP failures instead of failing silently.
+                        scope.launch {
+                            runCatching { repository.toggleEventRsvp(event.id) }
+                                .onFailure {
+                                    snackbarHostState.showSnackbar("Couldn't update RSVP. Try again.")
+                                }
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),

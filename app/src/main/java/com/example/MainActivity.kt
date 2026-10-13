@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -22,6 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.navigation.Screen
+import com.example.ui.navigation.decodeRoute
+import com.example.ui.navigation.encode
 import com.example.ui.screens.*
 import com.example.ui.theme.*
 import kotlinx.coroutines.launch
@@ -78,10 +81,35 @@ class MainActivity : ComponentActivity() {
 fun EBarangaySuaApp() {
     val repository = remember { com.example.data.BarangayRepository.instance }
     val scope = rememberCoroutineScope()
+    // P0-8: persisted mirror of the back stack (encoded routes) so navigation
+    // history survives process death. A plain ArrayList is Bundle/Serializable
+    // safe, which `rememberSaveable` requires.
+    val savedStack = rememberSaveable { arrayListOf<String>() }
     val backStack = remember { mutableStateListOf<Screen>(Screen.Splash) }
+    // Restore persisted history exactly once, before the first frame renders.
+    remember {
+        if (savedStack.isNotEmpty() && backStack.size == 1 && backStack.lastOrNull() == Screen.Splash) {
+            val restored = savedStack.map { decodeRoute(it) }
+            backStack.clear()
+            backStack.addAll(restored)
+        }
+    }
     val currentScreen = backStack.lastOrNull() ?: Screen.Home
 
+    // P0-8: per-tab navigation history so switching bottom tabs keeps each
+    // destination's own stack instead of wiping it.
+    var currentTab by rememberSaveable { mutableStateOf(Screen.Home.route) }
+    val tabStacks = remember { mutableStateMapOf<String, List<String>>() }
+    val bottomTabRoutes = listOf(
+        Screen.Home.route,
+        Screen.Services.route,
+        Screen.Sua.route,
+        Screen.Alerts.route,
+        Screen.Profile.route
+    )
+
     fun navigateTo(screen: Screen) {
+        // TODO(P1): slide transitions — persistence is the P0, motion is the P1.
         backStack.add(screen)
     }
 
@@ -99,9 +127,29 @@ fun EBarangaySuaApp() {
     }
 
     fun selectBottomTab(screen: Screen) {
-        // Keep bottom destination at root
-        backStack.clear()
-        backStack.add(screen)
+        if (screen.route in bottomTabRoutes) {
+            // Commit the outgoing tab's stack only when it really belongs to the
+            // active tab (guards against the Login/Onboarding flow overwriting it).
+            if (backStack.firstOrNull()?.route == currentTab) {
+                tabStacks[currentTab] = backStack.map { it.encode() }
+            }
+            currentTab = screen.route
+            backStack.clear()
+            val saved = tabStacks[screen.route]?.takeIf { it.firstOrNull() == screen.encode() }
+            (saved ?: listOf(screen.encode())).forEach { backStack.add(decodeRoute(it)) }
+        } else {
+            // Non-tab roots (e.g. Login) start a fresh session — drop stale stacks.
+            tabStacks.clear()
+            currentTab = screen.route
+            backStack.clear()
+            backStack.add(screen)
+        }
+    }
+
+    // Keep the persisted mirror in step with the live stack (P0-8).
+    LaunchedEffect(backStack.size, backStack.lastOrNull()) {
+        savedStack.clear()
+        savedStack.addAll(backStack.map { it.encode() })
     }
 
     // Android System Back Handling
@@ -244,8 +292,9 @@ fun EBarangaySuaApp() {
                             onNavigateToRequestDetails = { rId -> navigateTo(Screen.RequestDetails(rId)) },
                             onNavigateToAnnouncements = { selectBottomTab(Screen.Alerts) },
                             onNavigateToAnnouncementDetails = { aId -> navigateTo(Screen.AnnouncementDetails(aId)) },
-                            onNavigateToEvents = { selectBottomTab(Screen.Alerts) },
+                            onNavigateToEvents = { navigateTo(Screen.Events) },
                             onNavigateToEventDetails = { eId -> navigateTo(Screen.EventDetails(eId)) },
+                            onNavigateToNotifications = { navigateTo(Screen.Notifications) },
                             onNavigateToAssistant = { navigateTo(Screen.Assistant) },
                             onNavigateToAdminDashboard = { navigateTo(Screen.AdminDashboard) }
                         )
@@ -311,6 +360,11 @@ fun EBarangaySuaApp() {
                             onNavigateToAnnouncementDetails = { aId ->
                                 navigateTo(Screen.AnnouncementDetails(aId))
                             }
+                        )
+                    }
+                    is Screen.Events -> {
+                        EventsScreen(
+                            onNavigateToEventDetails = { navigateTo(Screen.EventDetails(it)) }
                         )
                     }
                     is Screen.AnnouncementDetails -> {

@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -17,6 +18,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -66,14 +68,15 @@ fun SettingsScreen(
                         Icon(
                             imageVector = if (themeMode == com.example.data.AppThemeMode.DARK) Icons.Default.LightMode else Icons.Default.DarkMode,
                             contentDescription = "Toggle Dark Mode",
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         }
@@ -147,6 +150,9 @@ fun SettingsScreen(
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
+                            .heightIn(min = 48.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable(role = Role.RadioButton) { repository.setThemeMode(mode) }
                             .padding(vertical = 3.dp)
                     ) {
                         Row(
@@ -157,7 +163,7 @@ fun SettingsScreen(
                         ) {
                             RadioButton(
                                 selected = isSelected,
-                                onClick = { repository.setThemeMode(mode) },
+                                onClick = null,
                                 colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -326,11 +332,18 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Biometric Sign-In", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                        Text("Biometric Sign-In (Coming soon)", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                         Text("Use fingerprint or face recognition", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        // P0-12: be honest — androidx.biometric is not bundled yet.
+                        Text(
+                            text = "Coming soon — fingerprint sign-in isn't available in this release.",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                     Switch(
                         checked = biometricsEnabled,
+                        enabled = false,
                         onCheckedChange = {
                             biometricsEnabled = it
                             prefs.edit().putBoolean("biometrics", it).apply()
@@ -378,7 +391,7 @@ fun SettingsScreen(
                 OutlinedButton(
                     onClick = { showDeleteAccountDialog = true },
                     shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = RestrainedCoralRed),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(Icons.Default.DeleteOutline, contentDescription = null, modifier = Modifier.size(18.dp))

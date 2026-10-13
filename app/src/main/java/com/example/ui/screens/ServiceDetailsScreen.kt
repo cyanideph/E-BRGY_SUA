@@ -12,6 +12,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
@@ -35,9 +37,45 @@ fun ServiceDetailsScreen(
     onNavigateToRequestForm: (String) -> Unit
 ) {
     val repository = remember { BarangayRepository.instance }
-    val service = remember(serviceId) {
-        repository.services.value.firstOrNull { it.id == serviceId }
-            ?: repository.services.value.first()
+    val services by repository.services.collectAsState()
+    val service = remember(serviceId, services) {
+        services.firstOrNull { it.id == serviceId }
+    }
+
+    if (service == null) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Service Details", fontWeight = FontWeight.Bold) },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                )
+            }
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                EmptyStateCard(
+                    icon = Icons.Default.Description,
+                    title = "Service unavailable",
+                    message = "This service isn't cached yet. Connect and retry.",
+                    buttonText = "Back",
+                    onButtonClick = onNavigateBack
+                )
+            }
+        }
+        return
     }
 
     Scaffold(
@@ -50,9 +88,9 @@ fun ServiceDetailsScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DeepOceanBlue,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         },

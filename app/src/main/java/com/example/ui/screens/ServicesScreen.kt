@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.BarangayRepository
 import com.example.model.BarangayService
+import com.example.ui.components.EmptyStateCard
 import com.example.ui.components.SuaPlainRow
 import com.example.ui.components.SuaRowDivider
 import com.example.ui.components.SuaWaveHeader
@@ -107,17 +108,37 @@ fun ServicesScreen(
         }
 
         // List of Services — plain rows with dividers, no per-row cards.
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
-        ) {
-            items(filteredServices.size) { index ->
-                val service = filteredServices[index]
-                ServiceListItem(
-                    service = service,
-                    onClick = { onNavigateToServiceDetails(service.id) }
+        if (filteredServices.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                EmptyStateCard(
+                    icon = Icons.Default.SearchOff,
+                    title = "No services found",
+                    message = "Try a different keyword or category.",
+                    buttonText = "Clear search",
+                    onButtonClick = {
+                        searchQuery = ""
+                        selectedCategory = "All"
+                    }
                 )
-                if (index < filteredServices.lastIndex) SuaRowDivider()
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
+            ) {
+                items(filteredServices.size) { index ->
+                    val service = filteredServices[index]
+                    ServiceListItem(
+                        service = service,
+                        onClick = { onNavigateToServiceDetails(service.id) }
+                    )
+                    if (index < filteredServices.lastIndex) SuaRowDivider()
+                }
             }
         }
     }

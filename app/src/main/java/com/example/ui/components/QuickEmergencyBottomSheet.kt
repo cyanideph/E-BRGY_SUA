@@ -42,6 +42,7 @@ fun QuickEmergencyBottomSheet(
     val context = LocalContext.current
     val repository = remember { BarangayRepository.instance }
     val userSession by repository.currentUser.collectAsState()
+    val scope = rememberCoroutineScope()
 
     var selectedType by remember { mutableStateOf(EmergencyType.MEDICAL) }
     var locationDescription by remember { mutableStateOf("Near Purok 1 Beachfront, Barangay Sua") }
@@ -58,7 +59,9 @@ fun QuickEmergencyBottomSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
-                .padding(bottom = 28.dp),
+                .padding(bottom = 28.dp)
+                .imePadding()
+                .navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Header
@@ -161,7 +164,8 @@ fun QuickEmergencyBottomSheet(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
-                singleLine = true
+                maxLines = 2,
+                singleLine = false
             )
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -214,8 +218,9 @@ fun QuickEmergencyBottomSheet(
                             }
                             context.startActivity(intent)
                         },
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                        shape = RoundedCornerShape(10.dp)
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.heightIn(min = 48.dp)
                     ) {
                         Icon(Icons.Default.Phone, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
@@ -239,7 +244,7 @@ fun QuickEmergencyBottomSheet(
                             .maxByOrNull { it.time }
                     }.getOrNull()
 
-                    kotlinx.coroutines.MainScope().launch {
+                    scope.launch {
                         try {
                             val report = repository.submitEmergency(
                                 type = selectedType,

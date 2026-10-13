@@ -10,14 +10,16 @@ import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.BarangayRepository
+import com.example.ui.components.EmptyStateCard
 import com.example.ui.components.PriorityBadge
 import com.example.ui.components.SoftSkeuomorphicCard
 import com.example.ui.theme.*
@@ -29,9 +31,9 @@ fun AnnouncementDetailsScreen(
     onNavigateBack: () -> Unit
 ) {
     val repository = remember { BarangayRepository.instance }
-    val announcement = remember(announcementId) {
-        repository.announcements.value.firstOrNull { it.id == announcementId }
-            ?: repository.announcements.value.first()
+    val announcements by repository.announcements.collectAsState()
+    val announcement = remember(announcementId, announcements) {
+        announcements.firstOrNull { it.id == announcementId }
     }
 
     Scaffold(
@@ -44,13 +46,31 @@ fun AnnouncementDetailsScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DeepOceanBlue,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         }
     ) { innerPadding ->
+        if (announcement == null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                EmptyStateCard(
+                    icon = Icons.Default.Campaign,
+                    title = "Announcement unavailable",
+                    message = "This advisory isn't cached. Check Advisories list.",
+                    buttonText = "Back",
+                    onButtonClick = onNavigateBack
+                )
+            }
+            return@Scaffold
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()

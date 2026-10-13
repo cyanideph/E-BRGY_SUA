@@ -78,7 +78,7 @@ fun OnboardingScreen(
                     style = MaterialTheme.typography.titleMedium,
                     color = DeepOceanBlue
                 )
-                TextButton(onClick = onFinishOnboarding) {
+                TextButton(onClick = onFinishOnboarding, modifier = Modifier.heightIn(min = 48.dp)) {
                     Text(
                         text = "Skip",
                         fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold

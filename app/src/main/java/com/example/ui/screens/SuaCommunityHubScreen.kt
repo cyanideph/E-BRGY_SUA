@@ -36,6 +36,7 @@ fun SuaCommunityHubScreen(
     onNavigateToAnnouncements: () -> Unit
 ) {
     val repository = remember { BarangayRepository.instance }
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
     val officials by repository.officials.collectAsState()
     val facilities by repository.facilities.collectAsState()
     var selectedOfficialTab by remember { mutableStateOf("All") }
@@ -122,7 +123,7 @@ fun SuaCommunityHubScreen(
                             text = "Barangay Sua at a Glance",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = DeepOceanBlue
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = listOf(
@@ -200,7 +201,11 @@ fun SuaCommunityHubScreen(
                             Icon(
                                 imageVector = if (barangayProfile?.source == "GIS.PH") Icons.Default.Verified else Icons.Default.CloudOff,
                                 contentDescription = null,
-                                tint = if (barangayProfile?.source == "GIS.PH") SouthernSeaTealDark else WarmSunGoldDark,
+                                tint = if (barangayProfile?.source == "GIS.PH") {
+                                    if (isDark) OnNaturalGreenContainerDark else OnNaturalGreenContainer
+                                } else {
+                                    if (isDark) OnWarmAmberContainerDark else OnWarmAmberContainer
+                                },
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -209,7 +214,7 @@ fun SuaCommunityHubScreen(
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = "Live lookup unavailable; using the configured Barangay Sua service-area identity.",
-                            fontSize = 10.sp,
+                            fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -287,7 +292,7 @@ fun SuaCommunityHubScreen(
                     Text(
                         text = "Current Barangay Sua Officials",
                         fontSize = 11.sp,
-                        color = WarmSunGoldDark,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.SemiBold
                     )
                 }

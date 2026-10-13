@@ -56,6 +56,7 @@ fun EmergencyScreen(
     var isSubmitting by remember { mutableStateOf(false) }
     var submittedReport by remember { mutableStateOf<EmergencyReport?>(null) }
     var showPermissionRationale by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
@@ -89,6 +90,7 @@ fun EmergencyScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Emergency Response & SOS", fontWeight = FontWeight.Bold) },
@@ -98,9 +100,9 @@ fun EmergencyScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = RestrainedCoralRed,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.error,
+                    titleContentColor = MaterialTheme.colorScheme.onError,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onError
                 )
             )
         }
@@ -197,10 +199,10 @@ fun EmergencyScreen(
                             .padding(vertical = 3.dp)
                             .clickable { selectedType = type },
                         shape = RoundedCornerShape(10.dp),
-                        color = if (isSelected) RestrainedCoralRed else MaterialTheme.colorScheme.surface,
+                        color = if (isSelected) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.surface,
                         border = androidx.compose.foundation.BorderStroke(
                             1.dp,
-                            if (isSelected) RestrainedCoralRed else MaterialTheme.colorScheme.outlineVariant
+                            if (isSelected) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outlineVariant
                         )
                     ) {
                         Row(
@@ -211,8 +213,8 @@ fun EmergencyScreen(
                                 selected = isSelected,
                                 onClick = { selectedType = type },
                                 colors = RadioButtonDefaults.colors(
-                                    selectedColor = Color.White,
-                                    unselectedColor = RestrainedCoralRed
+                                    selectedColor = MaterialTheme.colorScheme.onError,
+                                    unselectedColor = MaterialTheme.colorScheme.error
                                 )
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -221,12 +223,12 @@ fun EmergencyScreen(
                                     text = type.displayName,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
+                                    color = if (isSelected) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = type.iconDescription,
-                                    fontSize = 11.sp,
-                                    color = if (isSelected) Color.White.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant
+                                    fontSize = 12.sp,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onError.copy(alpha = 0.9f) else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -275,11 +277,16 @@ fun EmergencyScreen(
                                 )
                             )
                         },
-                        shape = RoundedCornerShape(10.dp)
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.heightIn(min = 48.dp)
                     ) {
                         Icon(Icons.Default.MyLocation, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(if (isLocationPermissionGranted) "Acquired" else "GPS Tag", fontSize = 11.sp)
+                        Text(
+                            text = if (isLocationPermissionGranted) "Location acquired ✓" else "GPS Tag",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                 }
 
@@ -304,6 +311,12 @@ fun EmergencyScreen(
                             }.onFailure {
                                 isSubmitting = false
                                 showPermissionRationale = false
+                                // P0-6: never fail silently — keep the draft and explain what to do.
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        "SOS could not be sent. Your draft was kept — retry or call a hotline."
+                                    )
+                                }
                             }
                         }
                     },
@@ -358,8 +371,13 @@ fun EmergencyScreen(
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 hotlines.forEach { hotline ->
+                    // Single tap affordance (P0-4): the whole card dials, so the
+                    // nested Call button is removed and replaced by a trailing
+                    // icon+label that makes the action explicit.
                     SoftSkeuomorphicCard(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 56.dp),
                         onClick = {
                             val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${hotline.number.replace(" ", "")}"))
                             context.startActivity(intent)
@@ -402,20 +420,13 @@ fun EmergencyScreen(
                                 )
                             }
 
-                            Button(
-                                onClick = {
-                                    val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${hotline.number.replace(" ", "")}"))
-                                    context.startActivity(intent)
-                                },
-                                shape = RoundedCornerShape(10.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = SouthernSeaTeal,
-                                    contentColor = Color.White
-                                ),
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                            ) {
-                                Text("Call", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                            }
+                            Icon(Icons.Default.Call, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Call",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
                         }
                     }
                 }

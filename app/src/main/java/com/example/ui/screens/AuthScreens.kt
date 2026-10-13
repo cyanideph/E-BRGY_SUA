@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -20,12 +21,17 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -39,6 +45,8 @@ import com.example.model.ResidentProfile
 import com.example.model.UserRole
 import com.example.ui.components.SoftSkeuomorphicCard
 import com.example.ui.theme.*
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun LoginScreen(
@@ -46,12 +54,41 @@ fun LoginScreen(
     onNavigateToRegister: () -> Unit
 ) {
     val repository = remember { BarangayRepository.instance }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var email by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
+    var attempted by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+
+    val isEmailValid = remember(email) {
+        android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()
+    }
+
+    // Single submit path shared by the Sign In button and the password IME "Done" action.
+    val doLogin: () -> Unit = {
+        attempted = true
+        when {
+            isLoading -> Unit
+            email.isBlank() || password.isBlank() -> {
+                errorMessage = "Please enter both your email address and password."
+            }
+            !isEmailValid -> {
+                errorMessage = "Enter a valid email, e.g. name@example.com"
+            }
+            else -> {
+                isLoading = true
+                scope.launch {
+                    repository.login(email.trim(), password).fold(
+                        onSuccess = { isLoading = false; onLoginSuccess() },
+                        onFailure = { isLoading = false; errorMessage = it.message ?: "Sign in failed. Please check your credentials." }
+                    )
+                }
+            }
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background
@@ -61,6 +98,7 @@ fun LoginScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
+                .imePadding()
                 .padding(horizontal = 24.dp, vertical = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -89,7 +127,7 @@ fun LoginScreen(
                 text = "Welcome to e-Barangay Sua",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = DeepOceanBlue
+                color = MaterialTheme.colorScheme.onBackground
             )
 
             Text(
@@ -122,11 +160,18 @@ fun LoginScreen(
                         },
                         label = { Text("Email Address") },
                         leadingIcon = {
-                            Icon(Icons.Default.Email, contentDescription = null, tint = DeepOceanBlue)
+                            Icon(Icons.Default.Email, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        },
+                        isError = attempted && !isEmailValid,
+                        supportingText = {
+                            if (attempted && !isEmailValid) {
+                                Text("Enter a valid email, e.g. name@example.com")
+                            }
                         },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                         shape = RoundedCornerShape(12.dp)
                     )
 
@@ -140,7 +185,7 @@ fun LoginScreen(
                         },
                         label = { Text("Password") },
                         leadingIcon = {
-                            Icon(Icons.Default.Lock, contentDescription = null, tint = DeepOceanBlue)
+                            Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         },
                         trailingIcon = {
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -153,6 +198,8 @@ fun LoginScreen(
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { doLogin() }),
                         shape = RoundedCornerShape(12.dp)
                     )
 
@@ -162,34 +209,22 @@ fun LoginScreen(
                             text = errorMessage ?: "",
                             color = MaterialTheme.colorScheme.error,
                             fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive }
                         )
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))
 
                     Button(
-                        onClick = {
-                            if (isLoading) return@Button
-                            if (email.isBlank() || password.isBlank()) {
-                                errorMessage = "Please enter both your email address and password."
-                            } else {
-                                isLoading = true
-                                scope.launch {
-                                    repository.login(email.trim(), password).fold(
-                                        onSuccess = { isLoading = false; onLoginSuccess() },
-                                        onFailure = { isLoading = false; errorMessage = it.message ?: "Sign in failed. Please check your credentials." }
-                                    )
-                                }
-                            }
-                        },
+                        onClick = { doLogin() },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp),
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = DeepOceanBlue,
-                            contentColor = Color.White
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         )
                     ) {
                         if (isLoading) {
@@ -222,7 +257,7 @@ fun LoginScreen(
                     Text(
                         text = "Register",
                         fontWeight = FontWeight.Bold,
-                        color = SouthernSeaTealDark
+                        color = MaterialTheme.colorScheme.secondary
                     )
                 }
             }
@@ -240,26 +275,44 @@ fun RegisterScreen(
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
-    var fullName by remember { mutableStateOf("") }
-    var address by remember { mutableStateOf("") }
-    var mobile by remember { mutableStateOf("") }
-    var dateOfBirth by remember { mutableStateOf("") }
-    var civilStatus by remember { mutableStateOf("") }
-    var occupation by remember { mutableStateOf("") }
-    var emergencyContactName by remember { mutableStateOf("") }
-    var emergencyContactRelationship by remember { mutableStateOf("") }
-    var emergencyContactPhone by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-    var latitude by remember { mutableStateOf<Double?>(null) }
-    var longitude by remember { mutableStateOf<Double?>(null) }
+    var fullName by rememberSaveable { mutableStateOf("") }
+    var address by rememberSaveable { mutableStateOf("") }
+    var mobile by rememberSaveable { mutableStateOf("") }
+    var dateOfBirth by rememberSaveable { mutableStateOf("") }
+    var civilStatus by rememberSaveable { mutableStateOf("") }
+    var occupation by rememberSaveable { mutableStateOf("") }
+    var emergencyContactName by rememberSaveable { mutableStateOf("") }
+    var emergencyContactRelationship by rememberSaveable { mutableStateOf("") }
+    var emergencyContactPhone by rememberSaveable { mutableStateOf("") }
+    var email by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
+    var confirmPassword by rememberSaveable { mutableStateOf("") }
+    var latitude by remember { mutableStateOf<Double?>(null) } // restore from GPS on re-entry
+    var longitude by remember { mutableStateOf<Double?>(null) } // restore from GPS on re-entry
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var locationMessage by remember { mutableStateOf<String?>(null) }
     var showDatePicker by remember { mutableStateOf(false) }
     var civilExpanded by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
+    var attempted by rememberSaveable { mutableStateOf(false) }
+    var passwordVisible2 by remember { mutableStateOf(false) }
+    var confirmVisible by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
+
+    val hasGpsFix = latitude != null && longitude != null
+    val fullNameError = attempted && fullName.isBlank()
+    val addressError = attempted && address.isBlank() && !hasGpsFix
+    val mobileError = attempted && mobile.filter(Char::isDigit).length !in 10..11
+    val dobError = attempted && dateOfBirth.isBlank()
+    val civilError = attempted && civilStatus.isBlank()
+    val occupationError = attempted && occupation.isBlank()
+    val emergencyContactNameError = attempted && emergencyContactName.isBlank()
+    val emergencyContactRelationshipError = attempted && emergencyContactRelationship.isBlank()
+    val emergencyContactPhoneError = attempted && emergencyContactPhone.isBlank()
+    val emailError = attempted && !android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()
+    val passwordError = attempted && password.length < 8
+    val confirmPasswordError = attempted && confirmPassword != password
 
     val locationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -287,6 +340,60 @@ fun RegisterScreen(
     }
 
     val civilStatuses = listOf("Single", "Married", "Widowed", "Separated", "Divorced", "Annulled")
+
+    // Single submit path shared by the Create Account button and the confirm-password IME "Done" action.
+    val doRegister: () -> Unit = {
+        attempted = true
+        if (!isLoading) {
+            val hasLocation = latitude != null && longitude != null
+            when {
+                fullName.isBlank() || mobile.isBlank() || email.isBlank() || password.isBlank() ||
+                    confirmPassword.isBlank() || dateOfBirth.isBlank() || civilStatus.isBlank() ||
+                    occupation.isBlank() || emergencyContactName.isBlank() ||
+                    emergencyContactRelationship.isBlank() || emergencyContactPhone.isBlank() -> {
+                    errorMessage = "Please complete all required registration fields."
+                }
+                address.isBlank() && !hasLocation -> {
+                    errorMessage = "Enter your registered address or capture your current GPS location."
+                }
+                !android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches() -> {
+                    errorMessage = "Please enter a valid email address."
+                }
+                mobile.filter(Char::isDigit).length < 10 -> {
+                    errorMessage = "Please enter a valid mobile number."
+                }
+                password.length < 8 -> {
+                    errorMessage = "Password must be at least 8 characters."
+                }
+                password != confirmPassword -> {
+                    errorMessage = "Passwords do not match."
+                }
+                else -> {
+                    isLoading = true
+                    scope.launch {
+                        repository.register(
+                            fullName = fullName.trim(),
+                            email = email.trim(),
+                            password = password,
+                            mobile = mobile.trim(),
+                            address = address.trim(),
+                            dateOfBirth = dateOfBirth,
+                            civilStatus = civilStatus,
+                            occupation = occupation.trim(),
+                            emergencyContactName = emergencyContactName.trim(),
+                            emergencyContactRelationship = emergencyContactRelationship.trim(),
+                            emergencyContactPhone = emergencyContactPhone.trim(),
+                            latitude = latitude,
+                            longitude = longitude
+                        ).fold(
+                            onSuccess = { isLoading = false; onRegisterSuccess() },
+                            onFailure = { isLoading = false; errorMessage = it.message ?: "Registration failed. Please try again." }
+                        )
+                    }
+                }
+            }
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background
@@ -324,7 +431,7 @@ fun RegisterScreen(
                 text = "Resident Registration",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = DeepOceanBlue
+                color = MaterialTheme.colorScheme.onBackground
             )
             Text(
                 text = "Create your official Barangay Sua resident record",
@@ -342,8 +449,14 @@ fun RegisterScreen(
                         onValueChange = { fullName = it; errorMessage = null },
                         label = { Text("Full Name") },
                         leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+                        isError = fullNameError,
+                        supportingText = {
+                            Text(if (fullNameError) "Full name is required." else "Enter your full legal name")
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                         shape = RoundedCornerShape(12.dp)
                     )
                     Spacer(modifier = Modifier.height(10.dp))
@@ -352,11 +465,19 @@ fun RegisterScreen(
                         value = address,
                         onValueChange = { address = it; errorMessage = null },
                         label = { Text("Registered Address") },
-                        supportingText = { Text("Enter your barangay address or capture your current GPS location.") },
+                        supportingText = {
+                            Text(
+                                if (addressError) "Enter your registered address or capture your current GPS location."
+                                else "Enter your barangay address or capture your current GPS location."
+                            )
+                        },
+                        isError = addressError,
                         leadingIcon = { Icon(Icons.Default.Home, contentDescription = null) },
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 2,
                         maxLines = 3,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                         shape = RoundedCornerShape(12.dp)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -385,9 +506,14 @@ fun RegisterScreen(
                         onValueChange = { mobile = it; errorMessage = null },
                         label = { Text("Mobile Number") },
                         leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
+                        isError = mobileError,
+                        supportingText = {
+                            if (mobileError) Text("Enter a valid 10–11 digit mobile number.")
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                         shape = RoundedCornerShape(12.dp)
                     )
                     Spacer(modifier = Modifier.height(10.dp))
@@ -396,6 +522,15 @@ fun RegisterScreen(
                         Icon(Icons.Default.DateRange, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(if (dateOfBirth.isBlank()) "Select Date of Birth" else "Date of Birth: $dateOfBirth")
+                    }
+                    if (dobError) {
+                        Text(
+                            text = "Required.",
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
                     }
                     Spacer(modifier = Modifier.height(10.dp))
 
@@ -408,6 +543,10 @@ fun RegisterScreen(
                             onValueChange = {},
                             readOnly = true,
                             label = { Text("Civil Status") },
+                            isError = civilError,
+                            supportingText = {
+                                if (civilError) Text("Required.")
+                            },
                             leadingIcon = { Icon(Icons.Default.FamilyRestroom, contentDescription = null) },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = civilExpanded) },
                             modifier = Modifier.fillMaxWidth().menuAnchor(),
@@ -429,13 +568,19 @@ fun RegisterScreen(
                         onValueChange = { occupation = it },
                         label = { Text("Occupation") },
                         leadingIcon = { Icon(Icons.Default.Work, contentDescription = null) },
+                        isError = occupationError,
+                        supportingText = {
+                            if (occupationError) Text("Required.")
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                         shape = RoundedCornerShape(12.dp)
                     )
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    Text("Emergency Contact", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = DeepOceanBlue)
+                    Text("Emergency Contact", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(8.dp))
 
                     OutlinedTextField(
@@ -443,8 +588,14 @@ fun RegisterScreen(
                         onValueChange = { emergencyContactName = it },
                         label = { Text("Contact Name") },
                         leadingIcon = { Icon(Icons.Default.ContactPhone, contentDescription = null) },
+                        isError = emergencyContactNameError,
+                        supportingText = {
+                            if (emergencyContactNameError) Text("Required.")
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                         shape = RoundedCornerShape(12.dp)
                     )
                     Spacer(modifier = Modifier.height(10.dp))
@@ -454,8 +605,14 @@ fun RegisterScreen(
                         onValueChange = { emergencyContactRelationship = it },
                         label = { Text("Relationship") },
                         leadingIcon = { Icon(Icons.Default.People, contentDescription = null) },
+                        isError = emergencyContactRelationshipError,
+                        supportingText = {
+                            if (emergencyContactRelationshipError) Text("Required.")
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                         shape = RoundedCornerShape(12.dp)
                     )
                     Spacer(modifier = Modifier.height(10.dp))
@@ -465,9 +622,14 @@ fun RegisterScreen(
                         onValueChange = { emergencyContactPhone = it },
                         label = { Text("Emergency Contact Number") },
                         leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
+                        isError = emergencyContactPhoneError,
+                        supportingText = {
+                            if (emergencyContactPhoneError) Text("Required.")
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                         shape = RoundedCornerShape(12.dp)
                     )
                     Spacer(modifier = Modifier.height(10.dp))
@@ -477,9 +639,14 @@ fun RegisterScreen(
                         onValueChange = { email = it; errorMessage = null },
                         label = { Text("Email Address") },
                         leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+                        isError = emailError,
+                        supportingText = {
+                            if (emailError) Text("Enter a valid email address.")
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                         shape = RoundedCornerShape(12.dp)
                     )
                     Spacer(modifier = Modifier.height(10.dp))
@@ -489,9 +656,23 @@ fun RegisterScreen(
                         onValueChange = { password = it; errorMessage = null },
                         label = { Text("Create Password") },
                         leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
-                        visualTransformation = PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { passwordVisible2 = !passwordVisible2 }) {
+                                Icon(
+                                    imageVector = if (passwordVisible2) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = if (passwordVisible2) "Hide password" else "Show password"
+                                )
+                            }
+                        },
+                        visualTransformation = if (passwordVisible2) VisualTransformation.None else PasswordVisualTransformation(),
+                        isError = passwordError,
+                        supportingText = {
+                            if (passwordError) Text("At least 8 characters.")
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                         shape = RoundedCornerShape(12.dp)
                     )
                     Spacer(modifier = Modifier.height(10.dp))
@@ -501,9 +682,23 @@ fun RegisterScreen(
                         onValueChange = { confirmPassword = it; errorMessage = null },
                         label = { Text("Confirm Password") },
                         leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
-                        visualTransformation = PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { confirmVisible = !confirmVisible }) {
+                                Icon(
+                                    imageVector = if (confirmVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = if (confirmVisible) "Hide password" else "Show password"
+                                )
+                            }
+                        },
+                        visualTransformation = if (confirmVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        isError = confirmPasswordError,
+                        supportingText = {
+                            if (confirmPasswordError) Text("Passwords do not match.")
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { doRegister() }),
                         shape = RoundedCornerShape(12.dp)
                     )
 
@@ -515,59 +710,13 @@ fun RegisterScreen(
                     Spacer(modifier = Modifier.height(20.dp))
 
                     Button(
-                        onClick = {
-                            if (isLoading) return@Button
-                            val hasLocation = latitude != null && longitude != null
-                            when {
-                                fullName.isBlank() || mobile.isBlank() || email.isBlank() || password.isBlank() ||
-                                    confirmPassword.isBlank() || dateOfBirth.isBlank() || civilStatus.isBlank() ||
-                                    occupation.isBlank() || emergencyContactName.isBlank() ||
-                                    emergencyContactRelationship.isBlank() || emergencyContactPhone.isBlank() -> {
-                                    errorMessage = "Please complete all required registration fields."
-                                }
-                                address.isBlank() && !hasLocation -> {
-                                    errorMessage = "Enter your registered address or capture your current GPS location."
-                                }
-                                !android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches() -> {
-                                    errorMessage = "Please enter a valid email address."
-                                }
-                                mobile.filter(Char::isDigit).length < 10 -> {
-                                    errorMessage = "Please enter a valid mobile number."
-                                }
-                                password.length < 8 -> {
-                                    errorMessage = "Password must be at least 8 characters."
-                                }
-                                password != confirmPassword -> {
-                                    errorMessage = "Passwords do not match."
-                                }
-                                else -> {
-                                    isLoading = true
-                                    scope.launch {
-                                        repository.register(
-                                            fullName = fullName.trim(),
-                                            email = email.trim(),
-                                            password = password,
-                                            mobile = mobile.trim(),
-                                            address = address.trim(),
-                                            dateOfBirth = dateOfBirth,
-                                            civilStatus = civilStatus,
-                                            occupation = occupation.trim(),
-                                            emergencyContactName = emergencyContactName.trim(),
-                                            emergencyContactRelationship = emergencyContactRelationship.trim(),
-                                            emergencyContactPhone = emergencyContactPhone.trim(),
-                                            latitude = latitude,
-                                            longitude = longitude
-                                        ).fold(
-                                            onSuccess = { isLoading = false; onRegisterSuccess() },
-                                            onFailure = { isLoading = false; errorMessage = it.message ?: "Registration failed. Please try again." }
-                                        )
-                                    }
-                                }
-                            }
-                        },
+                        onClick = { doRegister() },
                         modifier = Modifier.fillMaxWidth().height(50.dp),
                         shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = DeepOceanBlue, contentColor = Color.White)
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(modifier = Modifier.size(22.dp), color = Color.White, strokeWidth = 2.dp)
@@ -582,7 +731,7 @@ fun RegisterScreen(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Already registered?", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 TextButton(onClick = onNavigateToLogin) {
-                    Text("Sign In", fontWeight = FontWeight.Bold, color = SouthernSeaTealDark)
+                    Text("Sign In", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                 }
             }
         }
@@ -595,10 +744,12 @@ fun RegisterScreen(
             confirmButton = {
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { millis ->
-                        dateOfBirth = java.time.Instant.ofEpochMilli(millis)
-                            .atZone(java.time.ZoneId.of("Asia/Manila"))
-                            .toLocalDate()
-                            .toString()
+                        dateOfBirth = DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.US)
+                            .format(
+                                java.time.Instant.ofEpochMilli(millis)
+                                    .atZone(java.time.ZoneId.of("Asia/Manila"))
+                                    .toLocalDate()
+                            )
                     }
                     showDatePicker = false
                 }) { Text("OK") }

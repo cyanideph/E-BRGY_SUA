@@ -5,6 +5,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,6 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalIndication
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -153,7 +156,7 @@ fun CoastalWeatherWidget(
                                     Spacer(modifier = Modifier.width(3.dp))
                                     Text(
                                         text = if (telemetry.isLive) "LIVE" else "EST.",
-                                        fontSize = 8.sp,
+                                        fontSize = 10.sp,
                                         fontWeight = FontWeight.Black,
                                         color = if (telemetry.isLive) NaturalGreen else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -195,7 +198,7 @@ fun CoastalWeatherWidget(
 
                     Spacer(modifier = Modifier.width(4.dp))
 
-                    // Refresh Button
+                    // Refresh Button (P0-4: 48dp minimum touch target)
                     IconButton(
                         onClick = {
                             coroutineScope.launch {
@@ -204,11 +207,11 @@ fun CoastalWeatherWidget(
                                 isRefreshing = false
                             }
                         },
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(48.dp)
                     ) {
                         if (isRefreshing) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
+                                modifier = Modifier.size(22.dp),
                                 strokeWidth = 2.dp,
                                 color = SouthernSeaTeal
                             )
@@ -217,7 +220,7 @@ fun CoastalWeatherWidget(
                                 imageVector = Icons.Default.Refresh,
                                 contentDescription = "Refresh Marine Telemetry",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                     }
@@ -378,7 +381,7 @@ fun CoastalWeatherWidget(
                                 Icon(Icons.Default.ArrowUpward, contentDescription = null, tint = DeepOceanBlue, modifier = Modifier.size(14.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Column {
-                                    Text("High Tide", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("High Tide", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Text(telemetry.highTideEstimate, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
@@ -396,7 +399,7 @@ fun CoastalWeatherWidget(
                                 Icon(Icons.Default.ArrowDownward, contentDescription = null, tint = SouthernSeaTeal, modifier = Modifier.size(14.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Column {
-                                    Text("Low Tide", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("Low Tide", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Text(telemetry.lowTideEstimate, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
@@ -410,25 +413,30 @@ fun CoastalWeatherWidget(
                     ) {
                         Text(
                             text = "Telemetry: Open-Meteo WMO • ECMWF Wave Model",
-                            fontSize = 9.sp,
+                            fontSize = 10.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
                             text = "Updated: ${telemetry.lastUpdated}",
-                            fontSize = 9.sp,
+                            fontSize = 10.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
             }
 
-            // Expand / Collapse Action Button
+            // Expand / Collapse Action Button (P0-4: ≥48dp target, labelled for AT)
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp)
+                    .heightIn(min = 48.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .clickable { isExpanded = !isExpanded },
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = LocalIndication.current,
+                        role = Role.Button
+                    ) { isExpanded = !isExpanded },
                 color = Color.Transparent
             ) {
                 Row(
@@ -445,7 +453,7 @@ fun CoastalWeatherWidget(
                     Spacer(modifier = Modifier.width(4.dp))
                     Icon(
                         imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = null,
+                        contentDescription = if (isExpanded) "Hide marine advisory" else "Show marine advisory",
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(16.dp)
                     )
@@ -486,7 +494,7 @@ private fun MetricTile(
                 Spacer(modifier = Modifier.width(3.dp))
                 Text(
                     text = title,
-                    fontSize = 9.sp,
+                    fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1
                 )
@@ -501,7 +509,7 @@ private fun MetricTile(
             )
             Text(
                 text = subtitle,
-                fontSize = 8.5.sp,
+                fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1
             )
