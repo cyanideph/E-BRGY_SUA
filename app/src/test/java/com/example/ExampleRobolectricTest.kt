@@ -27,4 +27,13 @@ class ExampleRobolectricTest {
     assertNotNull(repository.currentUser.value)
     assertNotNull(repository.currentUser.value.role)
   }
+
+  @Test
+  fun `main activity launches and creates without crashing`() {
+    androidx.test.core.app.ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+      scenario.onActivity { activity ->
+        assertNotNull(activity)
+      }
+    }
+  }
 }

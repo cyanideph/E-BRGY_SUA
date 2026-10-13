@@ -30,6 +30,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        runCatching {
+            val previous = Thread.getDefaultUncaughtExceptionHandler()
+            Thread.setDefaultUncaughtExceptionHandler(CrashHandler(application, previous))
+        }
+
         // Backend, notification, and local-cache initialization must not prevent
         // the Compose UI from opening. Keep each failure visible in logcat so
         // startup problems can be diagnosed instead of silently swallowing them.

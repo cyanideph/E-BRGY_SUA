@@ -240,8 +240,8 @@ val SuaShapes = Shapes(
 )
 
 object SuaElevation {
-    val Card = dp(1)
-    val Raised = dp(3)
+    val Card = 1.dp
+    val Raised = 3.dp
 }
 
 // ============================================================================
