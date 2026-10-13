@@ -138,7 +138,15 @@ jobs:
           APK="$(find ramus-apk -type f -name '*.apk' -print -quit)"
           test -n "$APK" || { echo "::error::No APK found."; exit 1; }
 
-          SESSION_JSON="$(npx --yes ramus-cli@0.1.13 session start --apk "$APK" --wait)"
+          set +e
+          SESSION_JSON="$(npx --yes ramus-cli@0.1.13 session start --apk "$APK" --wait 2>&1)"
+          SESSION_START_STATUS=$?
+          set -e
+          if [[ "$SESSION_START_STATUS" -ne 0 ]]; then
+            echo "::error::Ramus session start failed (exit $SESSION_START_STATUS); diagnostic output follows."
+            printf '%s\n' "$SESSION_JSON"
+            exit "$SESSION_START_STATUS"
+          fi
           echo "$SESSION_JSON"
           SESSION="$(jq -r '.session // empty' <<<"$SESSION_JSON")"
           WATCH_URL="$(jq -r '.watchUrl // empty' <<<"$SESSION_JSON")"
