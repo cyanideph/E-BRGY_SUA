@@ -11,11 +11,11 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Initialize Android Studio project with AGP 8.13.2 and Kotlin 2.2.10
-- [ ] T002 Configure Appwrite SDK 25.2.0 dependency and `.env` file setup
-- [ ] T003 Setup Room DB 2.7.0 with migration strategy for schema versioning
-- [ ] T004 Add Git ignore for `.env` and `.gradle` directories
-- [ ] T005 Initialize Git repository with initial commit structure
+- [x] T001 Initialize Android Studio project with AGP 8.13.2 and Kotlin 2.2.10
+- [x] T002 Configure Appwrite SDK 25.2.0 dependency and `.env` file setup
+- [x] T003 Setup Room DB 2.7.0 with migration strategy for schema versioning
+- [x] T004 Add Git ignore for `.env` and `.gradle` directories
+- [x] T005 Initialize Git repository with initial commit structure
 
 ---
 
@@ -25,21 +25,21 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T006 Create BarangayRepository interface encapsulating Appwrite + Room data sources
-- [ ] T007 Implement Resident Room entity with RoomTypeConverters for String lists and enums
-- [ ] T008 Implement ServiceRequest Room entity with RequestStatus enum converter
-- [ ] T009 Implement EmergencyReport Room entity with EmergencyStatus enum converter
-- [ ] T010 Implement Announcement Room entity with priority enum converter
-- [ ] T011 Implement BarangayOfficial Room entity with position enum converter
-- [ ] T012 Create Appwrite Resident data source with CRUD operations
-- [ ] T013 Create Appwrite ServiceRequest data source with status transition methods
-- [ ] T014 Create Appwrite EmergencyReport data source with realtime event methods
-- [ ] T015 Create Appwrite Announcement data source with realtime subscription
-- [ ] T016 Create Appwrite BarangayOfficial data source with retrieval methods
-- [ ] T017 Setup Authentication repository with Appwrite auth state management
-- [ ] T018 Configure error handling and logging infrastructure (per constitution VII)
-- [ ] T019 Setup environment configuration management via `.env` and BuildConfig
-- [ ] T020 Add Constance compliance checklist to CI/CD pipeline
+- [x] T006 Create BarangayRepository interface encapsulating Appwrite + Room data sources
+- [x] T007 Implement Resident Room entity with RoomTypeConverters for String lists and enums
+- [x] T008 Implement ServiceRequest Room entity with RequestStatus enum converter
+- [x] T009 Implement EmergencyReport Room entity with EmergencyStatus enum converter
+- [x] T010 Implement Announcement Room entity with priority enum converter
+- [x] T011 Implement BarangayOfficial Room entity with position enum converter
+- [x] T012 Create Appwrite Resident data source with CRUD operations
+- [x] T013 Create Appwrite ServiceRequest data source with status transition methods
+- [x] T014 Create Appwrite EmergencyReport data source with realtime event methods
+- [x] T015 Create Appwrite Announcement data source with realtime subscription
+- [x] T016 Create Appwrite BarangayOfficial data source with retrieval methods
+- [x] T017 Setup Authentication repository with Appwrite auth state management
+- [x] T018 Configure error handling and logging infrastructure (per constitution VII)
+- [x] T019 Setup environment configuration management via `.env` and BuildConfig
+- [x] T020 Add Constance compliance checklist to CI/CD pipeline
 
 ---
 
@@ -50,18 +50,18 @@
 
 ### Tests for User Story 1
 
-- [ ] T021 [P] [US1] Write unit test for Appwrite auth repository login flow (set up before implementation, expect FAIL)
-- [ ] T022 [P] [US1] Write Robolectric test for resident login UI flow
+- [x] T021 [P] [US1] Write unit test for Appwrite auth repository login flow (set up before implementation, expect FAIL)
+- [x] T022 [P] [US1] Write Robolectric test for resident login UI flow
 
 ### Implementation for User Story 1
 
-- [ ] T023 [P] [US1] Create AuthRepository class in `src/main/java/com/ebrgy/sua/domain/auth/AuthRepository.kt`
-- [ ] T024 [P] [US1] Implement AppwriteAuthProvider in `src/main/java/com/ebrgy/sua/data/provider/appwrite/AuthProvider.kt`
-- [ ] T025 [P] [US1] Create LoginScreen composable in `ui/resident/login/LoginScreen.kt`
-- [ ] T026 [P] [US1] Implement login form validation in `ui/resident/login/LoginFormValidator.kt`
-- [ ] T027 [US1] Connect AuthRepository to LoginScreen via ViewModel in `ui/resident/login/LoginViewModel.kt`
-- [ ] T028 [US1] Add navigation from LoginScreen to HomeDashboard on successful auth
-- [ ] T029 [US1] Verify Room DB cache populated with resident data after login
+- [x] T023 [P] [US1] Create AuthRepository class in `src/main/java/com/ebrgy/sua/domain/auth/AuthRepository.kt`
+- [x] T024 [P] [US1] Implement AppwriteAuthProvider in `src/main/java/com/ebrgy/sua/data/provider/appwrite/AuthProvider.kt`
+- [x] T025 [P] [US1] Create LoginScreen composable in `ui/resident/login/LoginScreen.kt`
+- [x] T026 [P] [US1] Implement login form validation in `ui/resident/login/LoginFormValidator.kt`
+- [x] T027 [US1] Connect AuthRepository to LoginScreen via ViewModel in `ui/resident/login/LoginViewModel.kt`
+- [x] T028 [US1] Add navigation from LoginScreen to HomeDashboard on successful auth
+- [x] T029 [US1] Verify Room DB cache populated with resident data after login
 
 ---
 
@@ -72,18 +72,18 @@
 
 ### Tests for User Story 2
 
-- [ ] T030 [P] [US2] Write unit test for Announcement data fetching from Appwrite
-- [ ] T031 [P] [US2] Write Robolectric test for AdvisoriesScreen UI display
+- [x] T030 [P] [US2] Write unit test for Announcement data fetching from Appwrite
+- [x] T031 [P] [US2] Write Robolectric test for AdvisoriesScreen UI display
 
 ### Implementation for User Story 2
 
-- [ ] T032 [P] [US2] Create Announcement Room entity extension for Appwrite mapping
-- [ ] T033 [P] [US2] Implement AppwriteAnnouncementProvider in `src/main/java/com/ebrgy/sua/data/provider/appwrite/AnnouncementProvider.kt`
-- [ ] T034 [P] [US2] Create AdvisoriesScreen composable in `ui/resident/advisories/AdvisoriesScreen.kt`
-- [ ] T035 [P] [US2] Implement advisory list adapter with Material 3 typography in `ui/resident/advisories/AdvisoryAdapter.kt`
-- [ ] T036 [P] [US2] Implement pull-to-refresh mechanism in AdvisoriesScreen
-- [ ] T037 [US2] Connect Announcement data source to AdvisoriesScreen via ViewModel
-- [ ] T038 [US2] Display badge with priority level (LOW/MEDIUM/HIGH/URGENT) per announcement
+- [x] T032 [P] [US2] Create Announcement Room entity extension for Appwrite mapping
+- [x] T033 [P] [US2] Implement AppwriteAnnouncementProvider in `src/main/java/com/ebrgy/sua/data/provider/appwrite/AnnouncementProvider.kt`
+- [x] T034 [P] [US2] Create AdvisoriesScreen composable in `ui/resident/advisories/AdvisoriesScreen.kt`
+- [x] T035 [P] [US2] Implement advisory list adapter with Material 3 typography in `ui/resident/advisories/AdvisoryAdapter.kt`
+- [x] T036 [P] [US2] Implement pull-to-refresh mechanism in AdvisoriesScreen
+- [x] T037 [US2] Connect Announcement data source to AdvisoriesScreen via ViewModel
+- [x] T038 [US2] Display badge with priority level (LOW/MEDIUM/HIGH/URGENT) per announcement
 
 ---
 
@@ -94,19 +94,19 @@
 
 ### Tests for User Story 3
 
-- [ ] T039 [P] [US3] Write unit test for service request submission flow
-- [ ] T040 [P] [US3] Write Robolectric test for service request submit UI flow
+- [x] T039 [P] [US3] Write unit test for service request submission flow
+- [x] T040 [P] [US3] Write Robolectric test for service request submit UI flow
 
 ### Implementation for User Story 3
 
-- [ ] T041 [P] [US3] Create ServiceRequest Room entity mapping in data model
-- [ ] T042 [P] [US3] Implement AppwriteServiceRequestProvider in `src/main/java/com/ebrgy/sua/data/provider/appwrite/ServiceRequestProvider.kt`
-- [ ] T043 [P] [US3] Create ServiceRequest form composable in `ui/resident/services/ServiceRequestForm.kt`
-- [ ] T044 [P] [US3] Implement form validation for service type, resident info in `ui/resident/services/ServiceFormValidator.kt`
-- [ ] T045 [P] [US3] Implement ServiceRequest submission handler in `ui/resident/services/ServiceRequestHandler.kt`
-- [ ] T046 [US3] Connect ServiceRequest data source to form via ViewModel in `ui/resident/services/ServiceRequestViewModel.kt`
-- [ ] T047 [US3] Display submission confirmation snackbar on success
-- [ ] T048 [US3] Verify Room DB `DocumentRequestEntity` cached after submission
+- [x] T041 [P] [US3] Create ServiceRequest Room entity mapping in data model
+- [x] T042 [P] [US3] Implement AppwriteServiceRequestProvider in `src/main/java/com/ebrgy/sua/data/provider/appwrite/ServiceRequestProvider.kt`
+- [x] T043 [P] [US3] Create ServiceRequest form composable in `ui/resident/services/ServiceRequestForm.kt`
+- [x] T044 [P] [US3] Implement form validation for service type, resident info in `ui/resident/services/ServiceFormValidator.kt`
+- [x] T045 [P] [US3] Implement ServiceRequest submission handler in `ui/resident/services/ServiceRequestHandler.kt`
+- [x] T046 [US3] Connect ServiceRequest data source to form via ViewModel in `ui/resident/services/ServiceRequestViewModel.kt`
+- [x] T047 [US3] Display submission confirmation snackbar on success
+- [x] T048 [US3] Verify Room DB `DocumentRequestEntity` cached after submission
 
 ---
 
@@ -117,19 +117,19 @@
 
 ### Tests for User Story 4
 
-- [ ] T049 [P] [US4] Write unit test for emergency report submission flow
-- [ ] T050 [P] [US4] Write Robolectric test for emergency report UI flow
+- [x] T049 [P] [US4] Write unit test for emergency report submission flow
+- [x] T050 [P] [US4] Write Robolectric test for emergency report UI flow
 
 ### Implementation for User Story 4
 
-- [ ] T051 [P] [US4] Create EmergencyReport Room entity mapping in data model
-- [ ] T052 [P] [US4] Implement AppwriteEmergencyReportProvider in `src/main/java/com/ebrgy/sua/data/provider/appwrite/EmergencyReportProvider.kt`
-- [ ] T053 [P] [US4] Create EmergencyReportScreen composable in `ui/resident/emergency/EmergencyReportScreen.kt`
-- [ ] T054 [P] [US4] Implement emergency type and severity enum selectors in `ui/resident/emergency/EmergencyForm.kt`
-- [ ] T055 [P] [US4] Implement realtime subscription for emergency notifications in `ui/resident/emergency/ EmergencyRealtimeListener.kt`
-- [ ] T056 [P] [US4] Implement location input with geolocation support
-- [ ] T057 [US4] Connect EmergencyReport data source to screen via ViewModel
-- [ ] T058 [US4] Display severity-based color-coding (CRITICAL=red, HIGH=orange, etc.)
+- [x] T051 [P] [US4] Create EmergencyReport Room entity mapping in data model
+- [x] T052 [P] [US4] Implement AppwriteEmergencyReportProvider in `src/main/java/com/ebrgy/sua/data/provider/appwrite/EmergencyReportProvider.kt`
+- [x] T053 [P] [US4] Create EmergencyReportScreen composable in `ui/resident/emergency/EmergencyReportScreen.kt`
+- [x] T054 [P] [US4] Implement emergency type and severity enum selectors in `ui/resident/emergency/EmergencyForm.kt`
+- [x] T055 [P] [US4] Implement realtime subscription for emergency notifications in `ui/resident/emergency/ EmergencyRealtimeListener.kt`
+- [x] T056 [P] [US4] Implement location input with geolocation support
+- [x] T057 [US4] Connect EmergencyReport data source to screen via ViewModel
+- [x] T058 [US4] Display severity-based color-coding (CRITICAL=red, HIGH=orange, etc.)
 
 ---
 
@@ -140,18 +140,18 @@
 
 ### Tests for User Story 5
 
-- [ ] T059 [P] [US5] Write unit test for admin approval/rejection flow
-- [ ] T060 [P] [US5] Write Robolectric test for admin dashboard approval action
+- [x] T059 [P] [US5] Write unit test for admin approval/rejection flow
+- [x] T060 [P] [US5] Write Robolectric test for admin dashboard approval action
 
 ### Implementation for User Story 5
 
-- [ ] T061 [P] [US5] Create admin dashboard composable in `ui/admin/dashboard/AdminDashboard.kt`
-- [ ] T062 [P] [US5] Implement service request list for admin with status badges in `ui/admin/services/AdminServiceRequestList.kt`
-- [ ] T063 [P] [US5] Implement approve action handler in `ui/admin/services/AdminRequestHandler.kt`
-- [ ] T064 [P] [US5] Implement reject action handler with resolution notes in `ui/admin/services/AdminRequestReject.kt`
-- [ ] T065 [P] [US5] Implement resident notification on status change in `ui/resident/notifications/StatusNotificationHandler.kt`
-- [ ] T066 [P] [US5] Create audit log entry on approval/rejection in `src/main/java/com/ebrgy/sua/data/AuditLogManager.kt`
-- [ ] T067 [US5] Add status change confirmation UI feedback
+- [x] T061 [P] [US5] Create admin dashboard composable in `ui/admin/dashboard/AdminDashboard.kt`
+- [x] T062 [P] [US5] Implement service request list for admin with status badges in `ui/admin/services/AdminServiceRequestList.kt`
+- [x] T063 [P] [US5] Implement approve action handler in `ui/admin/services/AdminRequestHandler.kt`
+- [x] T064 [P] [US5] Implement reject action handler with resolution notes in `ui/admin/services/AdminRequestReject.kt`
+- [x] T065 [P] [US5] Implement resident notification on status change in `ui/resident/notifications/StatusNotificationHandler.kt`
+- [x] T066 [P] [US5] Create audit log entry on approval/rejection in `src/main/java/com/ebrgy/sua/data/AuditLogManager.kt`
+- [x] T067 [US5] Add status change confirmation UI feedback
 
 ---
 
@@ -159,16 +159,16 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T068 [P] Update documentation across all UI screens per constitution III (real backend data)
-- [ ] T069 [P] Code cleanup and refactoring - ensure clean architecture layer separation
-- [ ] T070 [P] Performance optimization across all screens (cold start under 2s, AC-009)
-- [ ] T071 [P] Additional unit tests for remaining components (if requested)
-- [ ] T072 [P] Security hardening - implement SSL pinning (addresses F1 from audit)
-- [ ] T073 [P] Add ContentDescription for all Compose interactive elements (addresses F12)
-- [ ] T074 [P] Implement brute-force protection on Appwrite auth (addresses F2 from audit)
-- [ ] T075 [P] Run quickstart.md validation scenarios S1-S5
-- [ ] T076 [P] Constitution compliance checklist review for all merged changes
-- [ ] T077 [P] Address remaining audit findings (F3, F5, F9, F11, F13, F15, F17 as deferred with justification)
+- [x] T068 [P] Update documentation across all UI screens per constitution III (real backend data)
+- [x] T069 [P] Code cleanup and refactoring - ensure clean architecture layer separation
+- [x] T070 [P] Performance optimization across all screens (cold start under 2s, AC-009)
+- [x] T071 [P] Additional unit tests for remaining components (if requested)
+- [x] T072 [P] Security hardening - implement SSL pinning (addresses F1 from audit)
+- [x] T073 [P] Add ContentDescription for all Compose interactive elements (addresses F12)
+- [x] T074 [P] Implement brute-force protection on Appwrite auth (addresses F2 from audit)
+- [x] T075 [P] Run quickstart.md validation scenarios S1-S5
+- [x] T076 [P] Constitution compliance checklist review for all merged changes
+- [x] T077 [P] Address remaining audit findings (F3, F5, F9, F11, F13, F15, F17 as deferred with justification)
 
 ---
 

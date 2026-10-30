@@ -1,0 +1,31 @@
+hooks:
+  post_generate_tasks:
+    - name: "Run lint checks"
+      command: "./gradlew lint --no-daemon"
+      when: "always"
+      timeout_minutes: 10
+    - name: "Run unit tests"
+      command: "./gradlew test --no-daemon"
+      when: "test_existence"
+      timeout_minutes: 15
+    - name: "Generate debug APK"
+      command: "./gradlew assembleDebug --no-daemon"
+      when: "always"
+      timeout_minutes: 30
+    - name: "Validate task format"
+      command: "python3 -c \"import yaml; yaml.safe_load(open('specs/001-codebase/tasks.md'))\""
+      when: "always"
+      timeout_minutes: 2
+
+  post_implementation:
+    - name: "Check ConanEX audit findings"
+      command: "cat audit_report.md | grep -i 'finding' || echo 'No findings'"
+      when: "always"
+      timeout_minutes: 2
+    - name: "Constitution compliance review"
+      command: "python3 -c \"open('specs/001-codebase/constitution.md').read()\""
+      when: "always"
+      timeout_minutes: 2
+
+version: "0.1.0"
+description: "Extensions for specify task generation and implementation workflow"
