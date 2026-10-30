@@ -51,8 +51,12 @@ fun CoastalWeatherWidget(
     }
 
     // Rotating animation for refresh button
+    val useReducedMotion = isSystemInReducedMotion(LocalContext.current)
+    val pulseAlpha = remember { if (useReducedMotion) 1f else 0.4f }
+
+    // Conditional infinite transition only when not in reduced motion
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-    val pulseAlpha by infiniteTransition.animateFloat(
+    val pulseAlphaValue = infiniteTransition.animateFloat(
         initialValue = 0.4f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
@@ -61,6 +65,7 @@ fun CoastalWeatherWidget(
         ),
         label = "pulseAlpha"
     )
+    val pulseAlpha = if (useReducedMotion) 1f else pulseAlphaValue
 
     Surface(
         modifier = modifier

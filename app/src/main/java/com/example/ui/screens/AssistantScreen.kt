@@ -212,6 +212,15 @@ fun AssistantScreen(
                 }
             }
 
+            if (messages.isEmpty()) {
+            EmptyStateCard(
+                icon = Icons.Default.SmartToy,
+                title = "Start a Conversation",
+                message: "Ask me about available services, requirements, upcoming events, or emergency hotlines. I can help you find information about Barangay Sua public services.",
+                buttonText: "Ask a Question",
+                onButtonClick = { /* TODO: focus input */ }
+            )
+        } else {
             LazyColumn(
                 state = listState,
                 modifier = Modifier

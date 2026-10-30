@@ -117,7 +117,7 @@ fun EventsScreen(
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(text = event.time, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(verticalAlignment = Alignment.CenterVertively) {
                                 Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(text = event.location, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -135,6 +135,16 @@ fun EventsScreen(
                         }
                     }
                 }
+            }
+
+            if (events.isEmpty()) {
+                EmptyStateCard(
+                    icon = Icons.Default.CloudOff,
+                    title = "No Events Yet",
+                    message: "There are no upcoming community events at this time.",
+                    buttonText: "View All Events",
+                    onButtonClick = { /* TODO: navigate to events list */ }
+                )
             }
         }
     }

@@ -50,7 +50,8 @@ fun HomeScreen(
     onNavigateToEventDetails: (String) -> Unit,
     onNavigateToNotifications: () -> Unit,
     onNavigateToAssistant: () -> Unit,
-    onNavigateToAdminDashboard: () -> Unit
+    onNavigateToAdminDashboard: () -> Unit,
+    screenColorScheme: ColorScheme? = null
 ) {
     val repository = remember { BarangayRepository.instance }
     val userSession by repository.currentUser.collectAsState()
@@ -69,6 +70,7 @@ fun HomeScreen(
             else -> "Good evening"
         }
     }
+    val effectiveColorScheme = screenColorScheme ?: effectiveColorScheme
 
     var showQuickEmergencySheet by remember { mutableStateOf(false) }
 
@@ -152,7 +154,7 @@ fun HomeScreen(
             text = "Barangay Sua",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
+            color = effectiveColorScheme.onBackground,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
         )
 
@@ -226,7 +228,7 @@ fun HomeScreen(
                                 text = "Emergency Assistance",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onErrorContainer
+                                color = effectiveColorScheme.onErrorContainer
                             )
                             Text(
                                 text = "Get help from Tanod or medical responders",
@@ -272,7 +274,7 @@ fun HomeScreen(
                     text = "Services for you",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
+                    color = effectiveColorScheme.onBackground
                 )
             }
 
@@ -319,7 +321,7 @@ fun HomeScreen(
                     text = "My Requests",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
+                    color = effectiveColorScheme.onBackground
                 )
                 TextButton(
                     onClick = onNavigateToMyRequests,
@@ -328,7 +330,7 @@ fun HomeScreen(
                     Text(
                         text = "View all (${requests.size})",
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.secondary,
+                        color = effectiveColorScheme.secondary,
                         fontSize = 13.sp
                     )
                 }
@@ -386,7 +388,7 @@ fun HomeScreen(
                     text = "Latest Announcements",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
+                    color = effectiveColorScheme.onBackground
                 )
             }
 
@@ -408,7 +410,7 @@ fun HomeScreen(
                                 Text(
                                     text = item.publishedDate,
                                     fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = effectiveColorScheme.onSurfaceVariant
                                 )
                             }
                             Spacer(modifier = Modifier.height(8.dp))
@@ -416,13 +418,13 @@ fun HomeScreen(
                                 text = item.title,
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = effectiveColorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = item.description,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = effectiveColorScheme.onSurfaceVariant,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -445,7 +447,7 @@ fun HomeScreen(
                     text = "Upcoming Events",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
+                    color = effectiveColorScheme.onBackground
                 )
                 TextButton(
                     onClick = onNavigateToEvents,
@@ -454,7 +456,7 @@ fun HomeScreen(
                     Text(
                         text = "View all",
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.secondary,
+                        color = effectiveColorScheme.secondary,
                         fontSize = 13.sp
                     )
                 }
@@ -505,7 +507,7 @@ fun HomeScreen(
                                 text = event.title,
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface,
+                                color = effectiveColorScheme.onSurface,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -521,7 +523,7 @@ fun HomeScreen(
                                 Text(
                                     text = "${event.date} • ${event.time}",
                                     fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = effectiveColorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -600,7 +602,7 @@ private fun BarangaySafetySnapshot(onOpenEmergency: () -> Unit) {
                 telemetry?.let { "Waves " + String.format(java.util.Locale.US, "%.1f", it.waveHeightMeters) + " m • Rain " + it.rainProbability + "%" }
                     ?: "Live data is loading",
                 fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = effectiveColorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f)
             )
             TextButton(

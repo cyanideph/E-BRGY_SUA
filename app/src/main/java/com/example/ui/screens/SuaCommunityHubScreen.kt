@@ -25,6 +25,7 @@ import com.example.data.BarangayRepository
 import com.example.model.BarangayOfficial
 import com.example.model.BarangayProfile
 import com.example.services.GisPhService
+import com.example.ui.components.EmptyStateCard
 import com.example.ui.components.SoftSkeuomorphicCard
 import com.example.ui.components.SuaWaveDivider
 import com.example.ui.components.SuaWaveHeader
@@ -255,10 +256,12 @@ fun SuaCommunityHubScreen(
 
             // Community Facilities are backend-managed.
             if (facilities.isEmpty()) {
-                Text(
-                    text = "Facility information is managed by the barangay backend.",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                EmptyStateCard(
+                    icon = Icons.Default.Home,
+                    title = "No Facilities",
+                    message: "Community facilities are managed by the barangay backend. Contact the municipal office to register facilities.",
+                    buttonText: nil,
+                    onButtonClick: nil
                 )
             }
 

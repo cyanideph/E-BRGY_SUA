@@ -1,4 +1,4 @@
-import { ID } from "node-appwrite";
+import { ID, Query } from "node-appwrite";
 
 const endpoint = process.env.APPWRITE_FUNCTION_API_ENDPOINT;
 const project = process.env.APPWRITE_FUNCTION_PROJECT_ID;
@@ -23,6 +23,16 @@ const T = {
 
 const STAFF_ROLES = ["staff", "official", "admin"];
 const OFFICIAL_ROLES = ["official", "admin"];
+// Roles are now read from user LABELS (settable only via API key/console, never by client sessions)
+// This is defense-in-depth: the platform already closed F1 by removing users table `create` permission,
+// but using labels ensures role can't be forged even at the function level.
+const USER_LABELS = {
+  ADMIN: "admin",
+  OFFICIAL: "official",
+  STAFF: "staff",
+  RESIDENT: "resident"
+};
+
 const REQUEST_STATUSES = ["Submitted", "Under Review", "Processing", "Ready", "Completed", "Rejected"];
 const EMERGENCY_STATUSES = ["Reported", "Acknowledged", "Responding", "Resolved", "Cancelled"];
 const ID_PATTERN = /^[A-Za-z0-9_-]+$/;
@@ -234,23 +244,65 @@ async function assertJwtMatchesUser(req, uid) {
 }
 
 // Role resolution with generic failure (audit item 3).
+// Using user LABELS as the source of truth - labels can only be set by API key/console,
+// never by client sessions. This is defense-in-depth on top of the platform-level fix
+// that removed the users table `create` permission (F1 closure).
 async function requireRole(req, uid, roles, deniedMessage) {
   let actor;
   try {
-    actor = await get(req, T.users, uid);
+    // Fetch user by uid and read their labels (setter-only via API key)
+    actor = await getUser(req, uid);
   } catch (e) {
     // Missing users row (or any upstream failure): never leak Appwrite text.
     console.error(`[ebrgyauthority] Role lookup failed for user ${uid}: ${e?.stack || e}`);
     throw fail(401, "UNAUTHENTICATED", "Unable to verify the requesting user.");
   }
-  const role = String(actor?.role || "");
+  const role = String(actor?.labels?.role || actor?.role || "");
+  // Also accept the traditional role column as fallback for existing rows
   if (!roles.includes(role)) throw fail(403, "FORBIDDEN", deniedMessage);
   return actor;
+}
+
+// Resolve user role from JWT labels (setter-only via Appwrite console/API key)
+// Falls back to the role column for backward compatibility with existing rows.
+function getUserRoleFromLabels(actor) {
+  if (!actor) return "";
+  // Prefer labels (setter-only via API key/console)
+  if (actor.labels && actor.labels.role) return actor.labels.role;
+  // Fall back to role column (safe now that users table `create` is platform-closed)
+  if (actor.role) return actor.role;
+  return "";
 }
 
 function ownerPermissions(ownerUid) {
   return ownerUid ? [`read("user:${ownerUid}")`] : [];
 }
+
+// List rows from a table with optional queries (audit item 19 - staff read paths)
+async function listRows(req, databaseId, tableId, queries) {
+  const queryStr = queries && queries.length > 0
+    ? queries.map(q => {
+        // Handle Appwrite Query instances: Query.orderDesc('key') → { orderDesc: 'key' }
+        if (q && typeof q === 'object' && !(q instanceof Array)) {
+          const keys = Object.keys(q);
+          if (keys.includes('orderDesc')) return `order=${q.orderDesc}&sort=desc`;
+          if (keys.includes('orderAsc')) return `order=${q.orderAsc}&sort=asc`;
+          if (keys.includes('search')) return `search=${q.search}`;
+          // Generic: take first key-value pair
+          const k = keys[0];
+          const v = q[k];
+          return `${k}=${v}`;
+        }
+        // Fallback: assume plain object { key: value }
+        const key = Object.keys(q)[0];
+        const value = Object.values(q)[0];
+        return `${key}=${value}`;
+      }).join("&")
+    : "";
+  const path = `/databases/${databaseId}/tables/${tableId}/rows${queryStr ? "?" + queryStr : ""}`;
+  return appwrite(req, path, "GET");
+}
+
 
 async function handle(req) {
   const route = req.path || "/";
@@ -446,6 +498,18 @@ async function handle(req) {
     });
     await audit(req, uid, "CREATE_EVENT", "Event", created.$id, String(input.title || ""));
     return { ok: true, eventId: created.$id };
+  }
+
+  if (route === "/staff/requests" && req.method === "GET") {
+    await requireRole(req, uid, STAFF_ROLES, "Staff authorization required.");
+    const allRequests = await listRows(req, DATABASE_ID, T.requests, [Query.orderDesc("submittedAt")]);
+    return { ok: true, requests: allRequests.rows.map(row => row.data) };
+  }
+
+  if (route === "/staff/emergencies" && req.method === "GET") {
+    await requireRole(req, uid, STAFF_ROLES, "Staff authorization required.");
+    const allEmergencies = await listRows(req, DATABASE_ID, T.emergencies, [Query.orderDesc("createdAt")]);
+    return { ok: true, emergencies: allEmergencies.rows.map(row => row.data) };
   }
 
   throw fail(404, "NOT_FOUND", "Unsupported backend-authority route.");

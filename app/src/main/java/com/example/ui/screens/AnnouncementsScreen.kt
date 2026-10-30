@@ -122,9 +122,9 @@ fun AnnouncementsScreen(
             ) {
                 EmptyStateCard(
                     icon = Icons.Default.Campaign,
-                    title = "No Announcements",
-                    message = "There are no announcements currently in this category.",
-                    buttonText = "View All Announcements",
+                    title = "No Public Advisories",
+                    message = "No public advisories or notices are available at this time. Check back later for updates from Barangay Sua.",
+                    buttonText = "Refresh",
                     onButtonClick = {
                         selectedCategory = "All"
                         searchQuery = ""

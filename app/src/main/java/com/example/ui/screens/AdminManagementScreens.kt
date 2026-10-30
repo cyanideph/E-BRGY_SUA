@@ -117,12 +117,21 @@ fun AdminRequestsScreen(
                 }
             }
 
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                items(filteredList) { req ->
+            if (filteredList.isEmpty()) {
+                EmptyStateCard(
+                    icon = Icons.Default.CloudOff,
+                    title = "No Requests",
+                    message: "There are no document requests at this time. New requests will appear here as they are submitted.",
+                    buttonText: "Submit a New Request",
+                    onButtonClick = { /* TODO: navigate to request form */ }
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(filteredList) { req ->
                     SoftSkeuomorphicCard(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = { onNavigateToRequestDetails(req.id) }
@@ -223,11 +232,20 @@ fun AdminResidentsScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(filtered) { res ->
+            if (filtered.isEmpty()) {
+                EmptyStateCard(
+                    icon = Icons.Default.Person,
+                    title = "No Residents",
+                    message: "The resident registry is empty. Add residents to begin tracking the barangay population.",
+                    buttonText: "Add Resident",
+                    onButtonClick = { /* TODO: navigate to resident creation */ }
+                )
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(filtered) { res ->
                     SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth()) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -302,7 +320,16 @@ fun AdminHouseholdsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(households) { hh ->
+            if (households.isEmpty()) {
+                EmptyStateCard(
+                    icon = Icons.Default.Home,
+                    title = "No Households",
+                    message: "No households are registered yet. Add household records to begin tracking family units.",
+                    buttonText: "Add Household",
+                    onButtonClick = { /* TODO: navigate to household creation */ }
+                )
+            } else {
+                items(households) { hh ->
                 SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -386,7 +413,16 @@ fun AdminAnnouncementsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            items(announcements) { ann ->
+            if (announcements.isEmpty()) {
+                EmptyStateCard(
+                    icon = Icons.Default.Campaign,
+                    title = "No Announcements",
+                    message: "There are no official announcements at this time. Publish your first announcement to share updates with the community.",
+                    buttonText: "Publish Announcement",
+                    onButtonClick = { /* TODO: open create dialog */ }
+                )
+            } else {
+                items(announcements) { ann ->
                 SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -540,7 +576,16 @@ fun AdminEventsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            items(events) { ev ->
+            if (events.isEmpty()) {
+                EmptyStateCard(
+                    icon = Icons.Default.Event,
+                    title = "No Events",
+                    message: "There are no scheduled events at this time. Create your first community event to get started.",
+                    buttonText: "Schedule Event",
+                    onButtonClick = { /* TODO: open create event dialog */ }
+                )
+            } else {
+                items(events) { ev ->
                 SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -665,7 +710,16 @@ fun AdminEmergenciesScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            items(emergencies) { emg ->
+            if (emergencies.isEmpty()) {
+                EmptyStateCard(
+                    icon = Icons.Default.Emergency,
+                    title = "No Active Emergencies",
+                    message: "There are no active emergency reports at this time. All systems are functioning normally.",
+                    buttonText: nil,
+                    onButtonClick = nil
+                )
+            } else {
+                items(emergencies) { emg ->
                 val statusColor = when (emg.status) {
                     EmergencyStatus.RECEIVED -> RestrainedCoralRed
                     EmergencyStatus.RESPONDING -> WarmAmber
@@ -865,7 +919,16 @@ fun AdminAuditLogsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(logs) { log ->
+            if (logs.isEmpty()) {
+                EmptyStateCard(
+                    icon = Icons.Default.ReceiptLong,
+                    title = "No Audit Logs",
+                    message: "No audit records found. System activity will appear here as actions are performed.",
+                    buttonText: nil,
+                    onButtonClick = nil
+                )
+            } else {
+                items(logs) { log ->
                 SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),

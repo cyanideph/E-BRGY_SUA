@@ -117,9 +117,9 @@ fun MyRequestsScreen(
             ) {
                 EmptyStateCard(
                     icon = Icons.Default.AssignmentLate,
-                    title = "No Requests Found",
-                    message = "You don't have any requests in this category. Submit an application anytime.",
-                    buttonText = "View Available Services",
+                    title = "No Active Requests",
+                    message = "You don't have any ongoing requests. Apply for clearances and certifications anytime.",
+                    buttonText = "Apply for a Service",
                     onButtonClick = onNavigateToServices
                 )
             }

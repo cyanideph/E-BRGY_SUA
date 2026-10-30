@@ -61,26 +61,31 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            val repository = remember { com.example.data.BarangayRepository.instance }
-            val themeMode by repository.themeMode.collectAsState()
-            val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
+            // ViewModels — each owns its own UI-state; Repository remains for backend ops
+            val authViewModel: AuthViewModel = viewModel()
+            val requestsViewModel: RequestsViewModel = viewModel()
+            val emergencyViewModel: EmergencyViewModel = viewModel()
+            val civicViewModel: CivicViewModel = viewModel()
+
+            val themeMode = authViewModel.themeMode
             val isDark = when (themeMode) {
                 com.example.data.AppThemeMode.LIGHT -> false
                 com.example.data.AppThemeMode.DARK -> true
-                com.example.data.AppThemeMode.SYSTEM -> systemDark
+                com.example.data.AppThemeMode.SYSTEM -> androidx.compose.foundation.isSystemInDarkTheme()
             }
 
-            MyApplicationTheme(darkTheme = isDark) {
-                EBarangaySuaApp()
+            MyApplicationTheme(darkTheme = isDark, dynamicColor = true) {
+                EBarangaySuaApp(authViewModel, requestsViewModel, emergencyViewModel, civicViewModel)
             }
         }
     }
 }
 
 @Composable
-fun EBarangaySuaApp() {
-    val repository = remember { com.example.data.BarangayRepository.instance }
-    val scope = rememberCoroutineScope()
+fun EBarangaySuaApp(authViewModel: AuthViewModel,
+                      requestsViewModel: RequestsViewModel,
+                      emergencyViewModel: EmergencyViewModel,
+                      civicViewModel: CivicViewModel) {
     // P0-8: persisted mirror of the back stack (encoded routes) so navigation
     // history survives process death. A plain ArrayList is Bundle/Serializable
     // safe, which `rememberSaveable` requires.
@@ -162,7 +167,7 @@ fun EBarangaySuaApp() {
         else -> false
     }
 
-    val themeMode by repository.themeMode.collectAsState()
+    val themeMode = authViewModel.themeMode
     val isDark = when (themeMode) {
         com.example.data.AppThemeMode.LIGHT -> false
         com.example.data.AppThemeMode.DARK -> true
@@ -240,9 +245,9 @@ fun EBarangaySuaApp() {
                     is Screen.Splash -> {
                         SplashScreen(
                             onSplashFinished = {
-                                val currentUser = repository.currentUser.value
+                                val currentUser = authViewModel.currentUser.value
                                 val isLoggedIn = currentUser.uid.isNotBlank()
-                                val hasOnboarded = repository.hasCompletedOnboarding()
+                                val hasOnboarded = authViewModel.hasCompletedOnboarding.value
                                 when {
                                     isLoggedIn -> selectBottomTab(Screen.Home)
                                     hasOnboarded -> replaceTop(Screen.Login)
@@ -254,8 +259,8 @@ fun EBarangaySuaApp() {
                     is Screen.Onboarding -> {
                         OnboardingScreen(
                             onFinishOnboarding = {
-                                repository.setCompletedOnboarding(true)
-                                if (repository.currentUser.value.uid.isNotBlank()) {
+                                authViewModel.hasCompletedOnboarding.value
+                                if (authViewModel.currentUser.value.uid.isNotBlank()) {
                                     selectBottomTab(Screen.Home)
                                 } else {
                                     replaceTop(Screen.Login)
@@ -296,16 +301,17 @@ fun EBarangaySuaApp() {
                             onNavigateToEventDetails = { eId -> navigateTo(Screen.EventDetails(eId)) },
                             onNavigateToNotifications = { navigateTo(Screen.Notifications) },
                             onNavigateToAssistant = { navigateTo(Screen.Assistant) },
-                            onNavigateToAdminDashboard = { navigateTo(Screen.AdminDashboard) }
+                            onNavigateToAdminDashboard = { navigateTo(Screen.AdminDashboard) },
+                            screenColorScheme = null
                         )
                     }
                     is Screen.Services -> {
                         ServicesScreen(
                             onNavigateToServiceDetails = { sId ->
                                 navigateTo(Screen.ServiceDetails(sId))
-                            }
+                            },
+                            screenColorScheme = null
                         )
-                    }
                     is Screen.ServiceDetails -> {
                         ServiceDetailsScreen(
                             serviceId = screen.serviceId,
@@ -340,7 +346,8 @@ fun EBarangaySuaApp() {
                             },
                             onNavigateToServices = {
                                 selectBottomTab(Screen.Services)
-                            }
+                            },
+                            screenColorScheme = null
                         )
                     }
                     is Screen.RequestDetails -> {
@@ -352,36 +359,42 @@ fun EBarangaySuaApp() {
                     is Screen.Sua -> {
                         SuaCommunityHubScreen(
                             onNavigateToEmergency = { navigateTo(Screen.Emergency) },
-                            onNavigateToAnnouncements = { selectBottomTab(Screen.Alerts) }
+                            onNavigateToAnnouncements = { selectBottomTab(Screen.Alerts) },
+                            screenColorScheme = null
                         )
                     }
                     is Screen.Alerts -> {
                         AnnouncementsScreen(
                             onNavigateToAnnouncementDetails = { aId ->
                                 navigateTo(Screen.AnnouncementDetails(aId))
-                            }
+                            },
+                            screenColorScheme = null
                         )
                     }
                     is Screen.Events -> {
                         EventsScreen(
-                            onNavigateToEventDetails = { navigateTo(Screen.EventDetails(it)) }
+                            onNavigateToEventDetails = { navigateTo(Screen.EventDetails(it)) },
+                            screenColorScheme = null
                         )
                     }
                     is Screen.AnnouncementDetails -> {
                         AnnouncementDetailsScreen(
                             announcementId = screen.announcementId,
-                            onNavigateBack = { navigateBack() }
+                            onNavigateBack = { navigateBack() },
+                            screenColorScheme = null
                         )
                     }
                     is Screen.EventDetails -> {
                         EventDetailsScreen(
                             eventId = screen.eventId,
-                            onNavigateBack = { navigateBack() }
+                            onNavigateBack = { navigateBack() },
+                            screenColorScheme = null
                         )
                     }
                     is Screen.Emergency -> {
                         EmergencyScreen(
-                            onNavigateBack = { navigateBack() }
+                            onNavigateBack = { navigateBack() },
+                            screenColorScheme = null
                         )
                     }
                     is Screen.Notifications -> {
@@ -395,13 +408,13 @@ fun EBarangaySuaApp() {
                         ProfileScreen(
                             onNavigateToSettings = { navigateTo(Screen.Settings) },
                             onNavigateToAdminDashboard = { navigateTo(Screen.AdminDashboard) },
-                            onLogout = { scope.launch { repository.logout(); selectBottomTab(Screen.Login) } }
+                            onLogout = { scope.launch { authViewModel.logout(); selectBottomTab(Screen.Login) } }
                         )
                     }
                     is Screen.Settings -> {
                         SettingsScreen(
                             onNavigateBack = { navigateBack() },
-                            onLogout = { scope.launch { repository.logout(); selectBottomTab(Screen.Login) } }
+                            onLogout = { scope.launch { authViewModel.logout(); selectBottomTab(Screen.Login) } }
                         )
                     }
                     is Screen.Assistant -> {
@@ -415,7 +428,8 @@ fun EBarangaySuaApp() {
                             onNavigateToRequests = { navigateTo(Screen.AdminRequests) },
                             onNavigateToResidents = { navigateTo(Screen.AdminResidents) },
                             onNavigateToHouseholds = { navigateTo(Screen.AdminHouseholds) },
-                            onNavigateToAnnouncements = { navigateTo(Screen.AdminAnnouncements) },
+                            screenColorScheme = null
+                        )                            onNavigateToAnnouncements = { navigateTo(Screen.AdminAnnouncements) },
                             onNavigateToEvents = { navigateTo(Screen.AdminEvents) },
                             onNavigateToEmergencies = { navigateTo(Screen.AdminEmergencies) },
                             onNavigateToReports = { navigateTo(Screen.AdminReports) },
@@ -427,43 +441,44 @@ fun EBarangaySuaApp() {
                             onNavigateBack = { navigateBack() },
                             onNavigateToRequestDetails = { rId ->
                                 navigateTo(Screen.RequestDetails(rId))
-                            }
+                            },
+                            screenColorScheme = null
                         )
                     }
                     is Screen.AdminResidents -> {
                         AdminResidentsScreen(
-                            onNavigateBack = { navigateBack() }
-                        )
+                            onNavigateBack = { navigateBack() },
+                            screenColorScheme = null
                     }
                     is Screen.AdminHouseholds -> {
                         AdminHouseholdsScreen(
-                            onNavigateBack = { navigateBack() }
-                        )
+                            onNavigateBack = { navigateBack() },
+                            screenColorScheme = null
                     }
                     is Screen.AdminAnnouncements -> {
                         AdminAnnouncementsScreen(
-                            onNavigateBack = { navigateBack() }
-                        )
+                            onNavigateBack = { navigateBack() },
+                            screenColorScheme = null
                     }
                     is Screen.AdminEvents -> {
                         AdminEventsScreen(
-                            onNavigateBack = { navigateBack() }
-                        )
+                            onNavigateBack = { navigateBack() },
+                            screenColorScheme = null
                     }
                     is Screen.AdminEmergencies -> {
                         AdminEmergenciesScreen(
-                            onNavigateBack = { navigateBack() }
-                        )
+                            onNavigateBack = { navigateBack() },
+                            screenColorScheme = null
                     }
                     is Screen.AdminReports -> {
                         AdminReportsScreen(
-                            onNavigateBack = { navigateBack() }
-                        )
+                            onNavigateBack = { navigateBack() },
+                            screenColorScheme = null
                     }
                     is Screen.AdminAuditLogs -> {
                         AdminAuditLogsScreen(
-                            onNavigateBack = { navigateBack() }
-                        )
+                            onNavigateBack = { navigateBack() },
+                            screenColorScheme = null
                     }
                 }
             }

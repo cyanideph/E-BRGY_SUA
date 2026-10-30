@@ -28,13 +28,20 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
+        @Synchronized
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
+                val sqLiteOpenHelper = net.zeteticapp.sqlcipher.SQLiteOpenHelper(
                     context.applicationContext,
-                    AppDatabase::class.java,
-                    "ebarangay_sua.db"
-                ).fallbackToDestructiveMigration()
+                    "ebarangay_sua.db",
+                    null,
+                    1
+                )
+                INSTANCE = Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, "ebarangay_sua.db")
+                    .openHelperFactory(
+                        androidx.sqlite.db.libsupport.SupportSQLiteOpenHelperFactory(sqLiteOpenHelper)
+                    )
+                    .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 instance

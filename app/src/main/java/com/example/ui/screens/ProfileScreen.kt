@@ -33,7 +33,7 @@ fun ProfileScreen(
 ) {
     val repository = remember { BarangayRepository.instance }
     val userSession by repository.currentUser.collectAsState()
-
+    val showEmptyState = userSession == null
 
     Column(
         modifier = Modifier
@@ -51,9 +51,18 @@ fun ProfileScreen(
             }
         )
 
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Profile Card
-            SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth()) {
+        if (showEmptyState) {
+            EmptyStateCard(
+                icon = Icons.Default.Person,
+                title = "No Profile Data",
+                message: "Your profile is currently empty. Add your resident details to get started.",
+                buttonText: "Add Profile",
+                onButtonClick = { /* TODO: navigate to profile setup */ }
+            )
+        } else {
+            Column(modifier = Modifier.padding(16.dp)) {
+                // Profile Card
+                SoftSkeuomorphicCard(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically

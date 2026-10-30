@@ -117,9 +117,9 @@ fun ServicesScreen(
             ) {
                 EmptyStateCard(
                     icon = Icons.Default.SearchOff,
-                    title = "No services found",
-                    message = "Try a different keyword or category.",
-                    buttonText = "Clear search",
+                    title = "No Services Available",
+                    message = "There are currently no services matching your search. Check the full service catalog at the Barangay Sua desk.",
+                    buttonText = "Browse Services",
                     onButtonClick = {
                         searchQuery = ""
                         selectedCategory = "All"

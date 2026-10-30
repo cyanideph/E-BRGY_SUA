@@ -252,6 +252,7 @@ object SuaElevation {
 fun EBarangaySuaTheme(
     darkTheme: Boolean = false,
     dynamicColor: Boolean = false,
+    screenColorScheme: ColorScheme? = null,  // Per-screen color scheme override
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -259,6 +260,7 @@ fun EBarangaySuaTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
+        screenColorScheme != null -> screenColorScheme
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
