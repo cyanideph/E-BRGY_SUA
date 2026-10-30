@@ -3,7 +3,22 @@
 **Feature**: E-BRGY SUA - Barangay Management System  
 **Version**: 1.0  
 **Generated**: 2026-10-30  
-**Source**: plan.md, s  - [x] T078 [P] [US1] Improve LoginScreen accessibility — add contentDescription to all interactive elements, ensure 48dp touch targets per Constitution VII
+**Source**: plan.md, s  - [x  - [x] T083 [P] [US1] Add splash screen with animated branding on app startup
+  - [x] T084 [P] [US1] Create onboarding walkthrough (3 screens) highlighting key features
+  - [x] T085 [P] [US1] Implement OAuth login (Google, GitHub) alongside resident login
+  - [x] T086 [P] [US1] Add phone/SMS OTP verification for login/reset flow
+  - [x] T087 [P] [US1] Add password reset with email verification screen
+  - [x] T088 [P] [US2] Enhance resident dashboard with quick stats cards (total residents, pending requests, active emergencies)
+  - [x] T089 [P] [US2] Add feature shortcuts (1-tap Report Emergency, Submit Request, View Advisories)
+  - [x] T090 [P] [US2] Implement notification center with filter (all/urgent/unread)
+  - [x] T091 [P] [US3] Enhance admin dashboard with KPI cards (resident count, active services, pending approvals, active emergencies)
+  - [x] T092 [P] [US3] Add action bar with Approve All, Reject All, Export Reports buttons
+  - [x] T093 [P] [US3] Implement activity timeline (chronological list of approvals/rejections)
+  - [x] T094 [P] Design system: add custom illustrations for empty states and onboarding
+  - [x] T095 [P] Design system: refine typography scale and expand color semantic system
+  
+---
+] T078 [P] [US1] Improve LoginScreen accessibility — add contentDescription to all interactive elements, ensure 48dp touch targets per Constitution VII
   - [x] T079 [P] [US2] Enhance AdvisoriesScreen empty state — add illustrative icon with contentDescription and retry action text
   - [x] T080 [P] [US3] Polish EmergencyReportScreen form — add input validation, severity color-coding, and clear error messages
   - [x] T081 [P] [US4] AdminDashboard UX improvements — add pull-to-refresh indicator and status badge visual hierarchy
