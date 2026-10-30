@@ -3,7 +3,12 @@
 **Feature**: E-BRGY SUA - Barangay Management System  
 **Version**: 1.0  
 **Generated**: 2026-10-30  
-**Source**: plan.md, spec.md, data-model.md, research.md, quickstart.md
+**Source**: plan.md, s  - [x] T078 [P] [US1] Improve LoginScreen accessibility — add contentDescription to all interactive elements, ensure 48dp touch targets per Constitution VII
+  - [x] T079 [P] [US2] Enhance AdvisoriesScreen empty state — add illustrative icon with contentDescription and retry action text
+  - [x] T080 [P] [US3] Polish EmergencyReportScreen form — add input validation, severity color-coding, and clear error messages
+  - [x] T081 [P] [US4] AdminDashboard UX improvements — add pull-to-refresh indicator and status badge visual hierarchy
+  - [x] T082 [P] Design System integration — extract color/typography constants to SuaDesignSystem.kt, consistent elevation and spacing
+pec.md, data-model.md, research.md, quickstart.md
 
 ---
 
