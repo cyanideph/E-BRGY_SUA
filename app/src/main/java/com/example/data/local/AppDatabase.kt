@@ -13,7 +13,7 @@ import androidx.room.TypeConverters
         NotificationEntity::class,
         AuditLogEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(RoomTypeConverters::class)
@@ -34,8 +34,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "ebarangay_sua.db"
-                ).fallbackToDestructiveMigration()
-                    .build()
+                ).addMigrations(
+                    Migration_1_2
+                ).build()
                 INSTANCE = instance
                 instance
             }
