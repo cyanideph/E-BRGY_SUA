@@ -6,13 +6,36 @@ enum class RequestStatus(val label: String) {
     PROCESSING("Processing"),
     READY("Ready for Release"),
     COMPLETED("Completed"),
-    REJECTED("Rejected")
+    REJECTED("Rejected"),
+    FIRST_TIME_JOBSEEKER_CLEARANCE("First-Time Jobseeker Clearance (RA 11261)")
 }
 
 data class ServiceRequirement(
     val title: String,
     val description: String,
     val isMandatory: Boolean = true
+)
+
+data class FirstTimeJobseekerWaiver(
+    val applicantName: String,
+    val course: String,
+    val graduationDate: String,
+    val employmentStatus: String,
+    val barangayClearanceDate: String
+)
+
+data class FinancialReport(
+    val id: String = "",
+    val reportType: String = "",
+    val description: String = "",
+    val amount: Double = 0.0,
+    val currency: String = "PHP",
+    val category: String = "General",
+    val date: String = "",
+    val preparedBy: String = "",
+    val approvedBy: String? = null,
+    val status: String = "Pending",
+    val createdAt: Long = System.currentTimeMillis()
 )
 
 data class BarangayService(
@@ -24,7 +47,8 @@ data class BarangayService(
     val requirements: List<ServiceRequirement>,
     val processingDays: String,
     val feeDescription: String,
-    val iconKey: String
+    val iconKey: String,
+    val isFirstTimeJobseekerWaiverApplicable: Boolean = false
 )
 
 data class RequestTimelineEvent(

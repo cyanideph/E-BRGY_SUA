@@ -8,13 +8,19 @@ import androidx.room.TypeConverters
 
 @Database(
     entities = [
+        ResidentEntity::class,
+        ServiceRequestEntity::class,
+        EmergencyReportEntity::class,
+        AnnouncementEntity::class,
+        BarangayOfficialEntity::class,
         DocumentRequestEntity::class,
         EmergencyReportEntity::class,
         NotificationEntity::class,
         AuditLogEntity::class
     ],
-    version = 2,
-    exportSchema = false
+    version = 3,
+    exportSchema = false,
+    typeConverters = [RoomTypeConverters::class.java]
 )
 @TypeConverters(RoomTypeConverters::class)
 abstract class AppDatabase : RoomDatabase() {

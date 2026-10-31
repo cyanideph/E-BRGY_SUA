@@ -552,6 +552,7 @@ fun AdminEventsScreen(
                     }
                     Text("${ev.date} • ${ev.time}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("Location: ${ev.location}", fontSize = 11.sp, color = DeepNavySecondary)
+                    Text("Voting: ${ev.yesVotes} Yes / ${ev.noVotes} No", fontSize = 10.sp, color = DeepOceanBlue, fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -571,6 +572,9 @@ fun AdminEventsScreen(
                         OutlinedTextField(value = time, onValueChange = { time = it }, label = { Text("Time") }, modifier = Modifier.fillMaxWidth())
                         Spacer(modifier = Modifier.height(6.dp))
                         OutlinedTextField(value = location, onValueChange = { location = it }, label = { Text("Location") }, modifier = Modifier.fillMaxWidth())
+                        Spacer(modifier = Modifier.height(6.dp))
+                        // Voting toggle
+                        OutlinedTextField(value = if (ev.votingOpen) "true" else "false", onValueChange = { votingOpen = it }, label = { Text("Voting Open") }, modifier = Modifier.fillMaxWidth(), readOnly = true)
 
                         // P0-6: visible validation instead of a silent no-op Save.
                         val error = formError

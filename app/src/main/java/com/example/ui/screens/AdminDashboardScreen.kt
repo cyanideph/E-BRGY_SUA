@@ -54,6 +54,7 @@ fun AdminDashboardScreen(
     val pendingCount = requests.count { it.status == RequestStatus.SUBMITTED || it.status == RequestStatus.UNDER_REVIEW }
     val processingCount = requests.count { it.status == RequestStatus.PROCESSING }
     val readyCount = requests.count { it.status == RequestStatus.READY }
+    val firstTimeJobseekerCount = requests.count { it.status == RequestStatus.FIRST_TIME_JOBSEEKER_CLEARANCE }
     val activeEmergencies = emergencies.count { it.status != com.example.model.EmergencyStatus.RESOLVED }
 
     Scaffold(
@@ -167,6 +168,14 @@ fun AdminDashboardScreen(
                     color = RestrainedCoralRed,
                     modifier = Modifier.weight(1f),
                     onClick = onNavigateToEmergencies
+                )
+                AdminMetricCard(
+                    title = "First-Time Jobseeker",
+                    value = "$firstTimeJobseekerCount",
+                    subtitle = "RA 11261 clearances",
+                    color = DeepOceanBlue,
+                    modifier = Modifier.weight(1f),
+                    onClick = onNavigateToRequests
                 )
             }
 
@@ -449,7 +458,7 @@ fun AdminDashboardScreen(
                 )
                 AdminNavTile(
                     title = "Events",
-                    desc = "Schedule assemblies and community programs",
+                    desc = "Schedule assemblies and community programs; toggle voting",
                     icon = Icons.Default.Event,
                     onClick = onNavigateToEvents
                 )
@@ -464,6 +473,18 @@ fun AdminDashboardScreen(
                     desc = "Review administrative actions and status history",
                     icon = Icons.Default.ReceiptLong,
                     onClick = onNavigateToAuditLogs
+                )
+                AdminNavTile(
+                    title = "Financial Reports",
+                    desc = "View and submit treasury/financial reports",
+                    icon = Icons.Default.AccountBalance,
+                    onClick = { /* TODO: navigate to financial reports */ }
+                )
+                AdminNavTile(
+                    title = "Tanod Patrol",
+                    desc = "Track barangay security patrols and reports",
+                    icon = Icons.Default.Security,
+                    onClick = { /* TODO: navigate to tanod patrol */ }
                 )
             }
 

@@ -262,6 +262,54 @@ async function handle(req) {
 
   const input = body(req);
 
+if (route === "/first-time-jobseeker-clearance" && req.method === "POST") {
+    requireFields(input, ["applicantName", "course", "graduationDate", "employmentStatus", "barcodeNumber"]);
+    assertLength(input.applicantName, "applicantName");
+    assertLength(input.course, "course");
+    assertLength(input.graduationDate, "graduationDate");
+    assertLength(input.employmentStatus, "employmentStatus");
+    assertLength(input.barcodeNumber, "barcodeNumber");
+
+    const uid = requireUser(req);
+    const existing = null;
+    // Check if resident already exists
+    try { existing = await get(req, T.residents, uid); } catch {}
+
+    if (existing) throw fail(400, "BAD_REQUEST", "Resident profile already exists.");
+
+    const accountUser = await getUser(req, uid);
+    const accountEmail = String(accountUser.email || "").trim();
+    if (!accountEmail || accountEmail.toLowerCase() !== String(input.applicantName).trim().toLowerCase().split(" ").at(-1)) {
+      throw fail(400, "BAD_REQUEST", "Application email does not match the authenticated Appwrite account.");
+    }
+
+    const createdAt = now();
+    const ownerPermission = [`read("user:${uid}")`];
+
+    await create(req, T.residents, {
+      userId: uid,
+      fullName: String(input.applicantName),
+      address: "", // will be filled later
+      mobileNumber: "", // will be filled later
+      birthDate: input.graduationDate || null,
+      civilStatus: "",
+      occupation: "First-Time Jobseeker",
+      emergencyContactName: "",
+      emergencyContactRelationship: "",
+      emergencyContactPhone: "",
+      latitude: null,
+      longitude: null,
+      residentId: uid,
+      verified: false,
+      registrationStatus: "Pending Verification",
+      createdAt
+    }, uid, ownerPermission);
+
+    await audit(req, uid, "FIRST_TIME_JOBSEEKER_CLEARANCE", "Resident", uid, `Applicant: ${input.applicantName}`);
+
+    return { ok: true, residentId: uid, registrationStatus: "Pending Verification" };
+  }
+
   if (route === "/register-resident" && req.method === "POST") {
     requireFields(input, ["fullName", "email", "address", "mobileNumber"]);
     assertLength(input.fullName, "fullName");
@@ -365,6 +413,63 @@ async function handle(req) {
     return { ok: true };
   }
 
+  if (route === "/philsys-lookup" && req.method === "POST") {
+    const input = body(req);
+    requireFields(input, ["philId"]);
+    assertLength(input.philId, "philId");
+
+    const uid = requireUser(req);
+
+    // Simulate PhilSys lookup - in production this would call the official PH PhilSys API
+    const philId = String(input.philId).trim();
+    if (philId.length < 12 || philId.length > 15) {
+      throw fail(400, "BAD_REQUEST", "PhilSys ID must be 12-15 digits.");
+    }
+
+    // Mock lookup - would integrate with official PH government API
+    const mockRecord: any = {
+      philId: philId,
+      fullName: "Mock Resident",
+      dateOfBirth: "1990-01-01",
+      address: "Barangay Sua, San Juan, Southern Leyte",
+      gender: "Male",
+      civilStatus: "Single",
+      bloodType: "O+",
+      dateIssued: now(),
+      expiryDate: "2030-01-01"
+    };
+
+    await create(req, T.audit, {
+      actorUserId: uid, action: "LOOKUP_PHILSYS", resourceType: "PhilSys",
+      resourceId: philId, details: JSON.stringify({philId, found: true})
+    });
+
+    return { ok: true, record: mockRecord };
+  }
+
+  if (route === "/tanod-patrol" && req.method === "POST") {
+    const input = body(req);
+    requireFields(input, ["officerName", "patrolArea", "status"]);
+    assertLength(input.officerName, "officerName");
+    assertLength(input.patrolArea, "patrolArea");
+    assertLength(input.status, "status");
+
+    const uid = requireUser(req);
+    const report = await create(req, T.emergencies, {
+      userId: uid, type: "Tanod Patrol", description: input.patrolArea,
+      latitude: input.latitude ?? null, longitude: input.longitude ?? null,
+      status: String(input.status || "Active"),
+      createdAt: now()
+    }, ID.unique(), ownerPermissions(uid));
+    await create(req, T.emergencyHistory, {
+      reportId: report.$id, status: "Active", responder: "", notes: String(input.notes || ""),
+      changedBy: uid, changedAt: now()
+    }, ID.unique(), ownerPermissions(uid));
+    await notify(req, uid, "Tanod Patrol Report", `Patrol report was accepted by the barangay backend.`, "Emergency", report.$id);
+    await audit(req, uid, "CREATE_EMERGENCY", "EmergencyReport", report.$id, "Tanod Patrol");
+    return { ok: true, reportId: report.$id };
+  }
+
   if (route === "/emergency" && req.method === "POST") {
     const rawReportId = String(input.reportId ?? "").trim();
     const id = rawReportId ? assertId(rawReportId, "reportId") : ID.unique();
@@ -406,6 +511,57 @@ async function handle(req) {
     await notify(req, resident, "Emergency Status Updated", `Your emergency report status is now ${status}.`, "Emergency", reportId);
     await audit(req, uid, "UPDATE_EMERGENCY_STATUS", "EmergencyReport", reportId, status);
     return { ok: true };
+  }
+
+  if (route === "/financial-report" && req.method === "POST") {
+    const actor = await requireRole(req, uid, OFFICIAL_ROLES, "Official authorization required.");
+
+    const reportType = String(input.reportType ?? "");
+    const description = String(input.description ?? "");
+    const amount = Number(input.amount) || 0;
+    const category = String(input.category ?? "General");
+    const preparedBy = String(input.preparedBy ?? "");
+
+    if (!reportType.trim() || !description.trim()) {
+      throw fail(400, "BAD_REQUEST", "reportType and description are required.");
+    }
+    assertLength(reportType, "reportType");
+    assertLength(description, "description");
+    assertLength(input.body, "body");
+    assertLength(input.category, "category");
+
+    const created = await create(req, T.audit, {
+      actorUserId: uid, action: "CREATE_FINANCIAL_REPORT", resourceType: "FinancialReport",
+      resourceId: ID.unique(), details: JSON.stringify({reportType, description, amount, category, preparedBy})
+    });
+
+    await create(req, T.audit, {
+      actorUserId: uid, action: "CREATE_FINANCIAL_REPORT", resourceType: "FinancialReport",
+      resourceId: created.$id, details: JSON.stringify({reportType, description, amount, category, preparedBy})
+    });
+
+    return { ok: true, reportId: created.$id };
+  }
+
+  if (route === "/event-voting" && req.method === "POST") {
+    const input = body(req);
+    requireFields(input, ["eventId", "open"]);
+    assertLength(input.eventId, "eventId");
+    assertBoolean(input.open, "open");
+
+    const actor = await requireRole(req, uid, OFFICIAL_ROLES, "Official authorization required.");
+    const event = await get(req, T.events, input.eventId);
+
+    await update(req, T.events, input.eventId, {
+      title: event.title, description: event.description,
+      startsAt: event.startsAt, endsAt: event.endsAt,
+      location: event.location, organizer: event.organizer,
+      category: event.category, rsvpCount: event.rsvpCount,
+      votingOpen: Boolean(input.open), yesVotes: event.yesVotes, noVotes: event.noVotes
+    });
+
+    await audit(req, uid, "TOGGLE_EVENT_VOTING", "Event", input.eventId, `Voting ${Boolean(input.open) ? "opened" : "closed"}`);
+    return { ok: true, votingOpen: Boolean(input.open) };
   }
 
   if (route === "/announcement" && req.method === "POST") {

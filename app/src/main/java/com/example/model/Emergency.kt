@@ -5,7 +5,8 @@ enum class EmergencyType(val displayName: String, val iconDescription: String) {
     MEDICAL("Medical Emergency", "Ambulance & Rural Health Unit"),
     FIRE("Fire Emergency", "Bureau of Fire Protection"),
     POLICE("Police Assistance", "Philippine National Police"),
-    RESCUE_DISASTER("Rescue & Coastal Disaster", "MDRRMO & Coast Guard")
+    RESCUE_DISASTER("Rescue & Coastal Disaster", "MDRRMO & Coast Guard"),
+    TANOD_PATROL("Tanod Patrol", "Barangay Security Patrol")
 }
 
 enum class EmergencyStatus(val label: String) {
@@ -13,6 +14,17 @@ enum class EmergencyStatus(val label: String) {
     RESPONDING("Units Dispatched"),
     RESOLVED("Incident Resolved")
 }
+
+data class TanodPatrolReport(
+    val id: String = "",
+    val officerName: String = "",
+    val patrolArea: String = "",
+    val status: String = "Active",
+    val notes: String = "",
+    val timestamp: Long = System.currentTimeMillis(),
+    val locationLatitude: Double? = null,
+    val locationLongitude: Double? = null
+)
 
 data class EmergencyReport(
     val id: String = "",
@@ -35,4 +47,16 @@ data class OfficialHotline(
     val number: String,
     val agency: String,
     val description: String
+)
+
+data class PhilSysRecord(
+    val philId: String = "",
+    val fullName: String = "",
+    val dateOfBirth: String = "",
+    val address: String = "",
+    val gender: String = "",
+    val civilStatus: String = "",
+    val bloodType: String = "",
+    val dateIssued: String = "",
+    val expiryDate: String = ""
 )

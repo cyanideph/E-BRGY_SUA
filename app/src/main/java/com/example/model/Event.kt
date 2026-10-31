@@ -10,5 +10,8 @@ data class BarangayEvent(
     val organizer: String = "Barangay Council of Sua",
     val category: String = "Assembly",
     val rsvpCount: Int = 0,
-    val isUserRsvpd: Boolean = false
+    val isUserRsvpd: Boolean = false,
+    val votingOpen: Boolean = false,
+    val yesVotes: Int = 0,
+    val noVotes: Int = 0
 )

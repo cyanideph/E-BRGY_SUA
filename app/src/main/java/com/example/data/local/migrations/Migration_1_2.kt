@@ -1,8 +1,7 @@
 package com.example.data.local.migrations
 
 import androidx.room.Migration
-import androidx.room support.KT
-import androidx.room.support.ComponentActivity
+import androidx.room.Placeholder
 
 val MIGRATION_1_2: Migration = Migration(1, 2) { database ->
     // Add new tables/entities here as needed

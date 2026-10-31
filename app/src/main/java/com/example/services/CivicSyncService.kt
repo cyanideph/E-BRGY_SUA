@@ -72,6 +72,26 @@ object CivicSyncService {
         )
     }
 
+    suspend fun createFirstTimeJobseekerClearance(
+        applicantName: String,
+        course: String,
+        graduationDate: String,
+        employmentStatus: String,
+        barcodeNumber: String
+    ): Result<String> = runCatching {
+        executeAuthority(
+            path = "/first-time-jobseeker-clearance",
+            payload = mapOf(
+                "applicantName" to applicantName,
+                "course" to course,
+                "graduationDate" to graduationDate,
+                "employmentStatus" to employmentStatus,
+                "barangayClearanceDate" to Instant.ofEpochMilli(System.currentTimeMillis()).toString(),
+                "barcodeNumber" to barcodeNumber
+            )
+        )
+    }
+
     /** Fetch only the authenticated resident's requests. Appwrite permissions remain
      * the primary security boundary; the query also prevents loading unrelated rows. */
     suspend fun listRequestsForUser(userId: String): Result<List<Map<String, Any>>> = runCatching {
@@ -119,6 +139,34 @@ object CivicSyncService {
         )
     }
 
+    suspend fun createTanodPatrolReport(
+        officerName: String,
+        patrolArea: String,
+        status: String,
+        notes: String,
+        latitude: Double?,
+        longitude: Double?
+    ): Result<String> = runCatching {
+        executeAuthority(
+            path = "/tanod-patrol",
+            payload = mapOf(
+                "officerName" to officerName,
+                "patrolArea" to patrolArea,
+                "status" to status,
+                "notes" to notes,
+                "latitude" to latitude,
+                "longitude" to longitude
+            )
+        )
+    }
+
+    suspend fun lookupPhilSys(philId: String): Result<PhilSysRecord> = runCatching {
+        executeAuthority(
+            path = "/philsys-lookup",
+            payload = mapOf("philId" to philId)
+        )
+    }
+
     suspend fun updateEmergencyStatus(
         reportId: String,
         status: String,
@@ -162,6 +210,27 @@ object CivicSyncService {
         )
     }
 
+    suspend fun createFinancialReport(
+        reportType: String,
+        description: String,
+        amount: Double,
+        category: String,
+        preparedBy: String
+    ): Result<Unit> = runCatching {
+        executeAuthority(
+            path = "/financial-report",
+            payload = mapOf(
+                "reportType" to reportType,
+                "description" to description,
+                "amount" to amount,
+                "currency" to "PHP",
+                "category" to category,
+                "preparedBy" to preparedBy,
+                "date" to Instant.ofEpochMilli(System.currentTimeMillis()).toString()
+            )
+        )
+    }
+
     suspend fun createEvent(
         title: String,
         description: String,
@@ -182,6 +251,13 @@ object CivicSyncService {
                 "organizer" to organizer,
                 "category" to category
             )
+        )
+    }
+
+    suspend fun toggleEventVoting(eventId: String, open: Boolean): Result<Unit> = runCatching {
+        executeAuthority(
+            path = "/event-voting",
+            payload = mapOf("eventId" to eventId, "open" to open)
         )
     }
 

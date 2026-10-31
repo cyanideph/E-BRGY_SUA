@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.BarangayRepository
 import com.example.model.BarangayService
+import com.example.model.RequestStatus
 import com.example.ui.components.EmptyStateCard
 import com.example.ui.components.SuaPlainRow
 import com.example.ui.components.SuaRowDivider
@@ -48,6 +49,9 @@ fun ServicesScreen(
             matchesCategory && matchesSearch
         }
     }
+
+    // Check if First-Time Jobseeker Clearance is available
+    val hasFirstTimeJobseeker = services.any { it.name.contains("First-Time Jobseeker", ignoreCase = true) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         // Header
@@ -141,6 +145,20 @@ fun ServicesScreen(
                 }
             }
         }
+
+        // Quick access FAB for first-time jobseeker clearance if available
+        if (hasFirstTimeJobseeker) {
+            FloatingActionButton(
+                onClick = { /* Navigate to jobseeker clearance form */ },
+                modifier = Modifier.align(Alignment.BottomEnd)
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_baseline_person_add_24),
+                    contentDescription = "First-Time Jobseeker Clearance",
+                    contentScale = ContentScale.Fit
+                )
+            }
+        }
     }
 }
 
@@ -151,6 +169,7 @@ fun ServiceListItem(
 ) {
     // Non-card row: thumbnail tile + text. Parent draws dividers.
     val cardThumb = when {
+        service.name.contains("First-Time Jobseeker", ignoreCase = true) -> R.drawable.ic_baseline_person_add_24
         service.name.contains("Clearance", ignoreCase = true) -> R.drawable.card_clearance
         service.name.contains("Residency", ignoreCase = true) -> R.drawable.card_residency
         service.name.contains("Indigency", ignoreCase = true) -> R.drawable.card_indigency
